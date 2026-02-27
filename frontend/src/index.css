@@ -56,6 +56,20 @@
 
     --radius: 0.75rem;
 
+    /* --- Custom Brand Theme --- */
+    --brand-surface: 35 100% 97%;
+    /* very soft warm background */
+    --brand-primary: 28 95% 53%;
+    /* main SalesDuo orange */
+    --brand-secondary: 22 90% 48%;
+    /* deeper orange (CTA hover) */
+    --brand-tertiary: 40 95% 85%;
+    /* light amber highlight */
+    --brand-accent: 18 85% 60%;
+    /* warm accent coral */
+    --brand-dark: 24 95% 38%;
+    /* strong burnt orange for headings */
+
     /* --- Sidebar Theming --- */
     --sidebar-background: 220 14.3% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -126,6 +140,14 @@
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 32 100% 50%;
+
+    /* --- Custom Brand Theme (Dark) --- */
+    --brand-surface: 36 20% 10%;
+    --brand-primary: 32 100% 50%;
+    --brand-secondary: 15 85% 60%;
+    --brand-tertiary: 42 90% 55%;
+    --brand-accent: 25 80% 40%;
+    --brand-dark: 36 10% 90%;
 
     /* --- Sidebar Theming (Dark) --- */
     --sidebar-background: 224 71.4% 4.1%;

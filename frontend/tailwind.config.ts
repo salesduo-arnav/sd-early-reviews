@@ -67,6 +67,14 @@ export default {
                     ring: 'hsl(var(--sidebar-ring))',
                     item: 'hsl(var(--sidebar-item))',
                     'item-foreground': 'hsl(var(--sidebar-item-foreground))'
+                },
+                brand: {
+                    surface: 'hsl(var(--brand-surface))',
+                    primary: 'hsl(var(--brand-primary))',
+                    secondary: 'hsl(var(--brand-secondary))',
+                    tertiary: 'hsl(var(--brand-tertiary))',
+                    accent: 'hsl(var(--brand-accent))',
+                    dark: 'hsl(var(--brand-dark))'
                 }
             },
             borderRadius: {
