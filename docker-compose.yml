@@ -18,7 +18,7 @@ services:
     env_file: .env
     environment:
       - PGHOST=postgres
-      - NODE_ENV=production
+      - NODE_ENV=development
     ports:
       - "3000:3000"
     depends_on:
