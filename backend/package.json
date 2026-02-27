@@ -7,7 +7,7 @@
         "start": "npm run migrate:up && node dist/server.js",
         "lint": "eslint src",
         "clean": "rimraf dist && rimraf node_modules",
-        "migrate:create": "npx sequelize-cli migration:generate",
+        "migrate:create": "npx sequelize-cli migration:generate --name",
         "migrate:up": "npx sequelize-cli db:migrate",
         "migrate:down": "npx sequelize-cli db:migrate:undo",
         "test": "cross-env PGDATABASE=mydb_test jest"
