@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import path from 'path';
+import { logger } from '../utils/logger';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') }); // ensure .env is valid
 
@@ -11,15 +12,15 @@ const sequelize = new Sequelize({
     username: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
-    logging: false,
+    logging: msg => logger.debug(msg),
 });
 
 export const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('Database connected successfully (Sequelize)');
+        logger.info('✅ Database connected successfully (Sequelize)');
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        logger.error(`❌ Unable to connect to the database: ${error}`);
         process.exit(1);
     }
 };

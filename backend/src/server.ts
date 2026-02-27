@@ -1,48 +1,81 @@
-import app from './app';
-import dotenv from 'dotenv';
-import path from 'path';
-import { closeDB, connectDB } from './config/db';
+import app from "./app";
+import dotenv from "dotenv";
+import path from "path";
+import http from "http";
+import { closeDB, connectDB } from "./config/db";
+import { logger as Logger } from "./utils/logger";
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-const startServer = async () => {
-    try {
-        console.log('Starting server...');
-        await connectDB(); // Initial connection check
+const validateEnv = () => {
+    const requiredEnv = [
+        'PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE'
+    ];
 
-        const server = app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-
-        // Graceful Shutdown Logic
-        const shutdown = async (signal: string) => {
-            console.log(`${signal} received: closing HTTP server`);
-
-            server.close(async () => {
-                console.log('HTTP server closed');
-
-                try {
-                    // Close Database Pool
-                    await closeDB();
-                    console.log('Database connection closed');
-                    process.exit(0);
-                } catch (err) {
-                    console.error('Error closing database connection:', err);
-                    process.exit(1);
-                }
-            });
-        };
-
-        // Listen for termination signals
-        process.on('SIGTERM', () => shutdown('SIGTERM')); // Docker stop
-        process.on('SIGINT', () => shutdown('SIGINT'));   // Ctrl+C locally
-
-    } catch (err) {
-        console.error('Failed to start server:', err);
+    const missing = requiredEnv.filter(env => !process.env[env]);
+    if (missing.length > 0) {
+        Logger.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
         process.exit(1);
     }
 };
+
+validateEnv();
+
+let server: http.Server;
+
+const shutdown = async (signal: string) => {
+    Logger.info(`\n[${signal}] Graceful shutdown started...`);
+
+    const forceExit = setTimeout(() => {
+        Logger.error("⚠️ Force shutdown after 10s");
+        process.exit(1);
+    }, 10000);
+
+    try {
+        if (server) {
+            Logger.info("Closing HTTP server...");
+            await new Promise<void>((resolve, reject) => {
+                server.close(err => (err ? reject(err) : resolve()));
+            });
+            Logger.info("HTTP server closed.");
+        }
+
+        Logger.info("Closing database...");
+        await closeDB();
+        Logger.info("Database closed.");
+
+        clearTimeout(forceExit);
+        Logger.info("✅ Graceful shutdown complete.");
+        process.exit(0);
+    } catch (err) {
+        Logger.error(`❌ Shutdown failed: ${err}`);
+        process.exit(1);
+    }
+};
+
+const startServer = async () => {
+    try {
+        Logger.info("Initializing services...");
+
+        await connectDB();
+
+        server = app.listen(PORT, () => {
+            Logger.info(`✅ Server running on port ${PORT}`);
+        });
+    } catch (err) {
+        Logger.error(`❌ Failed to start server: ${err}`);
+        process.exit(1);
+    }
+};
+
+// Ctrl+C / Docker stop / nodemon restart
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGUSR2", async () => {
+    await shutdown("SIGUSR2");
+    process.kill(process.pid, "SIGUSR2");
+});
 
 startServer();

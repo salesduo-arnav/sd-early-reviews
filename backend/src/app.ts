@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import itemRoutes from './routes/item.routes';
+import morgan from 'morgan';
 import { errorHandler } from './middlewares/error';
+import { stream } from './utils/logger';
 
 const app = express();
 
@@ -10,9 +11,13 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Mount the generic resource routes
-// If this app is "Inventory", these become /api/inventory/items
-app.use('/items', itemRoutes);
+// Log HTTP requests
+app.use(morgan('tiny', { stream }));
+
+
+app.use(express.json());
+
+// Mount generic resource routes here
 
 // Standard Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
