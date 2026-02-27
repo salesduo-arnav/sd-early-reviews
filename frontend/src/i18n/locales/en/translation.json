@@ -1,0 +1,67 @@
+{
+    "landing": {
+        "nav": {
+            "logIn": "Log In",
+            "getStarted": "Get Started"
+        },
+        "hero": {
+            "title": "Accelerate your product launch with",
+            "titleHighlight": "verified reviews",
+            "subtitle": "Connect directly with real Amazon buyers. Sellers get momentum, buyers get rewarded. The transparent, reliable way to build early traction.",
+            "sellerBtn": "I'm a Seller",
+            "buyerBtn": "I'm a Buyer"
+        },
+        "howItWorks": {
+            "title": "Built for Growth",
+            "subtitle": "A double-sided marketplace that works for everyone",
+            "seller": {
+                "title": "For Sellers",
+                "description": "Launch new products with confidence. Get the initial reviews you need to rank higher and start driving organic sales.",
+                "features": [
+                    "List products and set reimbursement amounts",
+                    "Track review progress and completion rates",
+                    "100% verified Amazon purchases",
+                    "Only pay for completed, verified reviews"
+                ]
+            },
+            "buyer": {
+                "title": "For Buyers",
+                "description": "Discover great new products and get reimbursed for your honest feedback. Shop on Amazon like you normally do.",
+                "features": [
+                    "Browse a curated marketplace of products",
+                    "Buy on Amazon, post a review, get paid",
+                    "Fast reimbursements directly to your account",
+                    "Keep the products you love"
+                ]
+            }
+        },
+        "features": {
+            "title": "Why Choose Us",
+            "secure": {
+                "title": "Secure & Verified",
+                "description": "Our internal team verifies every purchase and review before processing reimbursements, ensuring platform integrity."
+            },
+            "anonymous": {
+                "title": "Anonymized Feedback",
+                "description": "Sellers receive valuable feedback while buyer identities remain completely protected and anonymous."
+            },
+            "analytics": {
+                "title": "Actionable Analytics",
+                "description": "Track your campaign progress, view completion rates, and manage your budget all from one powerful dashboard."
+            }
+        },
+        "stats": {
+            "activeReviewers": "Active Reviewers",
+            "activeReviewersValue": "50K+",
+            "productsTested": "Products Tested",
+            "productsTestedValue": "5K+",
+            "verifiedReviews": "Verified Reviews",
+            "verifiedReviewsValue": "100%",
+            "reimbursementTime": "Avg Reimbursement",
+            "reimbursementTimeValue": "< 24h"
+        },
+        "footer": {
+            "rights": "© 2026 EarlyReviews Platform. All rights reserved."
+        }
+    }
+}

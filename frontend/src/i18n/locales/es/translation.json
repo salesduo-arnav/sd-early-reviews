@@ -1,0 +1,67 @@
+{
+    "landing": {
+        "nav": {
+            "logIn": "Iniciar Sesión",
+            "getStarted": "Empezar"
+        },
+        "hero": {
+            "title": "Acelera el lanzamiento de tu producto con",
+            "titleHighlight": "reseñas verificadas",
+            "subtitle": "Conéctate directamente con compradores reales de Amazon. Los vendedores ganan impulso, los compradores son recompensados. La forma transparente de construir tracción temprana.",
+            "sellerBtn": "Soy Vendedor",
+            "buyerBtn": "Soy Comprador"
+        },
+        "howItWorks": {
+            "title": "Construido para Crecer",
+            "subtitle": "Un mercado bilateral que funciona para todos",
+            "seller": {
+                "title": "Para Vendedores",
+                "description": "Lanza nuevos productos con confianza. Obtén las reseñas iniciales que necesitas para mejorar tu ranking y comenzar a generar ventas orgánicas.",
+                "features": [
+                    "Lista productos y establece montos de reembolso",
+                    "Rastrea el progreso de reseñas y tasas de finalización",
+                    "Compras de Amazon 100% verificadas",
+                    "Solo paga por reseñas completadas y verificadas"
+                ]
+            },
+            "buyer": {
+                "title": "Para Compradores",
+                "description": "Descubre excelentes productos nuevos y recibe reembolsos por tus comentarios honestos. Compra en Amazon como lo haces normalmente.",
+                "features": [
+                    "Explora un mercado seleccionado de productos",
+                    "Compra en Amazon, publica una reseña, recibe tu pago",
+                    "Reembolsos rápidos directamente a tu cuenta",
+                    "Quédate con los productos que te encantan"
+                ]
+            }
+        },
+        "features": {
+            "title": "Por Qué Elegirnos",
+            "secure": {
+                "title": "Seguro y Verificado",
+                "description": "Nuestro equipo interno verifica cada compra y reseña antes de procesar reembolsos."
+            },
+            "anonymous": {
+                "title": "Comentarios Anónimos",
+                "description": "Los vendedores reciben comentarios valiosos mientras las identidades de los compradores."
+            },
+            "analytics": {
+                "title": "Analíticas Accionables",
+                "description": "Rastrea el progreso de tu campaña, tasas de finalización y maneja tu presupuesto."
+            }
+        },
+        "stats": {
+            "activeReviewers": "Revisores Activos",
+            "activeReviewersValue": "50K+",
+            "productsTested": "Productos Probados",
+            "productsTestedValue": "5K+",
+            "verifiedReviews": "Reseñas Verificadas",
+            "verifiedReviewsValue": "100%",
+            "reimbursementTime": "Reembolso Promedio",
+            "reimbursementTimeValue": "< 24h"
+        },
+        "footer": {
+            "rights": "© 2026 EarlyReviews Platform. Todos los derechos reservados."
+        }
+    }
+}
