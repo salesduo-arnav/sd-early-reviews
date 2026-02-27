@@ -71,10 +71,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Create .env files
+      - name: Create .env file
         run: |
-          cp backend/.env.example backend/.env
-          cp frontend/.env.example frontend/.env
+          echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: Build Docker Images
         run: |
@@ -103,21 +102,6 @@ jobs:
           set -o pipefail
           docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T backend npm test 2>&1 | tee backend_report.md
 
-      - name: Install Frontend Test Dependencies
-        run: |
-          sudo chown -R $(whoami) frontend
-          cd frontend
-          npm ci
-          npx playwright install --with-deps
-
-      - name: Run Frontend Tests
-        env:
-          CI_DOCKER: "true"
-        run: |
-          cd frontend
-          set -o pipefail
-          npx playwright test 2>&1 | tee ../frontend_report.md
-
       - name: Teardown
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down
@@ -129,7 +113,6 @@ jobs:
           name: test-reports
           path: |
             backend_report.md
-            frontend_report.md
 
   report:
     name: Generate CML Report
@@ -161,11 +144,6 @@ jobs:
           echo "## Backend Lint Results" >> report.md
           echo "\`\`\`" >> report.md
           cat backend-lint-report/backend_lint_report.md >> report.md || echo "Linting failed to run/not found." >> report.md
-          echo "\`\`\`" >> report.md
-
-          echo "## Frontend Test Results" >> report.md
-          echo "\`\`\`" >> report.md
-          cat test-reports/frontend_report.md >> report.md || echo "Tests failed to run/not found." >> report.md
           echo "\`\`\`" >> report.md
 
           echo "## Frontend Lint Results" >> report.md

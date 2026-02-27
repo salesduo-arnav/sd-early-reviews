@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../../.env') }); // ensure .env is valid
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') }); // ensure .env is valid
 
 const sequelize = new Sequelize({
     dialect: 'postgres',
