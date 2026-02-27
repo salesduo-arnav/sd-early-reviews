@@ -16,7 +16,7 @@ interface UserAttributes {
     deleted_at?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at'> { }
+type UserCreationAttributes = Optional<UserAttributes, 'id' | 'created_at'>;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     public id!: string;

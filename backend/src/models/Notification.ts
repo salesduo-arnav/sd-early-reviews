@@ -21,7 +21,7 @@ interface NotificationAttributes {
     deleted_at?: Date;
 }
 
-interface NotificationCreationAttributes extends Optional<NotificationAttributes, 'id' | 'type' | 'is_read' | 'created_at' | 'action_link' | 'deleted_at'> { }
+type NotificationCreationAttributes = Optional<NotificationAttributes, 'id' | 'type' | 'is_read' | 'created_at' | 'action_link' | 'deleted_at'>;
 
 export class Notification extends Model<NotificationAttributes, NotificationCreationAttributes> implements NotificationAttributes {
     public id!: string;

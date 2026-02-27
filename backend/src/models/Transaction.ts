@@ -28,7 +28,7 @@ interface TransactionAttributes {
     deleted_at?: Date;
 }
 
-interface TransactionCreationAttributes extends Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'deleted_at'> { }
+type TransactionCreationAttributes = Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'deleted_at'>;
 
 export class Transaction extends Model<TransactionAttributes, TransactionCreationAttributes> implements TransactionAttributes {
     public id!: string;

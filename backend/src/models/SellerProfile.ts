@@ -9,7 +9,7 @@ interface SellerProfileAttributes {
     deleted_at?: Date;
 }
 
-interface SellerProfileCreationAttributes extends Optional<SellerProfileAttributes, 'id' | 'company_name'> { }
+type SellerProfileCreationAttributes = Optional<SellerProfileAttributes, 'id' | 'company_name'>;
 
 export class SellerProfile extends Model<SellerProfileAttributes, SellerProfileCreationAttributes> implements SellerProfileAttributes {
     public id!: string;

@@ -26,7 +26,7 @@ interface CampaignAttributes {
     deleted_at?: Date;
 }
 
-interface CampaignCreationAttributes extends Optional<CampaignAttributes, 'id' | 'status' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'> { }
+type CampaignCreationAttributes = Optional<CampaignAttributes, 'id' | 'status' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'>;
 
 export class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes> implements CampaignAttributes {
     public id!: string;

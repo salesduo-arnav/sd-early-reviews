@@ -10,7 +10,7 @@ interface AdminAuditLogAttributes {
     deleted_at?: Date;
 }
 
-interface AdminAuditLogCreationAttributes extends Optional<AdminAuditLogAttributes, 'id' | 'created_at' | 'deleted_at'> { }
+type AdminAuditLogCreationAttributes = Optional<AdminAuditLogAttributes, 'id' | 'created_at' | 'deleted_at'>;
 
 export class AdminAuditLog extends Model<AdminAuditLogAttributes, AdminAuditLogCreationAttributes> implements AdminAuditLogAttributes {
     public id!: string;
