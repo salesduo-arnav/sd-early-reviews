@@ -64,6 +64,27 @@
             "rights": "© 2026 EarlyReviews Platform. All rights reserved."
         }
     },
+    "nav": {
+        "buyer_dashboard": "Buyer Dashboard",
+        "seller_dashboard": "Seller Dashboard",
+        "logout": "Log out"
+    },
+    "buyer": {
+        "welcome_title": "Welcome, Buyer!",
+        "welcome_subtitle": "Here you can browse available products to review and earn reimbursements.",
+        "available_campaigns": "Available Campaigns",
+        "available_campaigns_desc": "Find products to review.",
+        "my_claims": "My Claims",
+        "my_claims_desc": "Track your ongoing review reimbursements."
+    },
+    "seller": {
+        "welcome_title": "Welcome, Seller!",
+        "welcome_subtitle": "Manage your campaigns and track incoming reviews.",
+        "my_campaigns": "My Campaigns",
+        "my_campaigns_desc": "View your active product promotions.",
+        "create_campaign": "Create Campaign",
+        "create_campaign_desc": "Launch a new product review campaign."
+    },
     "auth": {
         "all_rights_reserved": "All rights reserved.",
         "login_title": "Welcome Back to SalesDuo",
@@ -111,6 +132,7 @@
         "im_a_seller": "I'm a Seller",
         "full_name": "Full Name",
         "amazon_profile_url": "Amazon Profile URL",
+        "region": "Region",
         "company_name": "Company Name",
         "password_setup": "Password",
         "confirm_password": "Confirm",

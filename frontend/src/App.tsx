@@ -4,6 +4,8 @@ import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import BuyerDashboard from './pages/buyer/BuyerDashboard';
+import SellerDashboard from './pages/seller/SellerDashboard';
 
 function App() {
   return (
@@ -16,12 +18,12 @@ function App() {
 
         {/* Placeholders for seller */}
         <Route element={<ProtectedRoute allowedRoles={['SELLER']} />}>
-          <Route path="/seller/*" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Seller Dashboard</h2></div>} />
+          <Route path="/seller/*" element={<SellerDashboard />} />
         </Route>
 
         {/* Placeholders for buyer */}
         <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-          <Route path="/buyer/*" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Buyer Dashboard</h2></div>} />
+          <Route path="/buyer/*" element={<BuyerDashboard />} />
         </Route>
 
         {/* Placeholders for admin */}

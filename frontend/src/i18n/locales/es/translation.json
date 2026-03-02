@@ -64,6 +64,27 @@
             "rights": "© 2026 EarlyReviews Platform. Todos los derechos reservados."
         }
     },
+    "nav": {
+        "buyer_dashboard": "Panel de Comprador",
+        "seller_dashboard": "Panel de Vendedor",
+        "logout": "Cerrar sesión"
+    },
+    "buyer": {
+        "welcome_title": "¡Bienvenido, Comprador!",
+        "welcome_subtitle": "Aquí puedes explorar productos disponibles para reseñar y ganar reembolsos.",
+        "available_campaigns": "Campañas Disponibles",
+        "available_campaigns_desc": "Encuentra productos para reseñar.",
+        "my_claims": "Mis Reclamos",
+        "my_claims_desc": "Rastrea tus reembolsos de reseñas en curso."
+    },
+    "seller": {
+        "welcome_title": "¡Bienvenido, Vendedor!",
+        "welcome_subtitle": "Gestiona tus campañas y rastrea reseñas entrantes.",
+        "my_campaigns": "Mis Campañas",
+        "my_campaigns_desc": "Ver tus promociones de productos activos.",
+        "create_campaign": "Crear Campaña",
+        "create_campaign_desc": "Lanzar una nueva campaña de reseñas de productos."
+    },
     "auth": {
         "all_rights_reserved": "Todos los derechos reservados.",
         "login_title": "Bienvenido a SalesDuo",
@@ -111,6 +132,7 @@
         "im_a_seller": "Soy Vendedor",
         "full_name": "Nombre completo",
         "amazon_profile_url": "URL del Perfil de Amazon",
+        "region": "Región",
         "company_name": "Nombre de la Empresa",
         "password_setup": "Contraseña",
         "confirm_password": "Confirmar",
