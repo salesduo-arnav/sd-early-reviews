@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/authStore';
 
 import { HeroSection } from './components/HeroSection';
 import { StatsSection } from './components/StatsSection';
@@ -12,6 +13,14 @@ import { FooterSection } from './components/FooterSection';
 
 const LandingPage = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { isAuthenticated, user } = useAuthStore();
+
+    React.useEffect(() => {
+        if (isAuthenticated && user) {
+            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
 
     return (
         <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">

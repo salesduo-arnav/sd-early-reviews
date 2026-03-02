@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { ArrowLeft } from 'lucide-react';
+import { authApi } from '@/api/auth';
+import { useAuthStore } from '@/store/authStore';
 
 const emailSchema = z.object({
     email: z.string().email(),
@@ -34,6 +36,16 @@ export default function ForgotPasswordPage() {
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>('email');
     const [emailForReset, setEmailForReset] = useState('');
+    const [otpToken, setOtpToken] = useState('');
+    const [otpCode, setOtpCode] = useState('');
+
+    const { isAuthenticated, user } = useAuthStore();
+
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const emailForm = useForm<z.infer<typeof emailSchema>>({
         resolver: zodResolver(emailSchema),
@@ -50,19 +62,41 @@ export default function ForgotPasswordPage() {
         defaultValues: { password: '', confirmPassword: '' },
     });
 
-    const onEmailSubmit = (data: z.infer<typeof emailSchema>) => {
-        setEmailForReset(data.email);
-        setStep('otp');
+    const onEmailSubmit = async (data: z.infer<typeof emailSchema>) => {
+        try {
+            const res = await authApi.forgotPassword({ email: data.email });
+            if (res.otpToken) {
+                setOtpToken(res.otpToken);
+                setEmailForReset(data.email);
+                setStep('otp');
+            } else {
+                // If the backend doesn't leak existence, it might just return success w/o token.
+                // But our implementation returns otpToken.
+                setEmailForReset(data.email);
+                setStep('otp');
+            }
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const onOtpSubmit = (data: z.infer<typeof otpVerifySchema>) => {
-        // Verify OTP logic here
+        // Just save the OTP code and advance to new_password step
+        setOtpCode(data.otp);
         setStep('new_password');
     };
 
-    const onNewPasswordSubmit = (data: z.infer<typeof newPasswordSchema>) => {
-        // Set new password logic here
-        navigate('/login');
+    const onNewPasswordSubmit = async (data: z.infer<typeof newPasswordSchema>) => {
+        try {
+            await authApi.resetPassword({
+                otp: otpCode,
+                otpToken,
+                newPassword: data.password
+            });
+            navigate('/login');
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const leftContent = {

@@ -10,6 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/api/auth';
+import { toast } from 'sonner';
 
 const signupSchema = z.object({
     fullName: z.string().min(2, 'Name is too short'),
@@ -17,6 +23,7 @@ const signupSchema = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
     amazonProfileUrl: z.string().optional(),
+    region: z.string().optional(),
     companyName: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -45,6 +52,8 @@ export default function SignupPage() {
 
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [signedUpEmail, setSignedUpEmail] = useState('');
+    const [otpToken, setOtpToken] = useState('');
+    const login = useAuthStore(state => state.login);
 
     useEffect(() => {
         const r = searchParams.get('role');
@@ -53,6 +62,15 @@ export default function SignupPage() {
         }
     }, [searchParams]);
 
+    const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+    const user = useAuthStore(state => state.user);
+
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
+
     const handleRoleChange = (newRole: Role) => {
         setRole(newRole);
         setSearchParams({ role: newRole });
@@ -60,7 +78,7 @@ export default function SignupPage() {
 
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
-        defaultValues: { fullName: '', email: '', password: '', confirmPassword: '', amazonProfileUrl: '', companyName: '' },
+        defaultValues: { fullName: '', email: '', password: '', confirmPassword: '', amazonProfileUrl: '', region: '', companyName: '' },
     });
 
     const otpForm = useForm<z.infer<typeof otpVerifySchema>>({
@@ -68,16 +86,41 @@ export default function SignupPage() {
         defaultValues: { otp: '' },
     });
 
-    const onSubmit = (data: z.infer<typeof signupSchema>) => {
-        console.log(`Signup as ${role}:`, data);
-        setSignedUpEmail(data.email);
-        setIsOtpModalOpen(true);
+    const onSubmit = async (data: z.infer<typeof signupSchema>) => {
+        try {
+            const res = await authApi.signup({
+                email: data.email,
+                password: data.password,
+                full_name: data.fullName,
+                role: role === 'buyer' ? 'BUYER' : 'SELLER',
+                amazon_profile_url: data.amazonProfileUrl,
+                region: data.region,
+                company_name: data.companyName
+            });
+            if (res.otpToken) {
+                setOtpToken(res.otpToken);
+                setSignedUpEmail(data.email);
+                setIsOtpModalOpen(true);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Something went wrong');
+        }
     };
 
-    const onOtpSubmit = (data: z.infer<typeof otpVerifySchema>) => {
-        console.log('OTP Verified:', data.otp);
-        setIsOtpModalOpen(false);
-        navigate('/login');
+    const onOtpSubmit = async (data: z.infer<typeof otpVerifySchema>) => {
+        try {
+            const res = await authApi.verifyEmail({ otp: data.otp, otpToken });
+            setIsOtpModalOpen(false);
+            if (res.user && res.tokens) {
+                login(res.user, res.tokens);
+                if (res.user.role === 'BUYER') navigate('/buyer');
+                else navigate('/seller');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Something went wrong');
+        }
     };
 
     const buyerLeftContent = {
@@ -177,19 +220,65 @@ export default function SignupPage() {
                                 )}
                             />
                             {role === 'buyer' && (
-                                <FormField
-                                    control={form.control}
-                                    name="amazonProfileUrl"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>{t('auth.amazon_profile_url', 'Amazon Profile URL')}</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://amazon.com/gp/profile/amzn1.account..." {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="region"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('auth.region', 'Region')}</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select Region" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="ca">Canada</SelectItem>
+                                                        <SelectItem value="cn">China</SelectItem>
+                                                        <SelectItem value="eg">Egypt</SelectItem>
+                                                        <SelectItem value="fr">France</SelectItem>
+                                                        <SelectItem value="de">Germany</SelectItem>
+                                                        <SelectItem value="in">India</SelectItem>
+                                                        <SelectItem value="it">Italy</SelectItem>
+                                                        <SelectItem value="jp">Japan</SelectItem>
+                                                        <SelectItem value="sa">Saudi Arabia</SelectItem>
+                                                        <SelectItem value="es">Spain</SelectItem>
+                                                        <SelectItem value="ae">UAE</SelectItem>
+                                                        <SelectItem value="co.uk">United Kingdom</SelectItem>
+                                                        <SelectItem value="com">United States</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="amazonProfileUrl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <div className="flex items-center space-x-2">
+                                                    <FormLabel>{t('auth.amazon_profile_url', 'Amazon Profile URL')}</FormLabel>
+                                                    <TooltipProvider delayDuration={100}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Info className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-[250px] p-3 text-sm">
+                                                                <p>To find your profile URL, go to <a href={`https://amazon.${form.watch('region') || 'com'}/gp/profile`} target="_blank" rel="noopener noreferrer" className="underline text-blue-500">amazon.{form.watch('region') || 'com'}/gp/profile</a> while logged into your Amazon account.</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                                <FormControl>
+                                                    <Input placeholder={`https://amazon.${form.watch('region') || 'com'}/gp/profile/amzn1.account...`} {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             )}
                             {role === 'seller' && (
                                 <FormField

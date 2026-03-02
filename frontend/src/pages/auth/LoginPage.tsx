@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { ArrowLeft } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/api/auth';
 
 const passwordSchema = z.object({
     email: z.string().email(),
@@ -30,6 +32,15 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const [otpSent, setOtpSent] = useState(false);
     const [emailForOtp, setEmailForOtp] = useState('');
+    const [otpToken, setOtpToken] = useState('');
+    const loginStore = useAuthStore(state => state.login);
+    const { isAuthenticated, user } = useAuthStore();
+
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const passwordForm = useForm<z.infer<typeof passwordSchema>>({
         resolver: zodResolver(passwordSchema),
@@ -46,20 +57,43 @@ export default function LoginPage() {
         defaultValues: { otp: '' },
     });
 
-    const onPasswordSubmit = (data: z.infer<typeof passwordSchema>) => {
-        console.log('Password Login:', data);
-        navigate('/');
+    const onPasswordSubmit = async (data: z.infer<typeof passwordSchema>) => {
+        try {
+            const res = await authApi.login(data);
+            if (res.user && res.tokens) {
+                loginStore(res.user, res.tokens);
+                if (res.user.role === 'BUYER') navigate('/buyer');
+                else navigate('/seller');
+            }
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const onOtpEmailSubmit = (data: z.infer<typeof otpEmailSchema>) => {
-        console.log('Send OTP to:', data.email);
-        setEmailForOtp(data.email);
-        setOtpSent(true);
+    const onOtpEmailSubmit = async (data: z.infer<typeof otpEmailSchema>) => {
+        try {
+            const res = await authApi.loginOtpRequest({ email: data.email });
+            if (res.otpToken) {
+                setOtpToken(res.otpToken);
+                setEmailForOtp(data.email);
+                setOtpSent(true);
+            }
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const onOtpVerifySubmit = (data: z.infer<typeof otpVerifySchema>) => {
-        console.log('Verify OTP:', data.otp, 'for email:', emailForOtp);
-        navigate('/');
+    const onOtpVerifySubmit = async (data: z.infer<typeof otpVerifySchema>) => {
+        try {
+            const res = await authApi.loginOtpVerify({ otp: data.otp, otpToken });
+            if (res.user && res.tokens) {
+                loginStore(res.user, res.tokens);
+                if (res.user.role === 'BUYER') navigate('/buyer');
+                else navigate('/seller');
+            }
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const leftContent = {

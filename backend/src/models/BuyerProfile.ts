@@ -5,6 +5,7 @@ interface BuyerProfileAttributes {
     id: string;
     user_id: string;
     amazon_profile_url: string;
+    region: string;
     stripe_connect_account_id?: string;
     bank_account_name?: string;
     bank_routing_number?: string;
@@ -21,6 +22,7 @@ export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCrea
     public id!: string;
     public user_id!: string;
     public amazon_profile_url!: string;
+    public region!: string;
     public stripe_connect_account_id!: string;
     public bank_account_name!: string;
     public bank_routing_number!: string;
@@ -47,6 +49,10 @@ BuyerProfile.init(
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
+        },
+        region: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
         stripe_connect_account_id: {
             type: DataTypes.STRING,

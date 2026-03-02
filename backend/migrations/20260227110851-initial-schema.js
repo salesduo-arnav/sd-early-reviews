@@ -77,6 +77,10 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
+      region: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       stripe_connect_account_id: {
         type: Sequelize.STRING,
         allowNull: true,

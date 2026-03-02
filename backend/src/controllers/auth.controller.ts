@@ -6,12 +6,13 @@ import SellerProfile from '../models/SellerProfile';
 import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp';
 import { generateAccessToken, generateRefreshToken, generateOtpToken, verifyToken, OtpTokenPayload } from '../utils/jwt';
 import { mailService } from '../services/mail.service';
+import { getSignupOtpEmail, getLoginOtpEmail, getResetPasswordOtpEmail } from '../utils/mailTemplates';
 import { logger } from '../utils/logger';
 
 // SIGNUP
 export const signup = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password, full_name, role, amazon_profile_url, company_name } = req.body;
+        const { email, password, full_name, role, amazon_profile_url, region, company_name } = req.body;
 
         // Validation
         if (!email || !password || !full_name || !role) {
@@ -26,9 +27,15 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         }
 
         // Roles specific validation
-        if (role === 'BUYER' && !amazon_profile_url) {
-            res.status(400).json({ message: 'Missing amazon_profile_url for BUYER' });
-            return;
+        if (role === 'BUYER') {
+            if (!amazon_profile_url) {
+                res.status(400).json({ message: 'Missing amazon_profile_url for BUYER' });
+                return;
+            }
+            if (!region) {
+                res.status(400).json({ message: 'Missing region for BUYER' });
+                return;
+            }
         }
 
         const userRole = role === 'BUYER' ? UserRole.BUYER : UserRole.SELLER;
@@ -46,6 +53,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
             await BuyerProfile.create({
                 user_id: newUser.id,
                 amazon_profile_url,
+                region,
             });
         } else {
             // For Seller
@@ -61,12 +69,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         const otpHash = await hashOtp(otp);
         const otpToken = generateOtpToken({ email, otpHash });
 
-        // Send Email
-        await mailService.sendMail({
+        // Send Email asynchronously (don't block the response)
+        const emailTemplate = getSignupOtpEmail(otp);
+        mailService.sendMail({
             to: email,
-            subject: 'SalesDuo - Verify your email',
-            text: `Your verification code is: ${otp}`,
-            html: `<p>Your verification code is: <strong>${otp}</strong></p>`
+            ...emailTemplate
+        }).catch(err => {
+            logger.error('Failed to send async signup OTP email', { error: err });
         });
 
         res.status(201).json({
@@ -173,11 +182,10 @@ export const loginOtpRequest = async (req: Request, res: Response): Promise<void
         const otpHash = await hashOtp(otp);
         const otpToken = generateOtpToken({ email, otpHash });
 
+        const emailTemplate = getLoginOtpEmail(otp);
         await mailService.sendMail({
             to: email,
-            subject: 'SalesDuo - Login OTP',
-            text: `Your login code is: ${otp}`,
-            html: `<p>Your login code is: <strong>${otp}</strong></p>`
+            ...emailTemplate
         });
 
         res.status(200).json({ message: 'OTP sent to email', otpToken });
@@ -244,11 +252,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
         const otpHash = await hashOtp(otp);
         const otpToken = generateOtpToken({ email, otpHash }); // Expires in 10 mins
 
+        const emailTemplate = getResetPasswordOtpEmail(otp);
         await mailService.sendMail({
             to: email,
-            subject: 'SalesDuo - Reset Password',
-            text: `Your password reset code is: ${otp}`,
-            html: `<p>Your password reset code is: <strong>${otp}</strong></p>`
+            ...emailTemplate
         });
 
         res.status(200).json({ message: 'Password reset OTP sent', otpToken });
