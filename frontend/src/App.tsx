@@ -1,14 +1,19 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/landing/LandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        {/* Placeholders for auth */}
-        <Route path="/login" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Login</h2></div>} />
-        <Route path="/signup" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Signup</h2></div>} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Placeholders for seller */}
         <Route path="/seller/*" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Seller Dashboard</h2></div>} />

@@ -11,6 +11,7 @@ interface UserAttributes {
     id: string;
     email: string;
     password_hash: string;
+    full_name: string;
     role: UserRole;
     created_at?: Date;
     deleted_at?: Date;
@@ -22,6 +23,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     public id!: string;
     public email!: string;
     public password_hash!: string;
+    public full_name!: string;
     public role!: UserRole;
     public created_at!: Date;
     public deleted_at!: Date;
@@ -40,6 +42,10 @@ User.init(
             unique: true,
         },
         password_hash: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        full_name: {
             type: DataTypes.STRING,
             allowNull: false,
         },

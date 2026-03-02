@@ -31,6 +31,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      full_name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       role: {
         type: 'enum_users_role',
         allowNull: false,

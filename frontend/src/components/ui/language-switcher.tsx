@@ -27,7 +27,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 
 interface LanguageSwitcherProps {
-    variant?: 'icon' | 'full';
+    variant?: 'icon' | 'full' | 'auth';
 }
 
 export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) => {
@@ -53,6 +53,14 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         </div>
                     </button>
+                ) : variant === 'auth' ? (
+                    <Button variant="ghost" className="h-9 px-3 rounded-full hover:bg-white/10 text-white/80 hover:text-white outline-none flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                            {LANGUAGE_NAMES[i18n.language ? i18n.language.split('-')[0] : 'en'] || 'English'}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
                 ) : (
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-muted/50 outline-none">
                         <Globe className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
