@@ -13,6 +13,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/comp
 import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
+import { toast } from 'sonner';
 
 const passwordSchema = z.object({
     email: z.string().email(),
@@ -66,7 +67,7 @@ export default function LoginPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            console.error(error);
+            toast.error(error instanceof Error ? error.message : 'Something went wrong');
         }
     };
 
@@ -79,7 +80,7 @@ export default function LoginPage() {
                 setOtpSent(true);
             }
         } catch (error) {
-            console.error(error);
+            toast.error(error instanceof Error ? error.message : 'Something went wrong');
         }
     };
 
@@ -92,7 +93,7 @@ export default function LoginPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            console.error(error);
+            toast.error(error instanceof Error ? error.message : 'Something went wrong');
         }
     };
 

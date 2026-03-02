@@ -103,8 +103,7 @@ export default function SignupPage() {
                 setIsOtpModalOpen(true);
             }
         } catch (error) {
-            console.error(error);
-            toast.error('Something went wrong');
+            toast.error(error instanceof Error ? error.message : 'Something went wrong');
         }
     };
 
@@ -118,8 +117,7 @@ export default function SignupPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            console.error(error);
-            toast.error('Something went wrong');
+            toast.error(error instanceof Error ? error.message : 'Something went wrong');
         }
     };
 

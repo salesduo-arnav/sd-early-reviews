@@ -18,7 +18,11 @@ export interface AuthResponse {
 
 const handleResponse = async (response: Response): Promise<AuthResponse> => {
     const data = await response.json();
+
     if (!response.ok) {
+        if (response.status >= 500) {
+            throw new Error('An unexpected server error occurred. Please try again later.');
+        }
         throw new Error(data.message || 'Something went wrong');
     }
     return data;

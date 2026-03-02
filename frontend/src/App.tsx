@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import SellerDashboard from './pages/seller/SellerDashboard';
+import { Toaster } from '@/components/ui/sonner';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/admin/*" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Admin Dashboard</h2></div>} />
         </Route>
       </Routes>
+      <Toaster position="bottom-right" />
     </BrowserRouter>
   );
 }
