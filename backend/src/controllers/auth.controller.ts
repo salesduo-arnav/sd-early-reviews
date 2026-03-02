@@ -197,9 +197,11 @@ export const loginOtpRequest = async (req: Request, res: Response): Promise<void
         const otpToken = generateOtpToken({ email, otpHash });
 
         const emailTemplate = getLoginOtpEmail(otp);
-        await mailService.sendMail({
+        mailService.sendMail({
             to: email,
             ...emailTemplate
+        }).catch(err => {
+            logger.error('Failed to send async login OTP email', { error: err });
         });
 
         res.status(200).json({ message: 'OTP sent to email', otpToken });
@@ -276,9 +278,11 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
         const otpToken = generateOtpToken({ email, otpHash }); // Expires in 10 mins
 
         const emailTemplate = getResetPasswordOtpEmail(otp);
-        await mailService.sendMail({
+        mailService.sendMail({
             to: email,
             ...emailTemplate
+        }).catch(err => {
+            logger.error('Failed to send async reset password OTP email', { error: err });
         });
 
         res.status(200).json({ message: 'Password reset OTP sent', otpToken });
