@@ -39,6 +39,11 @@ module.exports = {
         type: 'enum_users_role',
         allowNull: false,
       },
+      is_verified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn('now'),
