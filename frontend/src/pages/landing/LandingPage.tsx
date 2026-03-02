@@ -18,7 +18,9 @@ const LandingPage = () => {
 
     React.useEffect(() => {
         if (isAuthenticated && user) {
-            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+            if (user.role === 'ADMIN') navigate('/admin', { replace: true });
+            else if (user.role === 'BUYER') navigate('/buyer', { replace: true });
+            else navigate('/seller', { replace: true });
         }
     }, [isAuthenticated, user, navigate]);
 

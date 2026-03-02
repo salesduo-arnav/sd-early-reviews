@@ -67,7 +67,9 @@ export default function SignupPage() {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+            if (user.role === 'ADMIN') navigate('/admin', { replace: true });
+            else if (user.role === 'BUYER') navigate('/buyer', { replace: true });
+            else navigate('/seller', { replace: true });
         }
     }, [isAuthenticated, user, navigate]);
 
@@ -113,7 +115,8 @@ export default function SignupPage() {
             setIsOtpModalOpen(false);
             if (res.user && res.tokens) {
                 login(res.user, res.tokens);
-                if (res.user.role === 'BUYER') navigate('/buyer');
+                if (res.user.role === 'ADMIN') navigate('/admin');
+                else if (res.user.role === 'BUYER') navigate('/buyer');
                 else navigate('/seller');
             }
         } catch (error) {

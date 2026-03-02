@@ -39,7 +39,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            navigate(user.role === 'BUYER' ? '/buyer' : '/seller', { replace: true });
+            if (user.role === 'ADMIN') navigate('/admin', { replace: true });
+            else if (user.role === 'BUYER') navigate('/buyer', { replace: true });
+            else navigate('/seller', { replace: true });
         }
     }, [isAuthenticated, user, navigate]);
 
@@ -63,7 +65,8 @@ export default function LoginPage() {
             const res = await authApi.login(data);
             if (res.user && res.tokens) {
                 loginStore(res.user, res.tokens);
-                if (res.user.role === 'BUYER') navigate('/buyer');
+                if (res.user.role === 'ADMIN') navigate('/admin');
+                else if (res.user.role === 'BUYER') navigate('/buyer');
                 else navigate('/seller');
             }
         } catch (error) {
@@ -89,7 +92,8 @@ export default function LoginPage() {
             const res = await authApi.loginOtpVerify({ otp: data.otp, otpToken });
             if (res.user && res.tokens) {
                 loginStore(res.user, res.tokens);
-                if (res.user.role === 'BUYER') navigate('/buyer');
+                if (res.user.role === 'ADMIN') navigate('/admin');
+                else if (res.user.role === 'BUYER') navigate('/buyer');
                 else navigate('/seller');
             }
         } catch (error) {

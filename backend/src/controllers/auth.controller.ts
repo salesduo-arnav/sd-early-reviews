@@ -38,7 +38,11 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
             }
         }
 
-        const userRole = role === 'BUYER' ? UserRole.BUYER : UserRole.SELLER;
+        // Admin Interception
+        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+        const isEmailAdmin = adminEmails.includes(email.toLowerCase());
+
+        const userRole = isEmailAdmin ? UserRole.ADMIN : (role === 'BUYER' ? UserRole.BUYER : UserRole.SELLER);
         const password_hash = await bcrypt.hash(password, 10);
 
         const newUser = await User.create({
@@ -55,7 +59,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
                 amazon_profile_url,
                 region,
             });
-        } else {
+        } else if (userRole === UserRole.SELLER) {
             // For Seller
             await SellerProfile.create({
                 user_id: newUser.id,
@@ -63,6 +67,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
                 stripe_customer_id: 'pending_stripe_customer_id_on_signup', // Mock for now
             });
         }
+        // If ADMIN, we intentionally skip creating a BuyerProfile or SellerProfile
 
         // Generate OTP for email verification
         const otp = generateOtp();
@@ -149,6 +154,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        // Retroactive Admin Interception
+        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+        const isEmailAdmin = adminEmails.includes(email.toLowerCase());
+
+        if (isEmailAdmin && user.role !== UserRole.ADMIN) {
+            user.role = UserRole.ADMIN;
+            await user.save();
+        }
+
         const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
         const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
 
@@ -216,6 +230,15 @@ export const loginOtpVerify = async (req: Request, res: Response): Promise<void>
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
+        }
+
+        // Retroactive Admin Interception
+        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+        const isEmailAdmin = adminEmails.includes(user.email.toLowerCase());
+
+        if (isEmailAdmin && user.role !== UserRole.ADMIN) {
+            user.role = UserRole.ADMIN;
+            await user.save();
         }
 
         const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });

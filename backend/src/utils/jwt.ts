@@ -32,7 +32,7 @@ export const generateOtpToken = (payload: OtpTokenPayload): string => {
 export const verifyToken = <T>(token: string): T => {
     try {
         return jwt.verify(token, JWT_SECRET) as T;
-    } catch (error) {
+    } catch {
         throw new Error('Invalid token');
     }
 };

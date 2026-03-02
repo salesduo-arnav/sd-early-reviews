@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import SellerDashboard from './pages/seller/SellerDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
@@ -27,9 +28,9 @@ function App() {
           <Route path="/buyer/*" element={<BuyerDashboard />} />
         </Route>
 
-        {/* Placeholders for admin */}
+        {/* Admin Dashboard */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-          <Route path="/admin/*" element={<div className="container" style={{ paddingTop: '120px' }}><h2>Admin Dashboard</h2></div>} />
+          <Route path="/admin/*" element={<AdminDashboard />} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
