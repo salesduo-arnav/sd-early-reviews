@@ -13,6 +13,10 @@ jest.mock('../services/mail.service', () => ({
 beforeAll(async () => {
     // Optionally sync or authenticate if needed, but migrations run in global setup.
     await sequelize.authenticate();
+    // Check if DB is test db and not production db
+    if (process.env.PGDATABASE !== 'mydb_test' || sequelize.getDatabaseName() !== 'mydb_test') {
+        throw new Error('Not connected to test database');
+    }
 });
 
 afterAll(async () => {
