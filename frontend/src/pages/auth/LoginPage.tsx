@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -14,19 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
-
-const passwordSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
-});
-
-const otpEmailSchema = z.object({
-    email: z.string().email(),
-});
-
-const otpVerifySchema = z.object({
-    otp: z.string().length(6),
-});
+import { GoogleButton } from '@/components/auth/GoogleButton';
 
 export default function LoginPage() {
     const { t } = useTranslation();
@@ -45,22 +33,39 @@ export default function LoginPage() {
         }
     }, [isAuthenticated, user, navigate]);
 
-    const passwordForm = useForm<z.infer<typeof passwordSchema>>({
+    const passwordSchema = React.useMemo(() => z.object({
+        email: z.string().email(t('validation.invalid_email', 'Invalid email address')),
+        password: z.string().min(6, t('validation.password_min_6', 'Password must be at least 6 characters')),
+    }), [t]);
+
+    const otpEmailSchema = React.useMemo(() => z.object({
+        email: z.string().email(t('validation.invalid_email', 'Invalid email address')),
+    }), [t]);
+
+    const otpVerifySchema = React.useMemo(() => z.object({
+        otp: z.string().length(6, t('validation.otp_length', 'OTP must be 6 digits')),
+    }), [t]);
+
+    type PasswordFormValues = z.infer<typeof passwordSchema>;
+    type OtpEmailFormValues = z.infer<typeof otpEmailSchema>;
+    type OtpVerifyFormValues = z.infer<typeof otpVerifySchema>;
+
+    const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordSchema),
         defaultValues: { email: '', password: '' },
     });
 
-    const otpEmailForm = useForm<z.infer<typeof otpEmailSchema>>({
+    const otpEmailForm = useForm<OtpEmailFormValues>({
         resolver: zodResolver(otpEmailSchema),
         defaultValues: { email: '' },
     });
 
-    const otpVerifyForm = useForm<z.infer<typeof otpVerifySchema>>({
+    const otpVerifyForm = useForm<OtpVerifyFormValues>({
         resolver: zodResolver(otpVerifySchema),
         defaultValues: { otp: '' },
     });
 
-    const onPasswordSubmit = async (data: z.infer<typeof passwordSchema>) => {
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
         try {
             const res = await authApi.login(data);
             if (res.user && res.tokens) {
@@ -74,7 +79,26 @@ export default function LoginPage() {
         }
     };
 
-    const onOtpEmailSubmit = async (data: z.infer<typeof otpEmailSchema>) => {
+    const handleGoogleSuccess = async (response: { credential?: string; access_token?: string }) => {
+        try {
+            if (!response.credential && !response.access_token) return;
+            const res = await authApi.googleAuth({
+                credential: response.credential,
+                access_token: response.access_token
+            });
+            if (res.user && res.tokens) {
+                loginStore(res.user, res.tokens);
+                // The router's ProtectedRoute will automatically catch missing profiles and redirect to /onboarding
+                if (res.user.role === 'ADMIN') navigate('/admin');
+                else if (res.user.role === 'BUYER') navigate('/buyer');
+                else navigate('/seller');
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Google login failed');
+        }
+    };
+
+    const onOtpEmailSubmit = async (data: OtpEmailFormValues) => {
         try {
             const res = await authApi.loginOtpRequest({ email: data.email });
             if (res.otpToken) {
@@ -87,7 +111,7 @@ export default function LoginPage() {
         }
     };
 
-    const onOtpVerifySubmit = async (data: z.infer<typeof otpVerifySchema>) => {
+    const onOtpVerifySubmit = async (data: OtpVerifyFormValues) => {
         try {
             const res = await authApi.loginOtpVerify({ otp: data.otp, otpToken });
             if (res.user && res.tokens) {
@@ -128,6 +152,23 @@ export default function LoginPage() {
                     <p className="text-sm text-muted-foreground">
                         {t('auth.enter_details', 'Enter your details below to access your account')}
                     </p>
+                </div>
+
+                <div className="mt-4 mb-4">
+                    <GoogleButton
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => toast.error('Google Login Failed')}
+                        text={t('auth.login_with_google', 'Log in with Google')}
+                    />
+                </div>
+
+                <div className="relative mb-6 mt-2">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">{t('auth.or_continue_with_email', 'Or continue with email')}</span>
+                    </div>
                 </div>
 
                 <Tabs defaultValue="password" className="w-full">

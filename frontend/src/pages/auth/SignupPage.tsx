@@ -16,29 +16,7 @@ import { Info } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
-
-const signupSchema = z.object({
-    fullName: z.string().min(2, 'Name is too short'),
-    email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
-    amazonProfileUrl: z.string().optional(),
-    region: z.string().optional(),
-    companyName: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-}).refine((data) => {
-    // If we wanted strict validation here, we could, but role isn't in the schema.
-    // Instead we rely on the component or backend to enforce required fields for the specific roles.
-    return true;
-}, {
-    message: "Missing required role fields",
-});
-
-const otpVerifySchema = z.object({
-    otp: z.string().length(6, 'OTP must be 6 digits'),
-});
+import { GoogleButton } from '@/components/auth/GoogleButton';
 
 type Role = 'seller' | 'buyer';
 
@@ -78,17 +56,37 @@ export default function SignupPage() {
         setSearchParams({ role: newRole });
     };
 
-    const form = useForm<z.infer<typeof signupSchema>>({
+    const signupSchema = React.useMemo(() => z.object({
+        fullName: z.string().min(2, t('validation.name_too_short', 'Name is too short')),
+        email: z.string().email(t('validation.invalid_email', 'Invalid email address')),
+        password: z.string().min(8, t('validation.password_too_short', 'Password must be at least 8 characters')),
+        confirmPassword: z.string().min(8, t('validation.password_too_short', 'Password must be at least 8 characters')),
+        amazonProfileUrl: z.string().optional(),
+        region: z.string().optional(),
+        companyName: z.string().optional(),
+    }).refine((data) => data.password === data.confirmPassword, {
+        message: t('validation.passwords_dont_match', "Passwords don't match"),
+        path: ["confirmPassword"],
+    }), [t]);
+
+    const otpVerifySchema = React.useMemo(() => z.object({
+        otp: z.string().length(6, t('validation.otp_length', 'OTP must be 6 digits')),
+    }), [t]);
+
+    type SignupFormValues = z.infer<typeof signupSchema>;
+    type OtpVerifyFormValues = z.infer<typeof otpVerifySchema>;
+
+    const form = useForm<SignupFormValues>({
         resolver: zodResolver(signupSchema),
         defaultValues: { fullName: '', email: '', password: '', confirmPassword: '', amazonProfileUrl: '', region: '', companyName: '' },
     });
 
-    const otpForm = useForm<z.infer<typeof otpVerifySchema>>({
+    const otpForm = useForm<OtpVerifyFormValues>({
         resolver: zodResolver(otpVerifySchema),
         defaultValues: { otp: '' },
     });
 
-    const onSubmit = async (data: z.infer<typeof signupSchema>) => {
+    const onSubmit = async (data: SignupFormValues) => {
         try {
             const res = await authApi.signup({
                 email: data.email,
@@ -109,7 +107,27 @@ export default function SignupPage() {
         }
     };
 
-    const onOtpSubmit = async (data: z.infer<typeof otpVerifySchema>) => {
+    const handleGoogleSuccess = async (response: { credential?: string; access_token?: string }) => {
+        try {
+            if (!response.credential && !response.access_token) return;
+            const res = await authApi.googleAuth({
+                credential: response.credential,
+                access_token: response.access_token,
+                role: role === 'buyer' ? 'BUYER' : 'SELLER'
+            });
+            if (res.user && res.tokens) {
+                login(res.user, res.tokens);
+                // Router handles /onboarding redirect automatically
+                if (res.user.role === 'ADMIN') navigate('/admin');
+                else if (res.user.role === 'BUYER') navigate('/buyer');
+                else navigate('/seller');
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Google signup failed');
+        }
+    };
+
+    const onOtpSubmit = async (data: OtpVerifyFormValues) => {
         try {
             const res = await authApi.verifyEmail({ otp: data.otp, otpToken });
             setIsOtpModalOpen(false);
@@ -190,6 +208,23 @@ export default function SignupPage() {
                         >
                             {t('auth.im_a_seller', "I'm a Seller")}
                         </button>
+                    </div>
+
+                    <div className="mt-4 mb-4">
+                        <GoogleButton
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => toast.error('Google Signup Failed')}
+                            text={t('auth.signup_with_google', 'Sign up with Google')}
+                        />
+                    </div>
+
+                    <div className="relative mb-6 mt-2">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">{t('auth.or_continue_with_email', 'Or continue with email')}</span>
+                        </div>
                     </div>
 
                     <Form {...form}>

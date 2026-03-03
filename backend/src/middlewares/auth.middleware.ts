@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/jwt';
 import { logger } from '../utils/logger';
+import { User } from '../models';
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -11,18 +12,25 @@ declare global {
     }
 }
 
-export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticateJWT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
 
         try {
-            const user = verifyToken<TokenPayload>(token);
-            req.user = user;
+            const payload = verifyToken<TokenPayload>(token);
+            const user = await User.findByPk(payload.userId);
+
+            if (!user) {
+                res.status(401).json({ message: 'Unauthorized: User not found' });
+                return;
+            }
+
+            req.user = payload;
             next();
         } catch (error) {
-            logger.warn('Failed to verify JWT', { error: (error as Error).message });
+            logger.warn('Failed to verify JWT or user', { error: (error as Error).message });
             res.status(403).json({ message: 'Forbidden: Invalid or expired token' });
         }
     } else {

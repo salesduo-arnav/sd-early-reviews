@@ -6,6 +6,7 @@ export interface User {
     email: string;
     role: string;
     is_verified: boolean;
+    has_profile: boolean;
 }
 
 export interface Tokens {
@@ -19,6 +20,7 @@ interface AuthState {
     isAuthenticated: boolean;
     login: (user: User, tokens: Tokens) => void;
     logout: () => void;
+    completeOnboarding: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             login: (user, tokens) => set({ user, tokens, isAuthenticated: true }),
             logout: () => set({ user: null, tokens: null, isAuthenticated: false }),
+            completeOnboarding: () => set((state) => ({ user: state.user ? { ...state.user, has_profile: true } : null })),
         }),
         {
             name: 'auth-storage', // unique name for localStorage key

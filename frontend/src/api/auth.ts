@@ -12,6 +12,7 @@ export interface AuthResponse {
         email: string;
         role: string;
         is_verified: boolean;
+        has_profile: boolean;
     };
     otpToken?: string;
 }
@@ -91,4 +92,33 @@ export const authApi = {
         });
         return handleResponse(response);
     },
+
+    googleAuth: async (data: { credential?: string; access_token?: string; role?: string }): Promise<AuthResponse> => {
+        const response = await fetch(`${API_BASE_URL}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return handleResponse(response);
+    },
+
+    onboarding: async (data: Record<string, unknown>, token: string): Promise<AuthResponse> => {
+        const response = await fetch(`${API_BASE_URL}/auth/onboarding`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        });
+        return handleResponse(response);
+    },
+
+    me: async (token: string): Promise<AuthResponse> => {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        return handleResponse(response);
+    }
 };
