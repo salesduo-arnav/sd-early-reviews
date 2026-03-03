@@ -12,7 +12,7 @@ const sequelize = new Sequelize({
     username: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
-    logging: msg => logger.debug(msg),
+    logging: false,
 });
 
 export const connectDB = async () => {
