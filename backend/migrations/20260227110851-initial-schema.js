@@ -31,8 +31,17 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      full_name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       role: {
         type: 'enum_users_role',
+        allowNull: false,
+      },
+      is_verified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
         allowNull: false,
       },
       created_at: {
@@ -67,6 +76,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true,
+      },
+      region: {
+        type: Sequelize.STRING,
+        allowNull: false,
       },
       stripe_connect_account_id: {
         type: Sequelize.STRING,

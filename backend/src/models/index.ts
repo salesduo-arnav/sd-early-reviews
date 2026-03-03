@@ -1,20 +1,4 @@
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
-
-const sequelize = new Sequelize(
-    process.env.PGDATABASE as string,
-    process.env.PGUSER as string,
-    process.env.PGPASSWORD as string,
-    {
-        host: process.env.PGHOST,
-        port: Number(process.env.PGPORT) || 5432,
-        dialect: 'postgres',
-        logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    }
-);
+import sequelize from '../config/db';
 
 export default sequelize;
 

@@ -17,7 +17,10 @@ app.use(morgan('tiny', { stream }));
 
 app.use(express.json());
 
+import routes from './routes/index';
+
 // Mount generic resource routes here
+app.use('/api', routes);
 
 // Standard Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));

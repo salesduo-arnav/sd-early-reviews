@@ -1,5 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from './index';
+import sequelize from '../config/db';
 
 export enum TransactionType {
     SELLER_CHARGE = 'SELLER_CHARGE',
