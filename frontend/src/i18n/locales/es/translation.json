@@ -83,7 +83,35 @@
         "my_campaigns": "Mis Campañas",
         "my_campaigns_desc": "Ver tus promociones de productos activos.",
         "create_campaign": "Crear Campaña",
-        "create_campaign_desc": "Lanzar una nueva campaña de reseñas de productos."
+        "create_campaign_desc": "Lanzar una nueva campaña de reseñas de productos.",
+        "coming_soon": "Esta sección está en construcción.",
+        "campaigns_page_desc": "Gestiona todas tus campañas de productos activas y pasadas.",
+        "reviews_page_desc": "Monitorea y verifica reseñas entrantes de compradores.",
+        "billing_page_desc": "Gestiona tus métodos de pago y ve transacciones pasadas.",
+        "nav": {
+            "dashboard": "Panel",
+            "campaigns": "Campañas",
+            "reviews": "Reseñas",
+            "billing": "Facturación"
+        },
+        "dashboard": {
+            "active_campaigns": "Campañas Activas",
+            "currently_running": "Actualmente en ejecución",
+            "total_reviews": "Total de Reseñas Completadas",
+            "this_week": "esta semana",
+            "total_amount_spent": "Cantidad Total Gastada",
+            "lifetime_spend": "Gasto de vida en la plataforma",
+            "review_velocity": "Velocidad de Reseñas",
+            "review_velocity_desc": "Número de reseñas completadas con el tiempo en todas las campañas.",
+            "last_7_days": "Últimos 7 Días",
+            "last_14_days": "Últimos 14 Días",
+            "last_30_days": "Últimos 30 Días",
+            "no_data": "No hay datos disponibles para este período.",
+            "campaign_progress": "Progreso de la Campaña",
+            "no_active_campaigns": "No se encontraron campañas activas. Crea una para ver el progreso aquí.",
+            "reviews_completed": "Reseñas Completadas",
+            "goal_reached": "Meta Alcanzada"
+        }
     },
     "auth": {
         "all_rights_reserved": "Todos los derechos reservados.",

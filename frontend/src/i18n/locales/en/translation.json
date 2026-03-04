@@ -83,7 +83,35 @@
         "my_campaigns": "My Campaigns",
         "my_campaigns_desc": "View your active product promotions.",
         "create_campaign": "Create Campaign",
-        "create_campaign_desc": "Launch a new product review campaign."
+        "create_campaign_desc": "Launch a new product review campaign.",
+        "coming_soon": "This section is under construction.",
+        "campaigns_page_desc": "Manage all your active and past product campaigns.",
+        "reviews_page_desc": "Monitor and verify incoming reviews from buyers.",
+        "billing_page_desc": "Manage your payment methods and view past transactions.",
+        "nav": {
+            "dashboard": "Dashboard",
+            "campaigns": "Campaigns",
+            "reviews": "Reviews",
+            "billing": "Billing"
+        },
+        "dashboard": {
+            "active_campaigns": "Active Campaigns",
+            "currently_running": "Currently running",
+            "total_reviews": "Total Reviews Completed",
+            "this_week": "this week",
+            "total_amount_spent": "Total Amount Spent",
+            "lifetime_spend": "Lifetime platform spend",
+            "review_velocity": "Review Velocity",
+            "review_velocity_desc": "Number of completed reviews over time across all campaigns.",
+            "last_7_days": "Last 7 Days",
+            "last_14_days": "Last 14 Days",
+            "last_30_days": "Last 30 Days",
+            "no_data": "No data available for this period.",
+            "campaign_progress": "Campaign Progress",
+            "no_active_campaigns": "No active campaigns found. Create one to see progress here.",
+            "reviews_completed": "Reviews Completed",
+            "goal_reached": "Goal Reached"
+        }
     },
     "auth": {
         "all_rights_reserved": "All rights reserved.",

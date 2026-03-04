@@ -7,6 +7,10 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import SellerDashboard from './pages/seller/SellerDashboard';
+import CampaignsPage from './pages/seller/CampaignsPage';
+import ReviewsPage from './pages/seller/ReviewsPage';
+import BillingPage from './pages/seller/BillingPage';
+import { SellerLayout } from './components/layout/SellerLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 import NotFoundPage from './pages/NotFound';
@@ -43,7 +47,13 @@ function App() {
 
           {/* Placeholders for seller */}
           <Route element={<ProtectedRoute allowedRoles={['SELLER']} />}>
-            <Route path="/seller/*" element={<SellerDashboard />} />
+            <Route path="/seller" element={<SellerLayout />}>
+              <Route index element={<SellerDashboard />} />
+              <Route path="dashboard" element={<SellerDashboard />} />
+              <Route path="campaigns" element={<CampaignsPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="billing" element={<BillingPage />} />
+            </Route>
           </Route>
 
           {/* Placeholders for buyer */}
