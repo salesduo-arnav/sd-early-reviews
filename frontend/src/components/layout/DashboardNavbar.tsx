@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
+import { NotificationBell } from './NotificationBell';
 
 export interface NavItem {
     label: string;
@@ -59,11 +60,12 @@ export function DashboardNavbar({ links = [] }: DashboardNavbarProps) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground mr-2">
+                <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground mr-1">
                         <UserIcon className="w-4 h-4" />
                         <span>{user?.email}</span>
                     </div>
+                    <NotificationBell />
                     <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
                         <LogOut className="w-4 h-4 mr-2" />
                         {t('nav.logout', 'Log out')}
