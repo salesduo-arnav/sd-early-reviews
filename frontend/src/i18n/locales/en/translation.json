@@ -111,6 +111,94 @@
             "no_active_campaigns": "No active campaigns found. Create one to see progress here.",
             "reviews_completed": "Reviews Completed",
             "goal_reached": "Goal Reached"
+        },
+        "campaigns": {
+            "create_btn": "Create Campaign",
+            "claimed": "Claimed Units",
+            "fetch_error": "Failed to load campaigns.",
+            "not_found": "Campaign not found",
+            "paused_success": "Campaign paused successfully",
+            "resumed_success": "Campaign resumed successfully",
+            "toggle_error": "Failed to update campaign status",
+            "status": {
+                "active": "Active",
+                "paused": "Paused",
+                "completed": "Completed"
+            },
+            "section": {
+                "active": "Active Campaigns",
+                "paused": "Paused Campaigns",
+                "completed": "Completed Campaigns"
+            },
+            "no_campaigns": {
+                "title": "No campaigns found",
+                "desc": "Get started by creating your first campaign."
+            },
+            "detail": {
+                "title": "Campaign Details",
+                "pause": "Pause Campaign",
+                "resume": "Resume Campaign",
+                "guidelines": "Active Guidelines",
+                "no_guidelines": "No guidelines specified for this campaign.",
+                "progress": "Campaign Progress",
+                "claimed_desc": "Units claimed by reviewers",
+                "financials": "Financial Setup",
+                "reimbursement": "Reimbursement Rate",
+                "upfront": "Upfront Payment",
+                "need_help": "Need Help?",
+                "help_desc": "Modifying guidelines or targets for active campaigns requires platform approval to ensure fairness to existing claimants.",
+                "contact_support": "Contact Support"
+            },
+            "wizard": {
+                "title": "Create New Campaign",
+                "desc": "Follow the steps to setup your product review campaign.",
+                "success": "Campaign published successfully!",
+                "error": "Failed to publish campaign",
+                "region": "Marketplace Region",
+                "category": "Product Category",
+                "asin": "Product ASIN",
+                "fetch": "Fetch Details",
+                "asin_help": "Enter the 10-character Amazon Standard Identification Number.",
+                "matched_product": "Matched Product",
+                "target_reviews": "Target Number of Reviews",
+                "target_desc": "How many units would you like to distribute for this campaign?",
+                "reimbursement": "Reimbursement Percentage",
+                "reimbursement_desc": "What percentage of the product price will you reimburse to the buyer?",
+                "recommended": "Recommended",
+                "pro_tip": "Pro Tip: Higher Reimbursements Convert Faster",
+                "pro_tip_desc": "Campaigns offering 100% reimbursement tend to fulfill their review quotas 3x faster than campaigns offering partial reimbursements.",
+                "guidelines": "Review Guidelines & Buyer Instructions",
+                "guidelines_desc": "What specific aspects of the product do you want the reviewer to focus on? Provide clear and concise instructions.",
+                "optional": "Optional",
+                "steps": {
+                    "product_details": "Product Details",
+                    "quota_pricing": "Quota & Pricing",
+                    "guidelines": "Guidelines",
+                    "summary_checkout": "Summary & Checkout"
+                },
+                "tos": {
+                    "title": "Amazon TOS Compliance Notice",
+                    "desc": "Please ensure your guidelines strictly comply with Amazon's Terms of Service. Do not ask for guaranteed positive reviews or explicitly instruct the buyer not to mention the rebate."
+                },
+                "summary": {
+                    "campaign_details": "Campaign Details",
+                    "asin": "ASIN",
+                    "target": "Target Reviews",
+                    "reimbursement": "Reimbursement",
+                    "region": "Region",
+                    "guaranteed": "Secure & Fast Execution",
+                    "guaranteed_desc": "Your campaign will be published immediately to our verified reviewer pool. Funds are held securely until reviews are verified.",
+                    "financials": "Order Summary",
+                    "reimb_cost": "Reimbursement Cost",
+                    "total_reimb": "Total Reimbursement",
+                    "platform_fee": "Platform Fee",
+                    "total_fee": "Total Platform Fee",
+                    "total": "Total Cost",
+                    "due_today": "Due today via Stripe Checkout",
+                    "processing": "Processing Payment...",
+                    "pay": "Pay & Publish Campaign"
+                }
+            }
         }
     },
     "auth": {

@@ -111,6 +111,94 @@
             "no_active_campaigns": "No se encontraron campañas activas. Crea una para ver el progreso aquí.",
             "reviews_completed": "Reseñas Completadas",
             "goal_reached": "Meta Alcanzada"
+        },
+        "campaigns": {
+            "create_btn": "Crear Campaña",
+            "claimed": "Unidades Reclamadas",
+            "fetch_error": "Error al cargar las campañas.",
+            "not_found": "Campaña no encontrada",
+            "paused_success": "Campaña pausada exitosamente",
+            "resumed_success": "Campaña reanudada exitosamente",
+            "toggle_error": "Error al actualizar el estado de la campaña",
+            "status": {
+                "active": "Activa",
+                "paused": "Pausada",
+                "completed": "Completada"
+            },
+            "section": {
+                "active": "Campañas Activas",
+                "paused": "Campañas Pausadas",
+                "completed": "Campañas Completadas"
+            },
+            "no_campaigns": {
+                "title": "No se encontraron campañas",
+                "desc": "Empieza creando tu primera campaña."
+            },
+            "detail": {
+                "title": "Detalles de la Campaña",
+                "pause": "Pausar Campaña",
+                "resume": "Reanudar Campaña",
+                "guidelines": "Pautas Activas",
+                "no_guidelines": "No se especificaron pautas para esta campaña.",
+                "progress": "Progreso de la Campaña",
+                "claimed_desc": "Unidades reclamadas por revisores",
+                "financials": "Configuración Financiera",
+                "reimbursement": "Tasa de Reembolso",
+                "upfront": "Pago Anticipado",
+                "need_help": "¿Necesitas ayuda?",
+                "help_desc": "La modificación de pautas o de los objetivos en campañas activas requiere aprobación de la plataforma para asegurar la equidad con los revisores existentes.",
+                "contact_support": "Contactar Soporte"
+            },
+            "wizard": {
+                "title": "Crear Nueva Campaña",
+                "desc": "Sigue los pasos para configurar tu campaña de reseñas de productos.",
+                "success": "¡Campaña publicada exitosamente!",
+                "error": "Error al publicar la campaña",
+                "region": "Región",
+                "category": "Categoría del Producto",
+                "asin": "ASIN del Producto",
+                "fetch": "Obtener Detalles",
+                "asin_help": "Ingresa el Número de Identificación Estándar de Amazon de 10 caracteres.",
+                "matched_product": "Producto Coincidente",
+                "target_reviews": "Número de Reseñas Objetivo",
+                "target_desc": "¿Cuántas unidades te gustaría distribuir para esta campaña?",
+                "reimbursement": "Porcentaje de Reembolso",
+                "reimbursement_desc": "¿Qué porcentaje del precio del producto reembolsarás al comprador?",
+                "recommended": "Recomendado",
+                "pro_tip": "Consejo Profesional: Reembolsos más altos tienen mayor conversión",
+                "pro_tip_desc": "Las campañas que ofrecen un reembolso del 100% tienden a cumplir con sus cuotas de reseñas 3 veces más rápido que las campañas que ofrecen reembolsos parciales.",
+                "guidelines": "Pautas para Reseñas e Instrucciones",
+                "guidelines_desc": "¿En qué aspectos específicos del producto quieres que se enfoque el revisor? Proporciona instrucciones claras y concisas.",
+                "optional": "Opcional",
+                "steps": {
+                    "product_details": "Detalles del Producto",
+                    "quota_pricing": "Cuota y Precio",
+                    "guidelines": "Pautas",
+                    "summary_checkout": "Resumen y Pago"
+                },
+                "tos": {
+                    "title": "Aviso de Cumplimiento de TOS de Amazon",
+                    "desc": "Asegúrese de que sus pautas cumplan estrictamente con los Términos de Servicio de Amazon. No pida reseñas positivas garantizadas ni instruya explícitamente al comprador que no mencione el reembolso."
+                },
+                "summary": {
+                    "campaign_details": "Detalles de la Campaña",
+                    "asin": "ASIN",
+                    "target": "Reseñas Objetivo",
+                    "reimbursement": "Reembolso",
+                    "region": "Región",
+                    "guaranteed": "Ejecución Segura y Rápida",
+                    "guaranteed_desc": "Su campaña se publicará inmediatamente en nuestro grupo de revisores verificados. Los fondos se retienen de forma segura hasta que se verifiquen las reseñas.",
+                    "financials": "Resumen de la Orden",
+                    "reimb_cost": "Costo de Reembolso",
+                    "total_reimb": "Reembolso Total",
+                    "platform_fee": "Tarifa de Plataforma",
+                    "total_fee": "Tarifa Total de Plataforma",
+                    "total": "Costo Total",
+                    "due_today": "Vencimiento hoy a través de Stripe Checkout",
+                    "processing": "Procesando Pago...",
+                    "pay": "Pagar y Publicar Campaña"
+                }
+            }
         }
     },
     "auth": {

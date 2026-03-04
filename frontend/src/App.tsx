@@ -8,6 +8,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import SellerDashboard from './pages/seller/SellerDashboard';
 import CampaignsPage from './pages/seller/CampaignsPage';
+import CampaignDetailPage from './pages/seller/CampaignDetailPage';
 import ReviewsPage from './pages/seller/ReviewsPage';
 import BillingPage from './pages/seller/BillingPage';
 import { SellerLayout } from './components/layout/SellerLayout';
@@ -51,6 +52,7 @@ function App() {
               <Route index element={<SellerDashboard />} />
               <Route path="dashboard" element={<SellerDashboard />} />
               <Route path="campaigns" element={<CampaignsPage />} />
+              <Route path="campaigns/:id" element={<CampaignDetailPage />} />
               <Route path="reviews" element={<ReviewsPage />} />
               <Route path="billing" element={<BillingPage />} />
             </Route>

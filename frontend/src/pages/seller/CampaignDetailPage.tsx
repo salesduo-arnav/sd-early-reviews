@@ -1,0 +1,214 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { campaignsApi, Campaign } from '@/api/campaigns';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Loader2, PauseCircle, PlayCircle, ExternalLink } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+
+export default function CampaignDetailPage() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+
+    const [campaign, setCampaign] = useState<Campaign | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isToggling, setIsToggling] = useState(false);
+
+    useEffect(() => {
+        if (!id) return;
+        const loadCampaign = async () => {
+            setIsLoading(true);
+            try {
+                const data = await campaignsApi.getCampaignById(id);
+                if (data) {
+                    setCampaign(data);
+                } else {
+                    toast.error(t('seller.campaigns.not_found', 'Campaign not found'));
+                    navigate('/seller/campaigns');
+                }
+            } catch (err) {
+                toast.error(t('seller.campaigns.fetch_error', 'Failed to load campaigns.'));
+                navigate('/seller/campaigns');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadCampaign();
+    }, [id, navigate, t]);
+
+    const handleTogglePause = async () => {
+        if (!campaign) return;
+        setIsToggling(true);
+        try {
+            const updated = await campaignsApi.togglePauseStatus(campaign.id);
+            setCampaign(updated);
+            toast.success(
+                updated.status === 'paused'
+                    ? t('seller.campaigns.paused_success', 'Campaign paused successfully')
+                    : t('seller.campaigns.resumed_success', 'Campaign resumed successfully')
+            );
+        } catch (err) {
+            toast.error(t('seller.campaigns.toggle_error', 'Failed to update campaign status'));
+        } finally {
+            setIsToggling(false);
+        }
+    };
+
+    if (isLoading || !campaign) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+            </div>
+        );
+    }
+
+    const targetDivisor = campaign.target > 0 ? campaign.target : 1;
+    const progressPercent = Math.min((campaign.claimed / targetDivisor) * 100, 100);
+    const isCompleted = campaign.status === 'completed' || campaign.claimed >= campaign.target;
+
+    return (
+        <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+                <Button variant="ghost" size="icon" onClick={() => navigate('/seller/campaigns')} className="rounded-full">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('seller.campaigns.detail.title', 'Campaign Details')}</h1>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <span>ID: {campaign.id}</span>
+                        <span>•</span>
+                        <span>{new Date(campaign.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <div className="ml-auto flex items-center gap-3">
+                    {campaign.status !== 'completed' && (
+                        <Button
+                            variant={campaign.status === 'active' ? 'outline' : 'default'}
+                            onClick={handleTogglePause}
+                            disabled={isToggling}
+                            className={campaign.status === 'paused' ? 'bg-brand-primary' : ''}
+                        >
+                            {isToggling ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : campaign.status === 'active' ? (
+                                <PauseCircle className="h-4 w-4 mr-2 text-orange-500" />
+                            ) : (
+                                <PlayCircle className="h-4 w-4 mr-2" />
+                            )}
+                            {campaign.status === 'active'
+                                ? t('seller.campaigns.detail.pause', 'Pause Campaign')
+                                : t('seller.campaigns.detail.resume', 'Resume Campaign')}
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Product Info Column */}
+                <div className="md:col-span-2 space-y-6">
+                    <Card className="shadow-sm border-border overflow-hidden">
+                        <div className="md:flex">
+                            <div className="h-48 md:h-auto md:w-48 flex-shrink-0 bg-muted border-r border-border">
+                                {campaign.image ? (
+                                    <img src={campaign.image} alt={campaign.title} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-muted-foreground">No Image</div>
+                                )}
+                            </div>
+                            <div className="p-6 flex-1 flex flex-col">
+                                <div className="flex justify-between items-start gap-4 mb-2">
+                                    <h2 className="text-xl font-bold leading-tight">{campaign.title}</h2>
+                                    <div className="flex-shrink-0">
+                                        {campaign.status === 'active' && <Badge className="bg-brand-primary">{t('seller.campaigns.status.active', 'Active')}</Badge>}
+                                        {campaign.status === 'paused' && <Badge variant="secondary" className="bg-orange-500 text-white">{t('seller.campaigns.status.paused', 'Paused')}</Badge>}
+                                        {campaign.status === 'completed' && <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">{t('seller.campaigns.status.completed', 'Completed')}</Badge>}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-foreground/80 mb-4">
+                                    <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs border border-border">ASIN: {campaign.asin}</span>
+                                    <span>{campaign.category}</span>
+                                    <span className="flex items-center"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> Amazon {campaign.region}</span>
+                                </div>
+
+                                <div className="mt-auto pt-4 border-t border-border">
+                                    <p className="text-sm text-muted-foreground line-clamp-3">
+                                        {campaign.productDescription}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="shadow-sm border-border">
+                        <CardHeader>
+                            <CardTitle className="text-lg">{t('seller.campaigns.detail.guidelines', 'Active Guidelines')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="bg-secondary/20 p-4 rounded-md border border-secondary/50 text-sm whitespace-pre-wrap leading-relaxed">
+                                {campaign.guidelines ? (
+                                    campaign.guidelines
+                                ) : (
+                                    <span className="text-muted-foreground italic">{t('seller.campaigns.detail.no_guidelines', 'No guidelines specified for this campaign.')}</span>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Metrics Column */}
+                <div className="space-y-6">
+                    <Card className="shadow-sm border-border">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-lg">{t('seller.campaigns.detail.progress', 'Campaign Progress')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <div>
+                                            <span className="text-3xl font-bold tracking-tight text-foreground">{campaign.claimed}</span>
+                                            <span className="text-muted-foreground ml-1">/ {campaign.target}</span>
+                                        </div>
+                                        <span className="text-sm font-medium">{Math.round(progressPercent)}%</span>
+                                    </div>
+                                    <Progress value={progressPercent} className={`h-3 ${isCompleted ? '[&>div]:bg-green-500' : '[&>div]:bg-brand-primary'}`} />
+                                    <p className="text-xs text-muted-foreground mt-2">{t('seller.campaigns.detail.claimed_desc', 'Units claimed by reviewers')}</p>
+                                </div>
+
+                                <div className="pt-4 border-t border-border">
+                                    <h4 className="text-sm font-semibold mb-3">{t('seller.campaigns.detail.financials', 'Financial Setup')}</h4>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('seller.campaigns.detail.reimbursement', 'Reimbursement Rate')}</span>
+                                            <span className="font-semibold text-brand-primary">{campaign.reimbursementPercentage}%</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('seller.campaigns.detail.upfront', 'Upfront Payment')}</span>
+                                            <span className="font-medium text-foreground">Completed ✓</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm border-border bg-muted/30">
+                        <CardContent className="p-4 text-sm">
+                            <h4 className="font-semibold mb-1 text-foreground">{t('seller.campaigns.detail.need_help', 'Need Help?')}</h4>
+                            <p className="text-muted-foreground mb-3 text-xs leading-relaxed">
+                                {t('seller.campaigns.detail.help_desc', 'Modifying guidelines or targets for active campaigns requires platform approval to ensure fairness to existing claimants.')}
+                            </p>
+                            <Button variant="outline" className="w-full text-xs" size="sm">
+                                {t('seller.campaigns.detail.contact_support', 'Contact Support')}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+}
