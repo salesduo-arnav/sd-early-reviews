@@ -1,18 +1,45 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/db';
 
-export enum NotificationType {
-    SYSTEM = 'SYSTEM',
-    VERIFICATION_UPDATE = 'VERIFICATION_UPDATE',
-    PAYOUT_ALERT = 'PAYOUT_ALERT',
-    CAMPAIGN_UPDATE = 'CAMPAIGN_UPDATE',
-    ACTION_REQUIRED = 'ACTION_REQUIRED'
+export enum NotificationCategory {
+    // Buyer-facing
+    ORDER_APPROVED = 'ORDER_APPROVED',
+    ORDER_REJECTED = 'ORDER_REJECTED',
+    REVIEW_APPROVED = 'REVIEW_APPROVED',
+    REVIEW_REJECTED = 'REVIEW_REJECTED',
+    PAYOUT_PROCESSED = 'PAYOUT_PROCESSED',
+    PAYOUT_FAILED = 'PAYOUT_FAILED',
+    REVIEW_DEADLINE = 'REVIEW_DEADLINE',
+
+    // Seller-facing
+    CAMPAIGN_CREATED = 'CAMPAIGN_CREATED',
+    CAMPAIGN_PAUSED = 'CAMPAIGN_PAUSED',
+    CAMPAIGN_COMPLETED = 'CAMPAIGN_COMPLETED',
+    NEW_ORDER_CLAIM = 'NEW_ORDER_CLAIM',
+    REVIEW_SUBMITTED = 'REVIEW_SUBMITTED',
+    SELLER_PAYMENT_DUE = 'SELLER_PAYMENT_DUE',
+
+    // Admin-facing
+    ADMIN_VERIFICATION_NEEDED = 'ADMIN_VERIFICATION_NEEDED',
+    ADMIN_FLAGGED_USER = 'ADMIN_FLAGGED_USER',
+
+    // Shared
+    SYSTEM_ANNOUNCEMENT = 'SYSTEM_ANNOUNCEMENT',
+    WELCOME = 'WELCOME',
+}
+
+export enum NotificationPriority {
+    LOW = 'LOW',
+    MEDIUM = 'MEDIUM',
+    HIGH = 'HIGH',
+    CRITICAL = 'CRITICAL',
 }
 
 interface NotificationAttributes {
     id: string;
     user_id: string;
-    type: NotificationType;
+    category: NotificationCategory;
+    priority: NotificationPriority;
     title: string;
     message: string;
     action_link?: string;
@@ -21,12 +48,13 @@ interface NotificationAttributes {
     deleted_at?: Date;
 }
 
-type NotificationCreationAttributes = Optional<NotificationAttributes, 'id' | 'type' | 'is_read' | 'created_at' | 'action_link' | 'deleted_at'>;
+type NotificationCreationAttributes = Optional<NotificationAttributes, 'id' | 'category' | 'priority' | 'is_read' | 'created_at' | 'action_link' | 'deleted_at'>;
 
 export class Notification extends Model<NotificationAttributes, NotificationCreationAttributes> implements NotificationAttributes {
     public id!: string;
     public user_id!: string;
-    public type!: NotificationType;
+    public category!: NotificationCategory;
+    public priority!: NotificationPriority;
     public title!: string;
     public message!: string;
     public action_link!: string;
@@ -46,10 +74,15 @@ Notification.init(
             type: DataTypes.UUID,
             allowNull: false,
         },
-        type: {
-            type: DataTypes.ENUM(...Object.values(NotificationType)),
-            defaultValue: NotificationType.SYSTEM,
-            allowNull: false
+        category: {
+            type: DataTypes.ENUM(...Object.values(NotificationCategory)),
+            defaultValue: NotificationCategory.SYSTEM_ANNOUNCEMENT,
+            allowNull: false,
+        },
+        priority: {
+            type: DataTypes.ENUM(...Object.values(NotificationPriority)),
+            defaultValue: NotificationPriority.LOW,
+            allowNull: false,
         },
         title: {
             type: DataTypes.STRING,
@@ -66,7 +99,7 @@ Notification.init(
         is_read: {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
-            allowNull: false
+            allowNull: false,
         },
         created_at: {
             type: DataTypes.DATE,

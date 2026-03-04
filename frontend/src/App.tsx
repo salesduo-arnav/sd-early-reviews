@@ -9,6 +9,7 @@ import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import SellerDashboard from './pages/seller/SellerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
+import NotFoundPage from './pages/NotFound';
 import { Toaster } from '@/components/ui/sonner';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useEffect } from 'react';
@@ -54,6 +55,9 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/*" element={<AdminDashboard />} />
           </Route>
+
+          {/* 404 */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         <Toaster position="bottom-right" />
       </BrowserRouter>

@@ -12,7 +12,18 @@ module.exports = {
       CREATE TYPE "enum_order_claims_payout_status" AS ENUM ('NOT_ELIGIBLE', 'PENDING', 'PROCESSED', 'FAILED');
       CREATE TYPE "enum_transactions_type" AS ENUM ('SELLER_CHARGE', 'BUYER_PAYOUT', 'REFUND');
       CREATE TYPE "enum_transactions_status" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
-      CREATE TYPE "enum_notifications_type" AS ENUM ('SYSTEM', 'VERIFICATION_UPDATE', 'PAYOUT_ALERT', 'CAMPAIGN_UPDATE', 'ACTION_REQUIRED');
+      CREATE TYPE "enum_notifications_category" AS ENUM (
+        'ORDER_APPROVED', 'ORDER_REJECTED',
+        'REVIEW_APPROVED', 'REVIEW_REJECTED',
+        'PAYOUT_PROCESSED', 'PAYOUT_FAILED',
+        'REVIEW_DEADLINE',
+        'CAMPAIGN_CREATED', 'CAMPAIGN_PAUSED', 'CAMPAIGN_COMPLETED',
+        'NEW_ORDER_CLAIM', 'REVIEW_SUBMITTED',
+        'SELLER_PAYMENT_DUE',
+        'ADMIN_VERIFICATION_NEEDED', 'ADMIN_FLAGGED_USER',
+        'SYSTEM_ANNOUNCEMENT', 'WELCOME'
+      );
+      CREATE TYPE "enum_notifications_priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
     `);
 
     // 2. Create Users Table
@@ -413,9 +424,14 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      type: {
-        type: 'enum_notifications_type',
-        defaultValue: 'SYSTEM',
+      category: {
+        type: 'enum_notifications_category',
+        defaultValue: 'SYSTEM_ANNOUNCEMENT',
+        allowNull: false,
+      },
+      priority: {
+        type: 'enum_notifications_priority',
+        defaultValue: 'LOW',
         allowNull: false,
       },
       title: {
@@ -501,7 +517,8 @@ module.exports = {
       DROP TYPE IF EXISTS "enum_order_claims_payout_status";
       DROP TYPE IF EXISTS "enum_transactions_type";
       DROP TYPE IF EXISTS "enum_transactions_status";
-      DROP TYPE IF EXISTS "enum_notifications_type";
+      DROP TYPE IF EXISTS "enum_notifications_category";
+      DROP TYPE IF EXISTS "enum_notifications_priority";
     `);
   }
 };

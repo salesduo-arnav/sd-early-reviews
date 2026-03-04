@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 const validateEnv = () => {
     const requiredEnv = [
-        'PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'GOOGLE_CLIENT_ID'
+        'PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'GOOGLE_CLIENT_ID', 'FRONTEND_URL', 'CORS_ORIGINS'
     ];
 
     const missing = requiredEnv.filter(env => !process.env[env]);

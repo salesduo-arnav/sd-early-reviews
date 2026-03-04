@@ -9,6 +9,8 @@ import { generateAccessToken, generateRefreshToken, generateOtpToken, verifyToke
 import { mailService } from '../services/mail.service';
 import { getSignupOtpEmail, getLoginOtpEmail, getResetPasswordOtpEmail } from '../utils/mailTemplates';
 import { logger } from '../utils/logger';
+import { notificationService } from '../services/notification.service';
+import { NotificationCategory } from '../models/Notification';
 
 // SIGNUP
 export const signup = async (req: Request, res: Response): Promise<void> => {
@@ -69,6 +71,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
             });
         }
         // If ADMIN, we intentionally skip creating a BuyerProfile or SellerProfile
+
+        // Send welcome notification (async, non-blocking)
+        notificationService.send(newUser.id, NotificationCategory.WELCOME, {
+            message: `Hi ${full_name}! Welcome to SalesDuo. We're excited to have you on board. Explore your dashboard to get started.`,
+        }).catch(err => {
+            logger.error('Failed to send welcome notification', { error: err });
+        });
 
         // Generate OTP for email verification
         const otp = generateOtp();
@@ -435,6 +444,13 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
                 full_name: name,
                 role: userRole,
                 is_verified: true, // Google verifies emails
+            });
+
+            // Send welcome notification (async, non-blocking)
+            notificationService.send(user.id, NotificationCategory.WELCOME, {
+                message: `Hi ${name}! Welcome to SalesDuo. We're excited to have you on board. Explore your dashboard to get started.`,
+            }).catch(err => {
+                logger.error('Failed to send welcome notification', { error: err });
             });
         } else {
             // Retroactive Admin Interception check for existing users
