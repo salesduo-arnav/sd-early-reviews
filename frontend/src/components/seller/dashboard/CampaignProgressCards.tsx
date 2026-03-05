@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboardApi, CampaignProgress } from '@/api/dashboard/seller';
 import { Badge } from '@/components/ui/badge';
+import { AppPagination, PaginationMeta } from '@/components/common/AppPagination';
+
+const PAGE_SIZE = 12;
 
 export function CampaignProgressCards() {
     const { t } = useTranslation();
     const [campaigns, setCampaigns] = useState<CampaignProgress[]>([]);
+    const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchProgress = async () => {
+            setLoading(true);
             try {
-                const data = await dashboardApi.getSellerCampaignProgress();
-                setCampaigns(data);
+                const result = await dashboardApi.getSellerCampaignProgress(currentPage, PAGE_SIZE);
+                setCampaigns(result.data);
+                setPagination(result.pagination);
             } catch (err: unknown) {
                 console.error('Failed to fetch campaign progress', err);
                 setError('Failed to load campaign progress.');
@@ -23,7 +30,7 @@ export function CampaignProgressCards() {
             }
         };
         fetchProgress();
-    }, []);
+    }, [currentPage]);
 
     if (loading) {
         return (
@@ -86,9 +93,20 @@ export function CampaignProgressCards() {
                                             <CardTitle className="text-base font-semibold truncate" title={campaign.title}>
                                                 {campaign.title}
                                             </CardTitle>
-                                            <CardDescription className="text-xs truncate uppercase tracking-wider">
-                                                {campaign.status}
-                                            </CardDescription>
+                                            {/* Show status as badge and colour based on status */}
+                                            {campaign.status === 'ACTIVE' ? (
+                                                <Badge variant="outline" className="mt-2 text-primary border-primary/20 bg-primary/10">
+                                                    {campaign.status}
+                                                </Badge>
+                                            ) : campaign.status === 'COMPLETED' ? (
+                                                <Badge variant="outline" className="mt-2 text-green-500 border-green-500/20 bg-green-500/10">
+                                                    {campaign.status}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="mt-2 text-red-500 border-red-500/20 bg-red-500/10">
+                                                    {campaign.status}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -116,6 +134,13 @@ export function CampaignProgressCards() {
                     );
                 })}
             </div>
+            {pagination && (
+                <AppPagination
+                    pagination={pagination}
+                    onPageChange={setCurrentPage}
+                    isLoading={loading}
+                />
+            )}
         </div>
     );
 }

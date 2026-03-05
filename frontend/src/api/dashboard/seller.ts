@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../../config';
 import { useAuthStore } from '../../store/authStore';
+import { PaginatedResponse } from '../campaigns';
 
 export interface DashboardMetrics {
     activeCampaigns: number;
@@ -48,11 +49,10 @@ export const dashboardApi = {
         const params = new URLSearchParams();
         if (startDate) params.append('startDate', startDate);
         if (endDate) params.append('endDate', endDate);
-
         return fetchWithAuth(`/dashboard/seller/velocity?${params.toString()}`);
     },
 
-    getSellerCampaignProgress: async (): Promise<CampaignProgress[]> => {
-        return fetchWithAuth('/dashboard/seller/campaign-progress');
+    getSellerCampaignProgress: async (page = 1, limit = 6): Promise<PaginatedResponse<CampaignProgress>> => {
+        return fetchWithAuth(`/dashboard/seller/campaign-progress?page=${page}&limit=${limit}`);
     }
 };

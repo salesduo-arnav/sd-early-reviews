@@ -3,6 +3,20 @@ import { useAuthStore } from '../store/authStore';
 
 export type CampaignStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
 
+export interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    pagination: PaginationMeta;
+}
+
 export interface Campaign {
     id: string;
     product_title: string;
@@ -56,8 +70,8 @@ export const campaignsApi = {
         return handleResponse(response);
     },
 
-    getCampaigns: async (): Promise<Campaign[]> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns`, {
+    getCampaigns: async (page = 1, limit = 12): Promise<PaginatedResponse<Campaign>> => {
+        const response = await fetch(`${API_BASE_URL}/campaigns?page=${page}&limit=${limit}`, {
             method: 'GET',
             headers: getHeaders(),
         });

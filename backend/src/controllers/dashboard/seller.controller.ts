@@ -5,6 +5,7 @@ import { OrderClaim, ReviewStatus } from '../../models/OrderClaim';
 import { Transaction, TransactionStatus } from '../../models/Transaction';
 import { SellerProfile } from '../../models/SellerProfile';
 import { logger } from '../../utils/logger';
+import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek } from 'date-fns';
 
 /** Shared helper — resolves SellerProfile.id from JWT userId, returns null if not found */
@@ -149,20 +150,23 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
         const sellerProfileId = await resolveSellerProfileId(userId);
         if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
 
-        const campaigns = await Campaign.findAll({
+        const paginationParams = parsePaginationParams(req.query, 6);
+
+        const { count, rows: campaigns } = await Campaign.findAndCountAll({
             where: {
                 seller_id: sellerProfileId,
                 status: { [Op.in]: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED] }
             },
             attributes: ['id', 'product_title', 'product_image_url', 'product_price', 'target_reviews', 'status'],
-            order: [['created_at', 'DESC']]
+            order: [['created_at', 'DESC']],
+            limit: paginationParams.limit,
+            offset: paginationParams.offset,
         });
 
         const progressData = await Promise.all(campaigns.map(async (campaign) => {
             const completedReviews = await OrderClaim.count({
                 where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
             });
-
             return {
                 id: campaign.id,
                 title: campaign.product_title,
@@ -174,9 +178,10 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
             };
         }));
 
-        return res.status(200).json(progressData);
+        return res.status(200).json(buildPaginatedResponse(progressData, count, paginationParams));
     } catch (error) {
         logger.error(`Error fetching campaign progress: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+

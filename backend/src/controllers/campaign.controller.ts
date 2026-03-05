@@ -3,6 +3,7 @@ import { fetchAsinDetailsRealTime } from '../services/amazon.service';
 import { Campaign, CampaignStatus } from '../models/Campaign';
 import { SellerProfile } from '../models/SellerProfile';
 import { logger } from '../utils/logger';
+import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 
 export const lookupAsin = async (req: Request, res: Response) => {
     try {
@@ -77,26 +78,27 @@ export const createCampaign = async (req: Request, res: Response) => {
 export const getCampaigns = async (req: Request, res: Response) => {
     try {
         const user_id = req.user?.userId;
-        if (!user_id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
 
         const sellerProfile = await SellerProfile.findOne({ where: { user_id } });
-        if (!sellerProfile) {
-            return res.status(403).json({ message: 'Seller profile not found' });
-        }
+        if (!sellerProfile) return res.status(403).json({ message: 'Seller profile not found' });
 
-        const campaigns = await Campaign.findAll({
+        const pagination = parsePaginationParams(req.query, 12);
+
+        const { count, rows } = await Campaign.findAndCountAll({
             where: { seller_id: sellerProfile.id },
-            order: [['created_at', 'DESC']]
+            order: [['created_at', 'DESC']],
+            limit: pagination.limit,
+            offset: pagination.offset,
         });
 
-        return res.status(200).json(campaigns);
+        return res.status(200).json(buildPaginatedResponse(rows, count, pagination));
     } catch (error) {
         logger.error(`Error fetching campaigns: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaigns' });
     }
 };
+
 
 export const getCampaign = async (req: Request, res: Response) => {
     try {
