@@ -1,9 +1,7 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { DashboardNavbar } from '@/components/layout/DashboardNavbar';
-import { DashboardMetrics } from '@/components/seller/DashboardMetrics';
-import { ReviewVelocityChart } from '@/components/seller/ReviewVelocityChart';
-import { CampaignProgressCards } from '@/components/seller/CampaignProgressCards';
+import { DashboardMetrics } from '@/components/seller/dashboard/DashboardMetrics';
+import { ReviewVelocityChart } from '@/components/seller/dashboard/ReviewVelocityChart';
+import { CampaignProgressCards } from '@/components/seller/dashboard/CampaignProgressCards';
 
 export default function SellerDashboard() {
     const { t } = useTranslation();

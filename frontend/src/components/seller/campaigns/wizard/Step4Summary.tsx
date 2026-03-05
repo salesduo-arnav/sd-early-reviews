@@ -1,37 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CampaignWizardData } from '../wizard/CampaignWizardModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { configApi } from '@/api/config';
 
 interface Step4SummaryProps {
     data: CampaignWizardData;
     onBack: () => void;
     onSubmit: () => void;
+    isSubmitting: boolean;
 }
 
-export function Step4Summary({ data, onBack, onSubmit }: Step4SummaryProps) {
+export function Step4Summary({ data, onBack, onSubmit, isSubmitting }: Step4SummaryProps) {
     const { t } = useTranslation();
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [platformFeePercent, setPlatformFeePercent] = useState<number | null>(null);
 
-    // Mock calculations
-    const simulatedProductPrice = 49.99;
+    useEffect(() => {
+        configApi.getPublicConfig()
+            .then(cfg => setPlatformFeePercent(Number(cfg.platform_fee_percent)))
+            .catch(() => setPlatformFeePercent(10)); // fallback to 10% on error
+    }, []);
+
+    const simulatedProductPrice = data.product_price || 0;
     const itemCost = simulatedProductPrice * (data.reimbursementPercentage / 100);
     const totalItemCost = itemCost * data.target;
-    const platformFeePerItem = 5.00;
-    const totalPlatformFee = platformFeePerItem * data.target;
+    const feeMultiplier = (platformFeePercent ?? 0) / 100;
+    const totalPlatformFee = totalItemCost * feeMultiplier;
     const orderTotal = totalItemCost + totalPlatformFee;
-
-    const handleCheckout = () => {
-        setIsProcessing(true);
-        // Simulate Stripe checkout
-        setTimeout(() => {
-            setIsProcessing(false);
-            onSubmit();
-        }, 2000);
-    };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -90,7 +88,12 @@ export function Step4Summary({ data, onBack, onSubmit }: Step4SummaryProps) {
                                 <div className="pt-2">
                                     <div className="flex justify-between text-muted-foreground">
                                         <span>{t('seller.campaigns.wizard.summary.platform_fee', 'Platform Fee')}</span>
-                                        <span>${platformFeePerItem.toFixed(2)} x {data.target}</span>
+                                        <span>
+                                            {platformFeePercent === null
+                                                ? <Loader2 className="w-4 h-4 animate-spin inline" />
+                                                : `${platformFeePercent}% of reimbursement`
+                                            }
+                                        </span>
                                     </div>
                                     <div className="flex justify-between font-medium mt-1">
                                         <span>{t('seller.campaigns.wizard.summary.total_fee', 'Total Platform Fee')}</span>
@@ -110,17 +113,17 @@ export function Step4Summary({ data, onBack, onSubmit }: Step4SummaryProps) {
                             </div>
 
                             <Button
-                                onClick={handleCheckout}
-                                disabled={isProcessing}
+                                onClick={onSubmit}
+                                disabled={isSubmitting}
                                 size="lg"
                                 className="w-full bg-brand-primary hover:bg-brand-primary/90 text-primary-foreground font-semibold h-12"
                             >
-                                {isProcessing ? (
+                                {isSubmitting ? (
                                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                                 ) : (
                                     <CreditCard className="w-5 h-5 mr-2" />
                                 )}
-                                {isProcessing ? t('seller.campaigns.wizard.summary.processing', 'Processing Payment...') : t('seller.campaigns.wizard.summary.pay', 'Pay & Publish Campaign')}
+                                {isSubmitting ? t('seller.campaigns.wizard.summary.processing', 'Processing Payment...') : t('seller.campaigns.wizard.summary.pay', 'Pay & Publish Campaign')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -128,7 +131,7 @@ export function Step4Summary({ data, onBack, onSubmit }: Step4SummaryProps) {
             </div>
 
             <div className="pt-6 flex justify-between border-t border-border mt-8">
-                <Button onClick={onBack} variant="outline" size="lg" disabled={isProcessing}>
+                <Button onClick={onBack} variant="outline" size="lg" disabled={isSubmitting}>
                     {t('common.back', 'Back')}
                 </Button>
             </div>

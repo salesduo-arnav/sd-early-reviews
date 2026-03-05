@@ -3,33 +3,37 @@ import { Op } from 'sequelize';
 import { Campaign, CampaignStatus } from '../../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../../models/OrderClaim';
 import { Transaction, TransactionStatus } from '../../models/Transaction';
+import { SellerProfile } from '../../models/SellerProfile';
+import { logger } from '../../utils/logger';
 import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek } from 'date-fns';
+
+/** Shared helper — resolves SellerProfile.id from JWT userId, returns null if not found */
+const resolveSellerProfileId = async (userId: string): Promise<string | null> => {
+    const profile = await SellerProfile.findOne({ where: { user_id: userId } });
+    return profile ? profile.id : null;
+};
 
 export const getMetrics = async (req: Request, res: Response) => {
     try {
-        const sellerId = req.user?.userId;
-        if (!sellerId) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const sellerProfileId = await resolveSellerProfileId(userId);
+        if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
 
         // Active Campaigns
         const activeCampaignsCount = await Campaign.count({
-            where: {
-                seller_id: sellerId,
-                status: CampaignStatus.ACTIVE
-            }
+            where: { seller_id: sellerProfileId, status: CampaignStatus.ACTIVE }
         });
 
-        // Reviews Completed (All time for total)
+        // Reviews Completed (All time)
         const totalReviewsCompleted = await OrderClaim.count({
             include: [{
                 model: Campaign,
-                where: { seller_id: sellerId },
+                where: { seller_id: sellerProfileId },
                 required: true
             }],
-            where: {
-                review_status: ReviewStatus.APPROVED
-            }
+            where: { review_status: ReviewStatus.APPROVED }
         });
 
         // Current week vs last week for % change
@@ -41,28 +45,24 @@ export const getMetrics = async (req: Request, res: Response) => {
         const currentWeekReviews = await OrderClaim.count({
             include: [{
                 model: Campaign,
-                where: { seller_id: sellerId },
+                where: { seller_id: sellerProfileId },
                 required: true
             }],
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: {
-                    [Op.gte]: startOfCurrentWeek
-                }
+                review_date: { [Op.gte]: startOfCurrentWeek }
             }
         });
 
         const previousWeekReviews = await OrderClaim.count({
             include: [{
                 model: Campaign,
-                where: { seller_id: sellerId },
+                where: { seller_id: sellerProfileId },
                 required: true
             }],
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: {
-                    [Op.between]: [startOfPreviousWeek, endOfPreviousWeek]
-                }
+                review_date: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] }
             }
         });
 
@@ -70,15 +70,12 @@ export const getMetrics = async (req: Request, res: Response) => {
         if (previousWeekReviews > 0) {
             reviewChangePercent = ((currentWeekReviews - previousWeekReviews) / previousWeekReviews) * 100;
         } else if (currentWeekReviews > 0) {
-            reviewChangePercent = 100; // Infinite growth technically, capping at 100% for UI sanity
+            reviewChangePercent = 100;
         }
 
-        // Total Amount Spent
+        // Total Amount Spent — transactions belong to users (not seller profiles)
         const totalSpent = await Transaction.sum('gross_amount', {
-            where: {
-                user_id: sellerId,
-                status: TransactionStatus.SUCCESS
-            }
+            where: { user_id: userId, status: TransactionStatus.SUCCESS }
         }) || 0;
 
         return res.status(200).json({
@@ -89,85 +86,73 @@ export const getMetrics = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error('Error fetching dashboard metrics:', error);
-        res.status(500).json({ message: 'Internal server error', error: (error as Error).message });
+        logger.error(`Error fetching dashboard metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
 export const getReviewVelocity = async (req: Request, res: Response) => {
     try {
-        const sellerId = req.user?.userId;
-        if (!sellerId) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        // Default to last 7 days if not provided
+        const sellerProfileId = await resolveSellerProfileId(userId);
+        if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
+
         const startDateStr = req.query.startDate as string;
         const endDateStr = req.query.endDate as string;
 
         const endDate = endDateStr ? endOfDay(new Date(endDateStr)) : endOfDay(new Date());
         const startDate = startDateStr ? startOfDay(new Date(startDateStr)) : startOfDay(subDays(endDate, 6));
 
-        // Group by day. using standard JS grouping since DB driver group by date might vary
         const reviews = await OrderClaim.findAll({
             include: [{
                 model: Campaign,
-                where: { seller_id: sellerId },
+                where: { seller_id: sellerProfileId },
                 required: true,
                 attributes: []
             }],
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: {
-                    [Op.between]: [startDate, endDate]
-                }
+                review_date: { [Op.between]: [startDate, endDate] }
             },
             attributes: ['review_date']
         });
 
         const velocityMap: Record<string, number> = {};
 
-        // Initialize map with 0s for the date range
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            velocityMap[dateStr] = 0;
+            velocityMap[d.toISOString().split('T')[0]] = 0;
         }
 
-        // Populate counts
         reviews.forEach(review => {
             if (review.review_date) {
                 const dateStr = new Date(review.review_date).toISOString().split('T')[0];
-                if (velocityMap[dateStr] !== undefined) {
-                    velocityMap[dateStr]++;
-                }
+                if (velocityMap[dateStr] !== undefined) velocityMap[dateStr]++;
             }
         });
 
-        const formattedData = Object.keys(velocityMap).sort().map(date => ({
-            date, // YYYY-MM-DD format
-            completed: velocityMap[date]
-        }));
+        const formattedData = Object.keys(velocityMap).sort().map(date => ({ date, completed: velocityMap[date] }));
 
-        res.status(200).json(formattedData);
+        return res.status(200).json(formattedData);
     } catch (error) {
-        console.error('Error fetching review velocity:', error);
-        res.status(500).json({ message: 'Internal server error', error: (error as Error).message });
+        logger.error(`Error fetching review velocity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
 export const getCampaignProgress = async (req: Request, res: Response) => {
     try {
-        const sellerId = req.user?.userId;
-        if (!sellerId) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const sellerProfileId = await resolveSellerProfileId(userId);
+        if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
 
         const campaigns = await Campaign.findAll({
             where: {
-                seller_id: sellerId,
-                status: {
-                    [Op.in]: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED]
-                }
+                seller_id: sellerProfileId,
+                status: { [Op.in]: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED] }
             },
             attributes: ['id', 'product_title', 'product_image_url', 'product_price', 'target_reviews', 'status'],
             order: [['created_at', 'DESC']]
@@ -175,10 +160,7 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
 
         const progressData = await Promise.all(campaigns.map(async (campaign) => {
             const completedReviews = await OrderClaim.count({
-                where: {
-                    campaign_id: campaign.id,
-                    review_status: ReviewStatus.APPROVED
-                }
+                where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
             });
 
             return {
@@ -192,9 +174,9 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
             };
         }));
 
-        res.status(200).json(progressData);
+        return res.status(200).json(progressData);
     } catch (error) {
-        console.error('Error fetching campaign progress:', error);
-        res.status(500).json({ message: 'Internal server error', error: (error as Error).message });
+        logger.error(`Error fetching campaign progress: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };

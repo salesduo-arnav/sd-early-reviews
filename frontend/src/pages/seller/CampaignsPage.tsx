@@ -14,7 +14,7 @@ export default function CampaignsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const loadCampaigns = async () => {
+    const loadCampaigns = React.useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -27,11 +27,11 @@ export default function CampaignsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [t]);
 
     useEffect(() => {
         loadCampaigns();
-    }, []);
+    }, [loadCampaigns]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

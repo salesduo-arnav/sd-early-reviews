@@ -21,7 +21,6 @@ export function ReviewVelocityChart() {
                 const startDate = startOfDay(subDays(new Date(), parseInt(timeRange) - 1)).toISOString();
                 const velocityData = await dashboardApi.getSellerVelocity(startDate, endDate);
 
-                // Format dates to be more readable (e.g. 'MMM dd')
                 const formattedData = velocityData.map(item => {
                     const d = new Date(item.date);
                     return {
@@ -83,42 +82,15 @@ export function ReviewVelocityChart() {
                                         <stop offset="95%" stopColor="hsl(var(--brand-primary))" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <XAxis
-                                    dataKey="displayDate"
-                                    stroke="hsl(var(--muted-foreground))"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    stroke="hsl(var(--muted-foreground))"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(value) => `${value}`}
-                                    dx={-10}
-                                />
+                                <XAxis dataKey="displayDate" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} dx={-10} />
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                                 <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'hsl(var(--card))',
-                                        borderColor: 'hsl(var(--border))',
-                                        borderRadius: '8px',
-                                        boxShadow: 'var(--shadow-sm)'
-                                    }}
+                                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', boxShadow: 'var(--shadow-sm)' }}
                                     itemStyle={{ color: 'hsl(var(--brand-primary))', fontWeight: 'bold' }}
                                     labelStyle={{ color: 'hsl(var(--card-foreground))', fontWeight: 'bold', marginBottom: '8px' }}
-                                    labelFormatter={(label) => `${label}`}
                                 />
-                                <Area
-                                    type="monotone"
-                                    dataKey="completed"
-                                    stroke="hsl(var(--brand-primary))"
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorCompleted)"
-                                />
+                                <Area type="monotone" dataKey="completed" stroke="hsl(var(--brand-primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorCompleted)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     )}

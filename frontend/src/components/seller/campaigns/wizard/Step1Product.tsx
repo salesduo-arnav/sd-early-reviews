@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Search } from 'lucide-react';
 import { CampaignWizardData } from '../wizard/CampaignWizardModal';
+import { campaignsApi } from '@/api/campaigns';
+import { toast } from 'sonner';
 
 interface Step1ProductProps {
     data: CampaignWizardData;
@@ -29,61 +31,65 @@ const REGIONS = [
     { value: 'eg', label: 'Egypt (Amazon.eg)' },
 ];
 
-const CATEGORIES = [
-    'Electronics', 'Home & Kitchen', 'Beauty & Personal Care', 'Health & Household',
-    'Clothing & Accessories', 'Toys & Games', 'Sports & Outdoors', 'Automotive'
-];
+
 
 export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
     const { t } = useTranslation();
     const [isFetching, setIsFetching] = useState(false);
     const [mockProduct, setMockProduct] = useState<{ title: string; image: string } | null>(null);
 
-    const handleFetch = () => {
-        if (!data.asin) return;
+    const handleFetch = async () => {
+        if (!data.asin || !data.region) {
+            toast.error(t('seller.campaigns.wizard.missing_region_asin', 'Please provide an ASIN and select a Marketplace Region.'));
+            return;
+        }
+
         setIsFetching(true);
-        // Simulate API call to fetch product details from Amazon ASIN
-        setTimeout(() => {
-            setMockProduct({
-                title: 'Simulated Product Title for ' + data.asin + ' - Premium Quality Item',
-                image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=2699&auto=format&fit=crop',
+        try {
+            const response = await campaignsApi.lookupAsin(data.asin, data.region);
+
+            const priceString = response.product_price || '0';
+            const price = parseFloat(priceString.replace(/[^0-9.]/g, '')) || 0;
+
+            updateData({
+                product_title: response.product_title,
+                product_image_url: response.product_photo,
+                product_price: price,
+                product_description: response.product_description
+                    || (response.about_product?.length ? response.about_product.join('\n') : ''),
+                category: response.category?.name || response.product_category || 'Uncategorized',
             });
+
+            setMockProduct({
+                title: response.product_title,
+                image: response.product_photo,
+            });
+            toast.success(t('seller.campaigns.wizard.fetch_success', 'Product details fetched successfully!'));
+        } catch (error) {
+            toast.error(t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));
+            setMockProduct(null);
+        } finally {
             setIsFetching(false);
-        }, 1500);
+        }
     };
 
-    const isNextDisabled = !data.asin || !data.region || !data.category || !mockProduct;
+    const isNextDisabled = !data.asin || !data.region || !mockProduct;
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="region">{t('seller.campaigns.wizard.region', 'Marketplace Region')}</Label>
-                        <Select value={data.region} onValueChange={(v) => updateData({ region: v })}>
-                            <SelectTrigger id="region">
-                                <SelectValue placeholder="Select a region" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[40vh]">
-                                {REGIONS.map(region => (
-                                    <SelectItem key={region.value} value={region.value}>{region.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="category">{t('seller.campaigns.wizard.category', 'Product Category')}</Label>
-                        <Select value={data.category} onValueChange={(v) => updateData({ category: v })}>
-                            <SelectTrigger id="category">
-                                <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[40vh]">
-                                {CATEGORIES.map(category => (
-                                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="space-y-2">
+                    <Label htmlFor="region">{t('seller.campaigns.wizard.region', 'Marketplace Region')}</Label>
+                    <Select value={data.region} onValueChange={(v) => updateData({ region: v })}>
+                        <SelectTrigger id="region">
+                            <SelectValue placeholder="Select a region" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[40vh]">
+                            {REGIONS.map(region => (
+                                <SelectItem key={region.value} value={region.value}>{region.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -118,7 +124,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-muted-foreground mb-1">{t('seller.campaigns.wizard.matched_product', 'Matched Product')}</p>
-                        <h4 className="text-base font-semibold truncate" title={mockProduct.title}>{mockProduct.title}</h4>
+                        <h4 className="text-base font-semibold leading-tight line-clamp-2 break-words" title={mockProduct.title}>{mockProduct.title}</h4>
                     </div>
                 </div>
             )}

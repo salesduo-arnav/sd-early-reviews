@@ -15,6 +15,10 @@ export interface CampaignWizardData {
     target: number;
     reimbursementPercentage: number;
     guidelines: string;
+    product_title?: string;
+    product_image_url?: string;
+    product_description?: string;
+    product_price?: number;
 }
 
 const INITIAL_DATA: CampaignWizardData = {
@@ -24,6 +28,10 @@ const INITIAL_DATA: CampaignWizardData = {
     target: 0,
     reimbursementPercentage: 100,
     guidelines: '',
+    product_title: '',
+    product_image_url: '',
+    product_description: '',
+    product_price: 0,
 };
 
 interface CampaignWizardModalProps {
@@ -36,6 +44,7 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
     const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
     const [data, setData] = useState<CampaignWizardData>(INITIAL_DATA);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const STEPS = [
         { id: 1, title: t('seller.campaigns.wizard.steps.product_details', 'Product Details') },
@@ -57,23 +66,28 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
     };
 
     const handleSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         try {
             await campaignsApi.createCampaign({
                 asin: data.asin,
                 region: data.region,
-                category: data.category,
-                target: data.target,
-                reimbursementPercentage: data.reimbursementPercentage,
+                category: data.category || 'Uncategorized',
+                target_reviews: data.target,
+                reimbursement_percent: data.reimbursementPercentage,
                 guidelines: data.guidelines,
-                title: 'New Product Campaign for ' + data.asin, // Mocking title
-                image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=2699&auto=format&fit=crop',
-                productDescription: 'New product description added from wizard.',
+                product_title: data.product_title || `Campaign for ${data.asin}`,
+                product_image_url: data.product_image_url || '',
+                product_description: data.product_description || '',
+                product_price: data.product_price || 0,
             });
             toast.success(t('seller.campaigns.wizard.success', 'Campaign published successfully!'));
             onSuccess();
             handleClose();
         } catch (error) {
             toast.error(t('seller.campaigns.wizard.error', 'Failed to publish campaign'));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -126,7 +140,7 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
                     {currentStep === 1 && <Step1Product data={data} updateData={updateData} onNext={handleNext} />}
                     {currentStep === 2 && <Step2Quota data={data} updateData={updateData} onNext={handleNext} onBack={handleBack} />}
                     {currentStep === 3 && <Step3Guidelines data={data} updateData={updateData} onNext={handleNext} onBack={handleBack} />}
-                    {currentStep === 4 && <Step4Summary data={data} onBack={handleBack} onSubmit={handleSubmit} />}
+                    {currentStep === 4 && <Step4Summary data={data} onBack={handleBack} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
                 </div>
             </DialogContent>
         </Dialog>

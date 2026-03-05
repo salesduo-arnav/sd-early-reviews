@@ -38,9 +38,9 @@ export function CampaignList({ campaigns, isLoading, error }: CampaignListProps)
         );
     }
 
-    const activeCampaigns = campaigns.filter(c => c.status === 'active');
-    const pausedCampaigns = campaigns.filter(c => c.status === 'paused');
-    const completedCampaigns = campaigns.filter(c => c.status === 'completed');
+    const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
+    const pausedCampaigns = campaigns.filter(c => c.status === 'PAUSED');
+    const completedCampaigns = campaigns.filter(c => c.status === 'COMPLETED');
 
     const renderGrid = (items: Campaign[]) => (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

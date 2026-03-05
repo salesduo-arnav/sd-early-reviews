@@ -47,7 +47,7 @@ export default function CampaignDetailPage() {
             const updated = await campaignsApi.togglePauseStatus(campaign.id);
             setCampaign(updated);
             toast.success(
-                updated.status === 'paused'
+                updated.status === 'PAUSED'
                     ? t('seller.campaigns.paused_success', 'Campaign paused successfully')
                     : t('seller.campaigns.resumed_success', 'Campaign resumed successfully')
             );
@@ -66,9 +66,9 @@ export default function CampaignDetailPage() {
         );
     }
 
-    const targetDivisor = campaign.target > 0 ? campaign.target : 1;
-    const progressPercent = Math.min((campaign.claimed / targetDivisor) * 100, 100);
-    const isCompleted = campaign.status === 'completed' || campaign.claimed >= campaign.target;
+    const targetDivisor = campaign.target_reviews > 0 ? campaign.target_reviews : 1;
+    const progressPercent = Math.min((campaign.claimed_count / targetDivisor) * 100, 100);
+    const isCompleted = campaign.status === 'COMPLETED' || campaign.claimed_count >= campaign.target_reviews;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
@@ -81,25 +81,25 @@ export default function CampaignDetailPage() {
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <span>ID: {campaign.id}</span>
                         <span>•</span>
-                        <span>{new Date(campaign.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(campaign.created_at).toLocaleDateString()}</span>
                     </div>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
-                    {campaign.status !== 'completed' && (
+                    {campaign.status !== 'COMPLETED' && (
                         <Button
-                            variant={campaign.status === 'active' ? 'outline' : 'default'}
+                            variant={campaign.status === 'ACTIVE' ? 'outline' : 'default'}
                             onClick={handleTogglePause}
                             disabled={isToggling}
-                            className={campaign.status === 'paused' ? 'bg-brand-primary' : ''}
+                            className={campaign.status === 'PAUSED' ? 'bg-brand-primary' : ''}
                         >
                             {isToggling ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : campaign.status === 'active' ? (
+                            ) : campaign.status === 'ACTIVE' ? (
                                 <PauseCircle className="h-4 w-4 mr-2 text-orange-500" />
                             ) : (
                                 <PlayCircle className="h-4 w-4 mr-2" />
                             )}
-                            {campaign.status === 'active'
+                            {campaign.status === 'ACTIVE'
                                 ? t('seller.campaigns.detail.pause', 'Pause Campaign')
                                 : t('seller.campaigns.detail.resume', 'Resume Campaign')}
                         </Button>
@@ -113,19 +113,19 @@ export default function CampaignDetailPage() {
                     <Card className="shadow-sm border-border overflow-hidden">
                         <div className="md:flex">
                             <div className="h-48 md:h-auto md:w-48 flex-shrink-0 bg-muted border-r border-border">
-                                {campaign.image ? (
-                                    <img src={campaign.image} alt={campaign.title} className="h-full w-full object-cover" />
+                                {campaign.product_image_url ? (
+                                    <img src={campaign.product_image_url} alt={campaign.product_title} className="h-full w-full object-cover" />
                                 ) : (
                                     <div className="h-full w-full flex items-center justify-center text-muted-foreground">No Image</div>
                                 )}
                             </div>
                             <div className="p-6 flex-1 flex flex-col">
                                 <div className="flex justify-between items-start gap-4 mb-2">
-                                    <h2 className="text-xl font-bold leading-tight">{campaign.title}</h2>
+                                    <h2 className="text-xl font-bold leading-tight">{campaign.product_title}</h2>
                                     <div className="flex-shrink-0">
-                                        {campaign.status === 'active' && <Badge className="bg-brand-primary">{t('seller.campaigns.status.active', 'Active')}</Badge>}
-                                        {campaign.status === 'paused' && <Badge variant="secondary" className="bg-orange-500 text-white">{t('seller.campaigns.status.paused', 'Paused')}</Badge>}
-                                        {campaign.status === 'completed' && <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">{t('seller.campaigns.status.completed', 'Completed')}</Badge>}
+                                        {campaign.status === 'ACTIVE' && <Badge className="bg-brand-primary">{t('seller.campaigns.status.active', 'Active')}</Badge>}
+                                        {campaign.status === 'PAUSED' && <Badge variant="secondary" className="bg-orange-500 text-white">{t('seller.campaigns.status.paused', 'Paused')}</Badge>}
+                                        {campaign.status === 'COMPLETED' && <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">{t('seller.campaigns.status.completed', 'Completed')}</Badge>}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-foreground/80 mb-4">
@@ -134,11 +134,11 @@ export default function CampaignDetailPage() {
                                     <span className="flex items-center"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> Amazon {campaign.region}</span>
                                 </div>
 
-                                <div className="mt-auto pt-4 border-t border-border">
+                                {campaign.product_description && <div className="mt-auto pt-4 border-t border-border">
                                     <p className="text-sm text-muted-foreground line-clamp-3">
-                                        {campaign.productDescription}
+                                        {campaign.product_description}
                                     </p>
-                                </div>
+                                </div>}
                             </div>
                         </div>
                     </Card>
@@ -170,8 +170,8 @@ export default function CampaignDetailPage() {
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
                                         <div>
-                                            <span className="text-3xl font-bold tracking-tight text-foreground">{campaign.claimed}</span>
-                                            <span className="text-muted-foreground ml-1">/ {campaign.target}</span>
+                                            <span className="text-3xl font-bold tracking-tight text-foreground">{campaign.claimed_count}</span>
+                                            <span className="text-muted-foreground ml-1">/ {campaign.target_reviews}</span>
                                         </div>
                                         <span className="text-sm font-medium">{Math.round(progressPercent)}%</span>
                                     </div>
@@ -184,7 +184,7 @@ export default function CampaignDetailPage() {
                                     <div className="space-y-3 text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('seller.campaigns.detail.reimbursement', 'Reimbursement Rate')}</span>
-                                            <span className="font-semibold text-brand-primary">{campaign.reimbursementPercentage}%</span>
+                                            <span className="font-semibold text-brand-primary">{campaign.reimbursement_percent}%</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('seller.campaigns.detail.upfront', 'Upfront Payment')}</span>

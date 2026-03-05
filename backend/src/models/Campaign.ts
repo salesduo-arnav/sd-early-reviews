@@ -2,7 +2,6 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/db';
 
 export enum CampaignStatus {
-    DRAFT = 'DRAFT',
     ACTIVE = 'ACTIVE',
     PAUSED = 'PAUSED',
     COMPLETED = 'COMPLETED'
@@ -16,8 +15,10 @@ interface CampaignAttributes {
     category: string;
     product_title: string;
     product_image_url: string;
+    product_description: string;
     product_price: number;
     target_reviews: number;
+    claimed_count: number;
     reimbursement_percent: number;
     guidelines?: string;
     status: CampaignStatus;
@@ -26,7 +27,7 @@ interface CampaignAttributes {
     deleted_at?: Date;
 }
 
-type CampaignCreationAttributes = Optional<CampaignAttributes, 'id' | 'status' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'>;
+type CampaignCreationAttributes = Optional<CampaignAttributes, 'id' | 'status' | 'claimed_count' | 'product_description' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'>;
 
 export class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes> implements CampaignAttributes {
     public id!: string;
@@ -36,8 +37,10 @@ export class Campaign extends Model<CampaignAttributes, CampaignCreationAttribut
     public category!: string;
     public product_title!: string;
     public product_image_url!: string;
+    public product_description!: string;
     public product_price!: number;
     public target_reviews!: number;
+    public claimed_count!: number;
     public reimbursement_percent!: number;
     public guidelines!: string;
     public status!: CampaignStatus;
@@ -77,12 +80,21 @@ Campaign.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
+        product_description: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
         product_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
         target_reviews: {
             type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        claimed_count: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
             allowNull: false,
         },
         reimbursement_percent: {
@@ -95,7 +107,7 @@ Campaign.init(
         },
         status: {
             type: DataTypes.ENUM(...Object.values(CampaignStatus)),
-            defaultValue: CampaignStatus.DRAFT,
+            defaultValue: CampaignStatus.ACTIVE,
             allowNull: false
         },
         stripe_payment_intent_id: {

@@ -43,9 +43,7 @@ export function DashboardMetrics() {
         );
     }
 
-    if (!metrics) {
-        return null;
-    }
+    if (!metrics) return null;
 
     const isPositiveChange = metrics.reviewChangePercent >= 0;
 
