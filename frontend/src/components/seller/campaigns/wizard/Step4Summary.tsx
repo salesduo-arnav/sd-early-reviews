@@ -51,8 +51,8 @@ export function Step4Summary({ data, onBack, onSubmit, isSubmitting }: Step4Summ
                                 <span className="font-medium">{data.reimbursementPercentage}%</span>
                             </div>
                             <div className="flex justify-between items-center text-sm border-b border-border pb-2">
-                                <span className="text-muted-foreground">{t('seller.campaigns.wizard.summary.region', 'Region')}</span>
-                                <span className="font-medium leading-none">{data.region}</span>
+                                <span className="text-muted-foreground">{t('seller.campaigns.wizard.summary.region', 'Marketplace Region')}</span>
+                                <span className="font-medium leading-none">amazon.{data.region}</span>
                             </div>
                         </div>
                     </div>

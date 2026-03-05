@@ -25,9 +25,9 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
     const StatusBadge = () => {
         switch (campaign.status) {
             case 'ACTIVE':
-                return <Badge variant="default" className="bg-brand-primary text-primary-foreground">{t('seller.campaigns.status.active', 'Active')}</Badge>;
+                return <Badge variant="outline" className="bg-brand-primary/20 text-brand-primary border-brand-primary/20">{t('seller.campaigns.status.active', 'Active')}</Badge>;
             case 'PAUSED':
-                return <Badge variant="secondary" className="bg-orange-500 text-white">{t('seller.campaigns.status.paused', 'Paused')}</Badge>;
+                return <Badge variant="outline" className="bg-gray-500/20 text-gray-500 border-gray-500/20">{t('seller.campaigns.status.paused', 'Paused')}</Badge>;
             case 'COMPLETED':
                 return <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">{t('seller.campaigns.status.completed', 'Completed')}</Badge>;
             default:
@@ -80,7 +80,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
                             <span className="text-muted-foreground">/ {campaign.target_reviews}</span>
                         </div>
                     </div>
-                    <Progress value={progressPercent} className={`h-2.5 ${isCompleted ? '[&>div]:bg-green-500' : '[&>div]:bg-brand-primary'}`} />
+                    <Progress value={progressPercent} className={`h-2.5 ${isCompleted ? '[&>div]:bg-green-600' : campaign.status === 'PAUSED' ? '[&>div]:bg-gray-300' : '[&>div]:bg-brand-primary'}`} />
 
                     <div className="flex justify-between items-center pt-2">
                         <StatusBadge />

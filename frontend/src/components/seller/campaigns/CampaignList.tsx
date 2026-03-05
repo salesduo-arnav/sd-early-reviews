@@ -65,7 +65,7 @@ export function CampaignList({ campaigns, isLoading, error }: CampaignListProps)
             {pausedCampaigns.length > 0 && (
                 <section>
                     <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 text-muted-foreground">
-                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <div className="w-2 h-2 rounded-full bg-gray-500/40" />
                         {t('seller.campaigns.section.paused', 'Paused Campaigns')}
                     </h2>
                     {renderGrid(pausedCampaigns)}

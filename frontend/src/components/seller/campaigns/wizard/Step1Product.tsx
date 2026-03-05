@@ -111,7 +111,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
                             variant="secondary"
                             onClick={handleFetch}
                             disabled={!data.asin || isFetching}
-                            className="w-[140px]"
+                            className="w-[140px] hover:bg-gray-200"
                         >
                             {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
                             {t('seller.campaigns.wizard.fetch', 'Fetch Details')}
