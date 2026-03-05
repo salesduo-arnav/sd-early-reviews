@@ -128,10 +128,20 @@ export default function CampaignDetailPage() {
                                         {campaign.status === 'COMPLETED' && <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">{t('seller.campaigns.status.completed', 'Completed')}</Badge>}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 text-sm text-foreground/80 mb-4">
+                                <div className="flex items-center gap-4 text-sm text-foreground/80 mb-4 flex-wrap">
                                     <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs border border-border">ASIN: {campaign.asin}</span>
                                     <span>{campaign.category}</span>
-                                    <span className="flex items-center"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> Amazon {campaign.region}</span>
+                                    <a href={`https://www.amazon.${campaign.region}/dp/${campaign.asin}`} target="_blank" rel="noopener noreferrer" className="flex items-center hover:text-brand-primary cursor-pointer"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> Amazon.{campaign.region}</a>
+                                    {campaign.product_rating != null && (
+                                        <span className="flex items-center gap-1 text-amber-500 font-semibold text-lg">
+                                            ★ {Number(campaign.product_rating).toFixed(1)}
+                                            {campaign.product_rating_count != null && (
+                                                <span className="text-muted-foreground font-normal text-sm">
+                                                    ({Number(campaign.product_rating_count).toLocaleString()} ratings)
+                                                </span>
+                                            )}
+                                        </span>
+                                    )}
                                 </div>
 
                                 {campaign.product_description && <div className="mt-auto pt-4 border-t border-border">

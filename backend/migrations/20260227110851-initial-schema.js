@@ -206,6 +206,14 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      product_rating: {
+        type: Sequelize.DECIMAL(2, 1),
+        allowNull: true,
+      },
+      product_rating_count: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       target_reviews: {
         type: Sequelize.INTEGER,
         allowNull: false,

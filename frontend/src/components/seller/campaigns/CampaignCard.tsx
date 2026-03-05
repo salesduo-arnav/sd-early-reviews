@@ -58,13 +58,21 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
                             </CardTitle>
                             <CardDescription className="text-sm font-medium">
                                 ASIN: <span className="uppercase text-foreground">{campaign.asin}</span>
+                                {campaign.product_rating != null && (
+                                    <p className="text-sm text-amber-500 font-medium">
+                                        ★ {Number(campaign.product_rating).toFixed(1)}
+                                        {campaign.product_rating_count != null && (
+                                            <span className="text-muted-foreground font-normal ml-1">({Number(campaign.product_rating_count).toLocaleString()})</span>
+                                        )}
+                                    </p>
+                                )}
                             </CardDescription>
                         </div>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="mt-4 space-y-3">
+                <div className="mt-2 space-y-3">
                     <div className="flex justify-between items-center text-sm mb-1">
                         <span className="text-muted-foreground font-medium">{t('seller.campaigns.claimed', 'Claimed Units')}</span>
                         <div className="flex items-center gap-2">

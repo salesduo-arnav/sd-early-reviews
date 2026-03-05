@@ -23,6 +23,8 @@ export interface Campaign {
     asin: string;
     product_image_url: string;
     product_description: string;
+    product_rating?: number;
+    product_rating_count?: number;
     target_reviews: number;
     claimed_count: number;
     region: string;
@@ -55,6 +57,8 @@ export interface AsinLookupResponse {
     product_photo: string;
     product_price: string;
     product_description?: string | null;
+    product_star_rating?: string | null;
+    product_num_ratings?: number | null;
     about_product?: string[];
     product_category?: string;
     category?: { id: string; name: string };

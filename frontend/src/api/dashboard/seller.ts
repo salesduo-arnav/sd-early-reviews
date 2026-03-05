@@ -22,6 +22,8 @@ export interface CampaignProgress {
     status: string;
     target: number;
     completed: number;
+    product_rating?: number;
+    product_rating_count?: number;
 }
 
 const fetchWithAuth = async (endpoint: string) => {

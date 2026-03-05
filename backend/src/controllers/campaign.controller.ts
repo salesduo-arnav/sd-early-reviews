@@ -48,6 +48,8 @@ export const createCampaign = async (req: Request, res: Response) => {
             product_image_url,
             product_description,
             product_price,
+            product_rating,
+            product_rating_count,
             target_reviews,
             reimbursement_percent,
             guidelines
@@ -62,6 +64,8 @@ export const createCampaign = async (req: Request, res: Response) => {
             product_image_url,
             product_description,
             product_price,
+            product_rating: product_rating ?? null,
+            product_rating_count: product_rating_count ?? null,
             target_reviews,
             reimbursement_percent,
             guidelines,

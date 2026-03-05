@@ -19,6 +19,8 @@ export interface CampaignWizardData {
     product_image_url?: string;
     product_description?: string;
     product_price?: number;
+    product_rating?: number;
+    product_rating_count?: number;
 }
 
 const INITIAL_DATA: CampaignWizardData = {
@@ -32,6 +34,8 @@ const INITIAL_DATA: CampaignWizardData = {
     product_image_url: '',
     product_description: '',
     product_price: 0,
+    product_rating: undefined,
+    product_rating_count: undefined,
 };
 
 interface CampaignWizardModalProps {
@@ -80,6 +84,8 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
                 product_image_url: data.product_image_url || '',
                 product_description: data.product_description || '',
                 product_price: data.product_price || 0,
+                product_rating: data.product_rating,
+                product_rating_count: data.product_rating_count,
             });
             toast.success(t('seller.campaigns.wizard.success', 'Campaign published successfully!'));
             onSuccess();

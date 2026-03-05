@@ -58,6 +58,10 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
                 product_description: response.product_description
                     || (response.about_product?.length ? response.about_product.join('\n') : ''),
                 category: response.category?.name || response.product_category || 'Uncategorized',
+                product_rating: response.product_star_rating
+                    ? parseFloat(response.product_star_rating.replace(/[^0-9.]/g, ''))
+                    : undefined,
+                product_rating_count: response.product_num_ratings ?? undefined,
             });
 
             setMockProduct({

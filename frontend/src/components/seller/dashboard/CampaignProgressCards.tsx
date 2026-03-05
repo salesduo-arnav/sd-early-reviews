@@ -93,6 +93,14 @@ export function CampaignProgressCards() {
                                             <CardTitle className="text-base font-semibold truncate" title={campaign.title}>
                                                 {campaign.title}
                                             </CardTitle>
+                                            {campaign.product_rating != null && (
+                                                <p className="text-sm text-amber-500 font-medium mt-1">
+                                                    ★ {Number(campaign.product_rating).toFixed(1)}
+                                                    {campaign.product_rating_count != null && (
+                                                        <span className="text-muted-foreground font-normal ml-1">({Number(campaign.product_rating_count).toLocaleString()})</span>
+                                                    )}
+                                                </p>
+                                            )}
                                             {/* Show status as badge and colour based on status */}
                                             {campaign.status === 'ACTIVE' ? (
                                                 <Badge variant="outline" className="mt-2 text-primary border-primary/20 bg-primary/10">

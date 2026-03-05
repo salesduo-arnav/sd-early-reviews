@@ -17,6 +17,8 @@ interface CampaignAttributes {
     product_image_url: string;
     product_description: string;
     product_price: number;
+    product_rating?: number;
+    product_rating_count?: number;
     target_reviews: number;
     claimed_count: number;
     reimbursement_percent: number;
@@ -39,6 +41,8 @@ export class Campaign extends Model<CampaignAttributes, CampaignCreationAttribut
     public product_image_url!: string;
     public product_description!: string;
     public product_price!: number;
+    public product_rating!: number;
+    public product_rating_count!: number;
     public target_reviews!: number;
     public claimed_count!: number;
     public reimbursement_percent!: number;
@@ -87,6 +91,14 @@ Campaign.init(
         product_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
+        },
+        product_rating: {
+            type: DataTypes.DECIMAL(2, 1),
+            allowNull: true,
+        },
+        product_rating_count: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
         },
         target_reviews: {
             type: DataTypes.INTEGER,

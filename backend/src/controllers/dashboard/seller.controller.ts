@@ -157,7 +157,7 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
                 seller_id: sellerProfileId,
                 status: { [Op.in]: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED] }
             },
-            attributes: ['id', 'product_title', 'product_image_url', 'product_price', 'target_reviews', 'status'],
+            attributes: ['id', 'product_title', 'product_image_url', 'product_price', 'product_rating', 'product_rating_count', 'target_reviews', 'status'],
             order: [['created_at', 'DESC']],
             limit: paginationParams.limit,
             offset: paginationParams.offset,
@@ -174,7 +174,9 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
                 price: campaign.product_price,
                 status: campaign.status,
                 target: campaign.target_reviews,
-                completed: completedReviews
+                completed: completedReviews,
+                product_rating: campaign.product_rating ?? null,
+                product_rating_count: campaign.product_rating_count ?? null,
             };
         }));
 
