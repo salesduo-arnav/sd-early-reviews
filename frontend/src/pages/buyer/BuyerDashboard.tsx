@@ -13,7 +13,7 @@ export default function BuyerDashboard() {
     return (
         <div className="min-h-screen bg-muted/20">
             <DashboardNavbar links={navLinks} />
-            <main className="container max-w-7xl mx-auto px-4 md:px-6 pt-24 pb-12">
+            <main className="w-full px-4 md:px-8 pt-24 pb-12">
                 <div className="space-y-6">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">{t('buyer.welcome_title', 'Welcome, Buyer!')}</h1>

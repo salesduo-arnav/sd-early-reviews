@@ -1,11 +1,19 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Star, User as UserIcon } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LogOut, Star, User as UserIcon, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
 
 export interface NavItem {
     label: string;
@@ -32,7 +40,7 @@ export function DashboardNavbar({ links = [] }: DashboardNavbarProps) {
 
     return (
         <nav className="fixed top-0 left-0 right-0 h-16 flex items-center z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container md:px-6 flex justify-between items-center h-full max-w-7xl">
+            <div className="w-full px-4 md:px-8 flex justify-between items-center h-full">
                 <Link to={isBuyer ? '/buyer' : isSeller ? '/seller' : '/'} className="flex items-center gap-2 font-bold tracking-tight text-lg">
                     <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
                         <Star className="text-primary fill-primary w-4 h-4" />
@@ -60,16 +68,39 @@ export function DashboardNavbar({ links = [] }: DashboardNavbarProps) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                    <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground mr-1">
-                        <UserIcon className="w-4 h-4" />
-                        <span>{user?.email}</span>
-                    </div>
+                <div className="flex items-center gap-4">
                     <NotificationBell />
-                    <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        {t('nav.logout', 'Log out')}
-                    </Button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-muted/50 rounded-full md:rounded-md">
+                                <div className="h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center border border-border">
+                                    <UserIcon className="w-4 h-4" />
+                                </div>
+                                <span className="hidden md:block text-sm font-medium text-muted-foreground mr-1">
+                                    {user?.email?.split('@')[0] || t('nav.profile', 'Profile')}
+                                </span>
+                                <ChevronDown className="hidden md:block w-4 h-4 text-muted-foreground" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 mt-2">
+                            <DropdownMenuLabel className="font-normal">
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-sm font-medium leading-none">{t('nav.account', 'My Account')}</p>
+                                    <p className="text-xs leading-none text-muted-foreground">
+                                        {user?.email}
+                                    </p>
+                                </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <LanguageSwitcher variant="menu-item" />
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>{t('nav.logout', 'Log out')}</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
         </nav>

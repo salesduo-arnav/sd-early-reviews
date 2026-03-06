@@ -237,6 +237,7 @@ export function DataTable<TData, TValue>({
                                         return (
                                             <TableHead
                                                 key={header.id}
+                                                style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                                                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 first:pl-4 last:pr-4"
                                             >
                                                 {header.isPlaceholder
@@ -269,7 +270,7 @@ export function DataTable<TData, TValue>({
                                         )}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className="first:pl-4 last:pr-4 py-3">
+                                            <TableCell key={cell.id} style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }} className="first:pl-4 last:pr-4 py-3">
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext()

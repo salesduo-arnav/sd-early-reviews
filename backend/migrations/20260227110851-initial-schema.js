@@ -6,7 +6,7 @@ module.exports = {
     // 1. Create ENUMs native types first (PostgreSQL specific)
     await queryInterface.sequelize.query(`
       CREATE TYPE "enum_users_role" AS ENUM ('SELLER', 'BUYER', 'ADMIN');
-      CREATE TYPE "enum_campaigns_status" AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED');
+      CREATE TYPE "enum_campaigns_status" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED');
       CREATE TYPE "enum_order_claims_order_status" AS ENUM ('PENDING_VERIFICATION', 'APPROVED', 'REJECTED');
       CREATE TYPE "enum_order_claims_review_status" AS ENUM ('AWAITING_UPLOAD', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'TIMEOUT');
       CREATE TYPE "enum_order_claims_payout_status" AS ENUM ('NOT_ELIGIBLE', 'PENDING', 'PROCESSED', 'FAILED');
@@ -198,12 +198,29 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      product_description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
       product_price: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      product_rating: {
+        type: Sequelize.DECIMAL(2, 1),
+        allowNull: true,
+      },
+      product_rating_count: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       target_reviews: {
         type: Sequelize.INTEGER,
+        allowNull: false,
+      },
+      claimed_count: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
         allowNull: false,
       },
       reimbursement_percent: {
@@ -216,7 +233,7 @@ module.exports = {
       },
       status: {
         type: 'enum_campaigns_status',
-        defaultValue: 'DRAFT',
+        defaultValue: 'ACTIVE',
         allowNull: false,
       },
       stripe_payment_intent_id: {
@@ -495,10 +512,42 @@ module.exports = {
         allowNull: true,
       },
     });
+
+    // Create system_configs table for admin-managed platform settings
+    await queryInterface.createTable('system_configs', {
+      key: {
+        type: Sequelize.STRING,
+        primaryKey: true,
+        allowNull: false,
+      },
+      value: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+      },
+      description: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('NOW()'),
+      },
+    });
+
+    // Seed default platform configuration values
+    await queryInterface.bulkInsert('system_configs', [
+      {
+        key: 'platform_fee_percent',
+        value: '10',
+        description: 'Platform fee charged as a percentage of total reimbursement cost',
+        updated_at: new Date(),
+      },
+    ]);
   },
 
   async down(queryInterface, Sequelize) {
     // Drop tables in reverse order of creation
+    await queryInterface.dropTable('system_configs');
     await queryInterface.dropTable('admin_audit_logs');
     await queryInterface.dropTable('notifications');
     await queryInterface.dropTable('transactions');

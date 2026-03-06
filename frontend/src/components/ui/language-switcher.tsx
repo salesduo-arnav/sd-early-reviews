@@ -7,6 +7,10 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -27,7 +31,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 
 interface LanguageSwitcherProps {
-    variant?: 'icon' | 'full' | 'auth';
+    variant?: 'icon' | 'full' | 'auth' | 'menu-item';
 }
 
 export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) => {
@@ -36,6 +40,34 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
     };
+
+    // Extract supported languages from i18n config
+    const supportedLanguages = Object.keys(i18n.options.resources || { en: {}, es: {} });
+    const currentLangCode = i18n.language ? i18n.language.split('-')[0] : 'en';
+
+    if (variant === 'menu-item') {
+        return (
+            <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                    <Globe className="mr-2 h-4 w-4" />
+                    <span>{t('landing.footer.language', 'Language')} ({LANGUAGE_NAMES[currentLangCode] || 'English'})</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent className="w-40 rounded-xl">
+                        {supportedLanguages.map((lng) => (
+                            <DropdownMenuItem
+                                key={lng}
+                                onClick={() => changeLanguage(lng)}
+                                className={`cursor-pointer rounded-lg ${currentLangCode === lng ? 'bg-primary/10 text-primary font-medium' : ''}`}
+                            >
+                                {LANGUAGE_NAMES[lng] || lng.toUpperCase()}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+            </DropdownMenuSub>
+        );
+    }
 
     return (
         <DropdownMenu>
@@ -48,7 +80,7 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
                         </div>
                         <div className="pl-1 flex items-center gap-1 hover:text-brand-primary transition-colors text-sm font-medium text-foreground/80">
                             <span className="text-sm font-bold text-foreground/80">
-                                {LANGUAGE_NAMES[i18n.language ? i18n.language.split('-')[0] : 'en'] || 'English'}
+                                {LANGUAGE_NAMES[currentLangCode] || 'English'}
                             </span>
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -57,7 +89,7 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
                     <Button variant="ghost" className="h-9 px-3 rounded-full hover:bg-white/10 text-white/80 hover:text-white outline-none flex items-center gap-2">
                         <Globe className="h-4 w-4" />
                         <span className="text-sm font-medium">
-                            {LANGUAGE_NAMES[i18n.language ? i18n.language.split('-')[0] : 'en'] || 'English'}
+                            {LANGUAGE_NAMES[currentLangCode] || 'English'}
                         </span>
                         <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
@@ -69,18 +101,15 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
                 )}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                <DropdownMenuItem
-                    onClick={() => changeLanguage('en')}
-                    className={`cursor-pointer rounded-lg ${i18n.language.startsWith('en') ? 'bg-primary/10 text-primary font-medium' : ''}`}
-                >
-                    English
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={() => changeLanguage('es')}
-                    className={`cursor-pointer rounded-lg ${i18n.language.startsWith('es') ? 'bg-primary/10 text-primary font-medium' : ''}`}
-                >
-                    Español
-                </DropdownMenuItem>
+                {supportedLanguages.map((lng) => (
+                    <DropdownMenuItem
+                        key={lng}
+                        onClick={() => changeLanguage(lng)}
+                        className={`cursor-pointer rounded-lg ${currentLangCode === lng ? 'bg-primary/10 text-primary font-medium' : ''}`}
+                    >
+                        {LANGUAGE_NAMES[lng] || lng.toUpperCase()}
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );
