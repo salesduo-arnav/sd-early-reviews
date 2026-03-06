@@ -71,11 +71,57 @@
     },
     "buyer": {
         "welcome_title": "¡Bienvenido, Comprador!",
-        "welcome_subtitle": "Aquí puedes explorar productos disponibles para reseñar y ganar reembolsos.",
-        "available_campaigns": "Campañas Disponibles",
-        "available_campaigns_desc": "Encuentra productos para reseñar.",
-        "my_claims": "Mis Reclamos",
-        "my_claims_desc": "Rastrea tus reembolsos de reseñas en curso."
+        "welcome_subtitle": "Explora productos disponibles, reclama ofertas y gana reembolsos por tus reseñas.",
+        "nav": {
+            "marketplace": "Mercado",
+            "my_claims": "Mis Reclamos",
+            "account": "Perfil y Ganancias"
+        },
+        "marketplace": {
+            "title": "Mercado",
+            "subtitle": "Explora productos disponibles, reclama ofertas y comienza a ganar reembolsos.",
+            "features_title": "Funciones Planificadas",
+            "feature_browse": "Explorar productos disponibles de campañas activas de vendedores",
+            "feature_filter": "Filtrar por categoría, región, porcentaje de reembolso y rango de precio",
+            "feature_sort": "Ordenar por más recientes, mayor reembolso o más populares",
+            "feature_product_card": "Tarjeta de detalle del producto con imagen, título, precio, monto de reembolso y calificación del vendedor",
+            "feature_amazon_link": "Enlace externo \"Ver en Amazon\" para cada producto",
+            "feature_claim_cta": "Botón CTA \"Reclamar Producto\" → abre un modal para subir captura de pantalla del pedido como prueba",
+            "feature_search": "Barra de búsqueda por palabra clave o ASIN",
+            "feature_pagination": "Listado de productos paginado"
+        },
+        "claims": {
+            "title": "Mis Reclamos",
+            "subtitle": "Rastrea tus productos reclamados, sube prueba de reseña y monitorea el estado de reembolso.",
+            "features_title": "Funciones Planificadas",
+            "feature_list": "Tabla / tarjetas con todos los reclamos con pipeline de estado (Pedido Enviado → Reseña Pendiente → Reseña Enviada → Aprobado → Reembolsado)",
+            "feature_status_filter": "Pestañas de filtro de estado o menú desplegable para reducir resultados",
+            "feature_upload_review": "Subir prueba de reseña (URL de reseña o captura de pantalla)",
+            "feature_timeline": "Expansión de detalle de reclamo con línea de tiempo / registro de actividad",
+            "feature_deadline": "Cuenta regresiva de fecha límite para envío de reseña",
+            "feature_payout": "Monto de reembolso y estado de pago por reclamo",
+            "feature_amazon_link": "Enlace directo al producto en Amazon",
+            "feature_cancel": "Acción de cancelar reclamo (si aún está en etapas tempranas)"
+        },
+        "account": {
+            "title": "Perfil y Ganancias",
+            "subtitle": "Rastrea tu rendimiento, administra datos bancarios y consulta tus ganancias.",
+            "active_claims": "Reclamos Activos",
+            "active_claims_desc": "Actualmente en progreso",
+            "reviews_submitted": "Reseñas Enviadas",
+            "reviews_submitted_desc": "Total de por vida",
+            "total_earnings": "Ganancias Totales",
+            "total_earnings_desc": "Reembolsos recibidos",
+            "approval_rate": "Tasa de Aprobación",
+            "approval_rate_desc": "Reseñas aprobadas",
+            "features_title": "Funciones Planificadas",
+            "feature_health": "Estadísticas de salud del perfil: tasa de envío a tiempo, ganancias totales, reclamos completados, tasa de aprobación",
+            "feature_amazon_url": "Visualización de URL de perfil de Amazon (solo lectura)",
+            "feature_bank": "Gestión de datos bancarios: agregar, editar o eliminar cuenta bancaria para reembolsos",
+            "feature_notifications": "Preferencias de notificación (activar/desactivar correo electrónico)",
+            "feature_tier": "Insignia de nivel / reputación del comprador",
+            "feature_activity": "Registro de actividad de la cuenta (último inicio de sesión, acciones recientes)"
+        }
     },
     "seller": {
         "welcome_title": "¡Bienvenido, Vendedor!",

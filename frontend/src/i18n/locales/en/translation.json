@@ -71,11 +71,57 @@
     },
     "buyer": {
         "welcome_title": "Welcome, Buyer!",
-        "welcome_subtitle": "Here you can browse available products to review and earn reimbursements.",
-        "available_campaigns": "Available Campaigns",
-        "available_campaigns_desc": "Find products to review.",
-        "my_claims": "My Claims",
-        "my_claims_desc": "Track your ongoing review reimbursements."
+        "welcome_subtitle": "Browse available products, claim deals, and earn reimbursements for your reviews.",
+        "nav": {
+            "marketplace": "Marketplace",
+            "my_claims": "My Claims",
+            "account": "Profile & Earnings"
+        },
+        "marketplace": {
+            "title": "Marketplace",
+            "subtitle": "Browse available products, claim deals, and start earning reimbursements.",
+            "features_title": "Planned Features",
+            "feature_browse": "Browse available products from active seller campaigns",
+            "feature_filter": "Filter by category, region, reimbursement %, and price range",
+            "feature_sort": "Sort by newest, highest reimbursement, or most popular",
+            "feature_product_card": "Product detail card with image, title, price, reimbursement amount, and seller rating",
+            "feature_amazon_link": "\"View on Amazon\" external link for each product",
+            "feature_claim_cta": "\"Claim Product\" CTA button → opens modal to upload order screenshot as proof",
+            "feature_search": "Search bar for keyword or ASIN search",
+            "feature_pagination": "Paginated product listing"
+        },
+        "claims": {
+            "title": "My Claims",
+            "subtitle": "Track your claimed products, upload review proof, and monitor reimbursement status.",
+            "features_title": "Planned Features",
+            "feature_list": "Table / cards listing all claims with full status pipeline (Order Submitted → Review Pending → Review Submitted → Approved → Reimbursed)",
+            "feature_status_filter": "Status filter tabs or dropdown to narrow results",
+            "feature_upload_review": "Upload review proof (review URL or screenshot)",
+            "feature_timeline": "Claim detail expansion with timeline / activity log",
+            "feature_deadline": "Deadline countdown for review submission",
+            "feature_payout": "Reimbursement amount and payout status per claim",
+            "feature_amazon_link": "Direct link to the product on Amazon",
+            "feature_cancel": "Cancel claim action (if still in early stages)"
+        },
+        "account": {
+            "title": "Profile & Earnings",
+            "subtitle": "Track your performance, manage bank details, and view your earnings.",
+            "active_claims": "Active Claims",
+            "active_claims_desc": "Currently in progress",
+            "reviews_submitted": "Reviews Submitted",
+            "reviews_submitted_desc": "Total lifetime",
+            "total_earnings": "Total Earnings",
+            "total_earnings_desc": "Reimbursements received",
+            "approval_rate": "Approval Rate",
+            "approval_rate_desc": "Reviews approved",
+            "features_title": "Planned Features",
+            "feature_health": "Profile health stats: on-time submission rate, total earnings, claims completed, approval rate",
+            "feature_amazon_url": "Read-only Amazon Profile URL display",
+            "feature_bank": "Bank details management: add, edit, or remove bank account for reimbursements",
+            "feature_notifications": "Notification preferences (email toggle)",
+            "feature_tier": "Buyer tier / reputation badge display",
+            "feature_activity": "Account activity log (last login, recent actions)"
+        }
     },
     "seller": {
         "welcome_title": "Welcome, Seller!",
