@@ -11,8 +11,8 @@ jest.mock('../services/mail.service', () => ({
 }));
 
 jest.mock('../middlewares/rateLimiter', () => ({
-    authRateLimiter: (req: any, res: any, next: any) => next(),
-    publicRateLimiter: (req: any, res: any, next: any) => next(),
+    authRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
+    publicRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 beforeAll(async () => {

@@ -3,7 +3,6 @@ import { Express } from 'express';
 import { User, UserRole } from '../models/User';
 import { SellerProfile } from '../models/SellerProfile';
 import { BuyerProfile } from '../models/BuyerProfile';
-import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus, OrderStatus, PayoutStatus } from '../models/OrderClaim';
 
 let sellerCounter = 0;
@@ -68,7 +67,7 @@ export const defaultCampaignData = {
     reimbursement_percent: 100,
 };
 
-export async function createCampaignViaAPI(app: Express, token: string, overrides: Record<string, any> = {}) {
+export async function createCampaignViaAPI(app: Express, token: string, overrides: Record<string, unknown> = {}) {
     campaignCounter++;
     const res = await request(app)
         .post('/api/campaigns')

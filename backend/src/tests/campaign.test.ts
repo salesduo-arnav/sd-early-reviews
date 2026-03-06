@@ -25,10 +25,11 @@ jest.mock('../services/amazon.service', () => ({
 }));
 
 jest.mock('../middlewares/rateLimiter', () => ({
-    authRateLimiter: (req: any, res: any, next: any) => next(),
-    publicRateLimiter: (req: any, res: any, next: any) => next(),
+    authRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
+    publicRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { fetchAsinDetailsRealTime } = require('../services/amazon.service');
 
 beforeAll(async () => {

@@ -242,13 +242,15 @@ export const getSellerReviewStats = async (req: Request, res: Response) => {
             }],
             where: {
                 review_status: { [Op.ne]: ReviewStatus.AWAITING_UPLOAD },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.not with null requires any cast
                 review_rating: { [Op.not]: null } as any
             },
             raw: true
         });
 
-        const sumResult = Number((ratingData[0] as any)?.total_rating || 0);
-        const countNum = Number((ratingData[0] as any)?.rating_count || 0);
+        const row = ratingData[0] as unknown as { total_rating: string | null; rating_count: string | null } | undefined;
+        const sumResult = Number(row?.total_rating || 0);
+        const countNum = Number(row?.rating_count || 0);
 
         const averageRating = countNum > 0 ? (sumResult / countNum).toFixed(1) : 0;
 
@@ -276,7 +278,8 @@ export const getSellerReviews = async (req: Request, res: Response) => {
 
         const { search, status, rating, startDate, endDate } = req.query;
 
-        const whereClause: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic Sequelize where with Op.or and nested $column$ refs
+        const whereClause: Record<string | symbol, any> = {
             review_status: { [Op.ne]: ReviewStatus.AWAITING_UPLOAD }
         };
 
@@ -325,12 +328,15 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             subQuery: false
         });
 
-        const formattedReviews = reviews.map(r => ({
+        type ReviewWithCampaign = OrderClaim & { Campaign?: { asin: string; product_title: string; product_image_url: string } };
+        const formattedReviews = reviews.map(r => {
+            const rc = r as ReviewWithCampaign;
+            return {
             id: r.id,
             campaign_id: r.campaign_id,
-            asin: (r as any).Campaign?.asin,
-            product_title: (r as any).Campaign?.product_title,
-            product_image_url: (r as any).Campaign?.product_image_url,
+            asin: rc.Campaign?.asin,
+            product_title: rc.Campaign?.product_title,
+            product_image_url: rc.Campaign?.product_image_url,
             review_date: r.review_date,
             review_rating: r.review_rating,
             review_text: r.review_text,
@@ -338,7 +344,8 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             amazon_order_id: r.amazon_order_id,
             expected_payout_amount: r.expected_payout_amount,
             rejection_reason: r.rejection_reason
-        }));
+            };
+        });
 
         return res.status(200).json(buildPaginatedResponse(formattedReviews, count, paginationParams));
     } catch (error) {

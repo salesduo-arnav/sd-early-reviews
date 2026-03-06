@@ -26,8 +26,8 @@ jest.mock('../services/amazon.service', () => ({
 }));
 
 jest.mock('../middlewares/rateLimiter', () => ({
-    authRateLimiter: (req: any, res: any, next: any) => next(),
-    publicRateLimiter: (req: any, res: any, next: any) => next(),
+    authRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
+    publicRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 beforeAll(async () => {
@@ -139,7 +139,7 @@ describe('Seller Dashboard API', () => {
             expect(Array.isArray(res.body)).toBe(true);
             expect(res.body.length).toBeGreaterThanOrEqual(7);
 
-            const totalCompleted = res.body.reduce((sum: number, d: any) => sum + d.completed, 0);
+            const totalCompleted = res.body.reduce((sum: number, d: { completed: number }) => sum + d.completed, 0);
             expect(totalCompleted).toBe(1);
         });
 
@@ -152,7 +152,7 @@ describe('Seller Dashboard API', () => {
 
             expect(res.status).toBe(200);
             expect(res.body).toHaveLength(7);
-            res.body.forEach((d: any) => {
+            res.body.forEach((d: { date: string; completed: number }) => {
                 expect(d).toHaveProperty('date');
                 expect(d).toHaveProperty('completed');
             });
@@ -166,7 +166,7 @@ describe('Seller Dashboard API', () => {
                 .set('Authorization', `Bearer ${seller.token}`);
 
             expect(res.status).toBe(200);
-            const allZero = res.body.every((d: any) => d.completed === 0);
+            const allZero = res.body.every((d: { completed: number }) => d.completed === 0);
             expect(allZero).toBe(true);
         });
     });

@@ -8,15 +8,15 @@ import { Campaign } from '../models/Campaign';
 import { OrderClaim } from '../models/OrderClaim';
 import { Transaction } from '../models/Transaction';
 import { Notification, NotificationCategory, NotificationPriority } from '../models/Notification';
-import { createSellerAndLogin, createBuyerAndLogin, resetCounters } from './helpers';
+import { createSellerAndLogin, resetCounters } from './helpers';
 
 jest.mock('../services/mail.service', () => ({
     mailService: { sendMail: jest.fn().mockResolvedValue(true) },
 }));
 
 jest.mock('../middlewares/rateLimiter', () => ({
-    authRateLimiter: (req: any, res: any, next: any) => next(),
-    publicRateLimiter: (req: any, res: any, next: any) => next(),
+    authRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
+    publicRateLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 beforeAll(async () => {

@@ -62,22 +62,23 @@ export function ReviewsTable() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter, ratingFilter, startDate, endDate]);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'APPROVED':
-                return <Badge className="bg-green-500/10 text-green-700 border-green-200">{t('status.approved', 'Approved')}</Badge>;
-            case 'PENDING_VERIFICATION':
-                return <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 border-orange-200">{t('status.pending', 'Pending')}</Badge>;
-            case 'REJECTED':
-                return <Badge variant="destructive">{t('status.rejected', 'Rejected')}</Badge>;
-            case 'TIMEOUT':
-                return <Badge variant="outline" className="text-gray-500">{t('status.timeout', 'Timeout')}</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
+    const columns = useMemo<ColumnDef<SellerReview, unknown>[]>(() => {
+        const getStatusBadge = (status: string) => {
+            switch (status) {
+                case 'APPROVED':
+                    return <Badge className="bg-green-500/10 text-green-700 border-green-200">{t('status.approved', 'Approved')}</Badge>;
+                case 'PENDING_VERIFICATION':
+                    return <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 border-orange-200">{t('status.pending', 'Pending')}</Badge>;
+                case 'REJECTED':
+                    return <Badge variant="destructive">{t('status.rejected', 'Rejected')}</Badge>;
+                case 'TIMEOUT':
+                    return <Badge variant="outline" className="text-gray-500">{t('status.timeout', 'Timeout')}</Badge>;
+                default:
+                    return <Badge variant="outline">{status}</Badge>;
+            }
+        };
 
-    const columns = useMemo<ColumnDef<SellerReview, any>[]>(() => [
+        return [
         {
             accessorKey: 'review_date',
             size: 110,
@@ -175,7 +176,8 @@ export function ReviewsTable() {
                 </div>
             )
         }
-    ], [t]);
+    ];
+    }, [t]);
 
     return (
         <div className="space-y-4">
