@@ -10,6 +10,11 @@ jest.mock('../services/mail.service', () => ({
     },
 }));
 
+jest.mock('../middlewares/rateLimiter', () => ({
+    authRateLimiter: (req: any, res: any, next: any) => next(),
+    publicRateLimiter: (req: any, res: any, next: any) => next(),
+}));
+
 beforeAll(async () => {
     // Optionally sync or authenticate if needed, but migrations run in global setup.
     await sequelize.authenticate();

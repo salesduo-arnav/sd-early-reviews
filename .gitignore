@@ -32,7 +32,7 @@ lerna-debug.log*
 # =========================
 # IDE / Editor Settings
 # =========================
-.vscode/*
+.vscode/
 !.vscode/extensions.json
 .idea/
 .DS_Store
