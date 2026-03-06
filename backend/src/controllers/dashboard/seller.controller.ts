@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Campaign, CampaignStatus } from '../../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../../models/OrderClaim';
+import sequelize from '../../config/db';
 import { Transaction, TransactionStatus } from '../../models/Transaction';
 import { SellerProfile } from '../../models/SellerProfile';
 import { logger } from '../../utils/logger';
@@ -183,6 +184,165 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
         return res.status(200).json(buildPaginatedResponse(progressData, count, paginationParams));
     } catch (error) {
         logger.error(`Error fetching campaign progress: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getSellerReviewStats = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const sellerProfileId = await resolveSellerProfileId(userId);
+        if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
+
+        const totalReviews = await OrderClaim.count({
+            include: [{
+                model: Campaign,
+                where: { seller_id: sellerProfileId },
+                required: true
+            }],
+            where: {
+                review_status: { [Op.ne]: ReviewStatus.AWAITING_UPLOAD }
+            }
+        });
+
+        const approvedReviews = await OrderClaim.count({
+            include: [{
+                model: Campaign,
+                where: { seller_id: sellerProfileId },
+                required: true
+            }],
+            where: {
+                review_status: ReviewStatus.APPROVED
+            }
+        });
+
+        const pendingReviews = await OrderClaim.count({
+            include: [{
+                model: Campaign,
+                where: { seller_id: sellerProfileId },
+                required: true
+            }],
+            where: {
+                review_status: ReviewStatus.PENDING_VERIFICATION
+            }
+        });
+
+        const ratingData = await OrderClaim.findAll({
+            attributes: [
+                [sequelize.fn('SUM', sequelize.col('review_rating')), 'total_rating'],
+                [sequelize.fn('COUNT', sequelize.col('review_rating')), 'rating_count']
+            ],
+            include: [{
+                model: Campaign,
+                where: { seller_id: sellerProfileId },
+                required: true,
+                attributes: []
+            }],
+            where: {
+                review_status: { [Op.ne]: ReviewStatus.AWAITING_UPLOAD },
+                review_rating: { [Op.not]: null } as any
+            },
+            raw: true
+        });
+
+        const sumResult = Number((ratingData[0] as any)?.total_rating || 0);
+        const countNum = Number((ratingData[0] as any)?.rating_count || 0);
+
+        const averageRating = countNum > 0 ? (sumResult / countNum).toFixed(1) : 0;
+
+        return res.status(200).json({
+            totalReviews,
+            approvedReviews,
+            pendingReviews,
+            averageRating: parseFloat(averageRating as string)
+        });
+    } catch (error) {
+        logger.error(`Error fetching review stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getSellerReviews = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const sellerProfileId = await resolveSellerProfileId(userId);
+        if (!sellerProfileId) return res.status(403).json({ message: 'Seller profile not found' });
+
+        const paginationParams = parsePaginationParams(req.query, 10);
+
+        const { search, status, rating, startDate, endDate } = req.query;
+
+        const whereClause: any = {
+            review_status: { [Op.ne]: ReviewStatus.AWAITING_UPLOAD }
+        };
+
+        if (status && status !== 'ALL') {
+            whereClause.review_status = status;
+        }
+
+        if (rating && rating !== 'ALL') {
+            whereClause.review_rating = parseInt(rating as string, 10);
+        }
+
+        if (startDate && endDate) {
+            whereClause.review_date = {
+                [Op.between]: [startOfDay(new Date(startDate as string)), endOfDay(new Date(endDate as string))]
+            };
+        } else if (startDate) {
+            whereClause.review_date = {
+                [Op.gte]: startOfDay(new Date(startDate as string))
+            };
+        } else if (endDate) {
+            whereClause.review_date = {
+                [Op.lte]: endOfDay(new Date(endDate as string))
+            };
+        }
+
+        if (search) {
+            const searchTerm = `%${search}%`;
+            whereClause[Op.or] = [
+                { review_text: { [Op.iLike]: searchTerm } },
+                { '$Campaign.asin$': { [Op.iLike]: searchTerm } },
+                { amazon_order_id: { [Op.iLike]: searchTerm } }
+            ];
+        }
+
+        const { count, rows: reviews } = await OrderClaim.findAndCountAll({
+            where: whereClause,
+            include: [{
+                model: Campaign,
+                where: { seller_id: sellerProfileId },
+                required: true,
+                attributes: ['id', 'asin', 'product_title', 'product_image_url']
+            }],
+            order: [['review_date', 'DESC NULLS LAST'], ['created_at', 'DESC']],
+            limit: paginationParams.limit,
+            offset: paginationParams.offset,
+            subQuery: false
+        });
+
+        const formattedReviews = reviews.map(r => ({
+            id: r.id,
+            campaign_id: r.campaign_id,
+            asin: (r as any).Campaign?.asin,
+            product_title: (r as any).Campaign?.product_title,
+            product_image_url: (r as any).Campaign?.product_image_url,
+            review_date: r.review_date,
+            review_rating: r.review_rating,
+            review_text: r.review_text,
+            review_status: r.review_status,
+            amazon_order_id: r.amazon_order_id,
+            expected_payout_amount: r.expected_payout_amount,
+            rejection_reason: r.rejection_reason
+        }));
+
+        return res.status(200).json(buildPaginatedResponse(formattedReviews, count, paginationParams));
+    } catch (error) {
+        logger.error(`Error fetching seller reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

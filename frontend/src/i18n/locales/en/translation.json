@@ -198,8 +198,51 @@
                     "processing": "Processing Payment...",
                     "pay": "Pay & Publish Campaign"
                 }
+            },
+            "reviews": {
+                "all_reviews": "All Reviews",
+                "total_reviews": "Total Reviews",
+                "acc_all_campaigns": "Across all campaigns",
+                "average_rating": "Average Rating",
+                "out_of_5": "Out of 5 stars",
+                "approved": "Approved",
+                "verified_by_team": "Verified by team",
+                "pending": "Pending Verification",
+                "awaiting_verification": "Awaiting verification",
+                "search_placeholder": "Search by ASIN or keywords...",
+                "no_reviews": "No reviews found matching your criteria.",
+                "details_title": "Review Details",
+                "posted_on": "Posted on {{date}}",
+                "not_posted": "Review not yet posted or date unavailable",
+                "content": "Review Content",
+                "no_text_provided": "No review text provided by the buyer.",
+                "rejection_reason": "Rejection Reason"
             }
         }
+    },
+    "common": {
+        "status": "Status",
+        "all_statuses": "All Statuses",
+        "rating": "Rating",
+        "all_ratings": "All Ratings",
+        "stars_short": "Stars",
+        "error_loading": "Failed to load data.",
+        "date": "Date",
+        "review": "Review",
+        "no_text": "No text provided",
+        "page": "Page",
+        "of": "of",
+        "payout": "Payout",
+        "actions": "Actions",
+        "view": "View",
+        "order_id": "Order ID",
+        "asin": "ASIN"
+    },
+    "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "timeout": "Timeout"
     },
     "auth": {
         "all_rights_reserved": "All rights reserved.",

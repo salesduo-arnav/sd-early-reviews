@@ -198,8 +198,51 @@
                     "processing": "Procesando Pago...",
                     "pay": "Pagar y Publicar Campaña"
                 }
+            },
+            "reviews": {
+                "all_reviews": "Todas las Reseñas",
+                "total_reviews": "Total de Reseñas",
+                "acc_all_campaigns": "En todas las campañas",
+                "average_rating": "Calificación Promedio",
+                "out_of_5": "De 5 estrellas",
+                "approved": "Aprobadas",
+                "verified_by_team": "Verificadas por el equipo",
+                "pending": "Pendientes de Verificación",
+                "awaiting_verification": "Esperando verificación",
+                "search_placeholder": "Buscar por ASIN o palabras clave...",
+                "no_reviews": "No se encontraron reseñas que coincidan con sus criterios.",
+                "details_title": "Detalles de la Reseña",
+                "posted_on": "Publicado el {{date}}",
+                "not_posted": "Reseña aún no publicada o fecha no disponible",
+                "content": "Contenido de la Reseña",
+                "no_text_provided": "Ningún texto de reseña fue proporcionado por el comprador.",
+                "rejection_reason": "Razón de Rechazo"
             }
         }
+    },
+    "common": {
+        "status": "Estado",
+        "all_statuses": "Todos los Estados",
+        "rating": "Calificación",
+        "all_ratings": "Todas las Calificaciones",
+        "stars_short": "Estrellas",
+        "error_loading": "Error al cargar datos.",
+        "date": "Fecha",
+        "review": "Reseña",
+        "no_text": "No se proporcionó texto",
+        "page": "Página",
+        "of": "de",
+        "payout": "Pago",
+        "actions": "Acciones",
+        "view": "Ver",
+        "order_id": "ID de Pedido",
+        "asin": "ASIN"
+    },
+    "status": {
+        "pending": "Pendiente",
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "timeout": "Tiempo de espera agotado"
     },
     "auth": {
         "all_rights_reserved": "Todos los derechos reservados.",
