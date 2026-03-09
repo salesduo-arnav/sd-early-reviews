@@ -7,6 +7,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 import MarketplacePage from './pages/buyer/MarketplacePage';
+import ProductDetailPage from './pages/buyer/ProductDetailPage';
 import MyClaimsPage from './pages/buyer/MyClaimsPage';
 import AccountPage from './pages/buyer/AccountPage';
 import SellerDashboard from './pages/seller/SellerDashboard';
@@ -67,6 +68,7 @@ function App() {
             <Route path="/buyer" element={<BuyerLayout />}>
               <Route index element={<MarketplacePage />} />
               <Route path="marketplace" element={<MarketplacePage />} />
+              <Route path="marketplace/:id" element={<ProductDetailPage />} />
               <Route path="claims" element={<MyClaimsPage />} />
               <Route path="account" element={<AccountPage />} />
             </Route>

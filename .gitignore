@@ -37,6 +37,7 @@ lerna-debug.log*
 .idea/
 .DS_Store
 .agents/
+.claude/
 
 # =========================
 # OS / Editor Temp Files
