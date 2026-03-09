@@ -275,7 +275,7 @@ export function ClaimProductModal({ product, open, onOpenChange, onClaimSuccess 
                         <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                             {t('common.cancel', 'Cancel')}
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting || !proofFile}>
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

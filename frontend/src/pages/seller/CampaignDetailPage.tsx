@@ -186,7 +186,7 @@ export default function CampaignDetailPage() {
                                         <span className="text-sm font-medium">{Math.round(progressPercent)}%</span>
                                     </div>
                                     <Progress value={progressPercent} className={`h-3 ${isCompleted ? '[&>div]:bg-green-500' : '[&>div]:bg-brand-primary'}`} />
-                                    <p className="text-xs text-muted-foreground mt-2">{t('seller.campaigns.detail.claimed_desc', 'Units claimed by reviewers')}</p>
+                                    <p className="text-xs text-muted-foreground mt-2">{t('seller.campaigns.detail.claimed_desc', 'Reviews Completed')}</p>
                                 </div>
 
                                 <div className="pt-4 border-t border-border">

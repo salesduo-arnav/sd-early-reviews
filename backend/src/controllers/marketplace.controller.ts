@@ -6,6 +6,8 @@ import { OrderClaim } from '../models/OrderClaim';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { logger } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
+import { notificationService } from '../services/notification.service';
+import { NotificationCategory } from '../models/Notification';
 
 /**
  * GET /api/marketplace
@@ -92,11 +94,23 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
             ],
         });
 
+        // Count active claims per campaign to derive slot availability
+        const campaignIds = rows.map((c) => c.id);
+        const claimCounts = await OrderClaim.count({
+            where: { campaign_id: campaignIds },
+            group: ['campaign_id'],
+        });
+        const claimCountMap = new Map(
+            (claimCounts as unknown as { campaign_id: string; count: number }[]).map(
+                (c) => [c.campaign_id, Number(c.count)]
+            )
+        );
+
         // Map to marketplace-friendly shape
         const products = rows.map((campaign) => {
             const raw = campaign.toJSON() as unknown as Record<string, unknown>;
             const seller = raw.SellerProfile as Record<string, unknown> | undefined;
-
+            const activeClaims = claimCountMap.get(raw.id as string) || 0;
 
             return {
                 id: raw.id,
@@ -115,8 +129,8 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
                 region: raw.region,
                 category: raw.category,
                 target_reviews: raw.target_reviews,
-                claimed_count: raw.claimed_count,
-                slots_remaining: Number(raw.target_reviews) - Number(raw.claimed_count),
+                claimed_count: activeClaims,
+                slots_remaining: Number(raw.target_reviews) - activeClaims,
                 company_name: seller?.company_name as string ?? 'Unknown',
                 guidelines: raw.guidelines,
                 created_at: raw.created_at,
@@ -155,6 +169,9 @@ export const getMarketplaceProduct = async (req: Request, res: Response) => {
         const raw = campaign.toJSON() as unknown as Record<string, unknown>;
         const seller = raw.SellerProfile as Record<string, unknown> | undefined;
 
+        // Count active claims to derive slot availability
+        const activeClaims = await OrderClaim.count({ where: { campaign_id: id } });
+
         const product = {
             id: raw.id,
             campaign_id: raw.id,
@@ -172,8 +189,8 @@ export const getMarketplaceProduct = async (req: Request, res: Response) => {
             region: raw.region,
             category: raw.category,
             target_reviews: raw.target_reviews,
-            claimed_count: raw.claimed_count,
-            slots_remaining: Number(raw.target_reviews) - Number(raw.claimed_count),
+            claimed_count: activeClaims,
+            slots_remaining: Number(raw.target_reviews) - activeClaims,
             company_name: seller?.company_name as string ?? 'Unknown',
             guidelines: raw.guidelines,
             created_at: raw.created_at,
@@ -236,8 +253,32 @@ export const claimProduct = async (req: Request, res: Response) => {
         // Validate required fields
         if (!amazon_order_id || !order_proof_url || !purchase_date) {
             return res.status(400).json({
-                message: 'amazon_order_id, order_proof_url, and purchase_date are required',
+                message: 'amazon_order_id, order_proof_url, and purchase_date are all required',
             });
+        }
+
+        // Validate Amazon Order ID format (e.g. 123-4567890-1234567)
+        const orderIdPattern = /^\d{3}-\d{7}-\d{7}$/;
+        if (!orderIdPattern.test(amazon_order_id)) {
+            return res.status(400).json({
+                message: 'Invalid Amazon Order ID format. Expected: 123-4567890-1234567',
+            });
+        }
+
+        // Validate order_proof_url is a valid URL
+        try {
+            new URL(order_proof_url);
+        } catch {
+            return res.status(400).json({ message: 'order_proof_url must be a valid URL' });
+        }
+
+        // Validate purchase_date is a valid date and not in the future
+        const parsedDate = new Date(purchase_date);
+        if (isNaN(parsedDate.getTime())) {
+            return res.status(400).json({ message: 'purchase_date must be a valid date' });
+        }
+        if (parsedDate > new Date()) {
+            return res.status(400).json({ message: 'purchase_date cannot be in the future' });
         }
 
         // Get buyer profile
@@ -260,8 +301,9 @@ export const claimProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'This campaign is no longer accepting claims' });
         }
 
-        // Check availability
-        if (campaign.claimed_count >= campaign.target_reviews) {
+        // Check slot availability via actual claim count
+        const activeClaims = await OrderClaim.count({ where: { campaign_id: campaignId } });
+        if (activeClaims >= campaign.target_reviews) {
             return res.status(400).json({ message: 'All slots for this product have been claimed' });
         }
 
@@ -299,14 +341,26 @@ export const claimProduct = async (req: Request, res: Response) => {
             review_deadline: reviewDeadline,
         });
 
-        // Increment claimed_count on campaign
-        await campaign.increment('claimed_count');
+        // Note: claimed_count on Campaign tracks completed reviews (incremented when review is approved).
+        // Slot availability is derived from OrderClaim count above.
 
-        // Auto-complete campaign if all slots filled
-        if (campaign.claimed_count + 1 >= campaign.target_reviews) {
-            campaign.status = CampaignStatus.COMPLETED;
-            await campaign.save();
+        // ── Notifications (non-blocking) ──
+
+        // Notify the seller about the new claim
+        const sellerProfile = await SellerProfile.findByPk(campaign.seller_id);
+        if (sellerProfile) {
+            notificationService.send(sellerProfile.user_id, NotificationCategory.NEW_ORDER_CLAIM, {
+                message: `A buyer has claimed "${campaign.product_title}" (Order: ${amazon_order_id}). Review their order proof in your dashboard.`,
+                actionLink: `/seller/campaigns/${campaignId}`,
+            }).catch((err) => logger.error('Failed to send NEW_ORDER_CLAIM notification', { err }));
         }
+
+        // Notify the buyer with confirmation
+        notificationService.send(userId, NotificationCategory.ORDER_APPROVED, {
+            title: 'Claim Submitted',
+            message: `Your claim for "${campaign.product_title}" has been submitted. You have 14 days to write and submit your review.`,
+            actionLink: '/buyer/claims',
+        }).catch((err) => logger.error('Failed to send claim confirmation notification', { err }));
 
         return res.status(201).json({
             message: 'Product claimed successfully',
