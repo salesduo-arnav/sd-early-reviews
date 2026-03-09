@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { configApi } from '@/api/config';
+import { formatPrice } from '@/lib/regions';
 
 interface Step4SummaryProps {
     data: CampaignWizardData;
@@ -78,11 +79,11 @@ export function Step4Summary({ data, onBack, onSubmit, isSubmitting }: Step4Summ
                             <div className="space-y-3 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">{t('seller.campaigns.wizard.summary.reimb_cost', 'Reimbursement Cost')}</span>
-                                    <span>${itemCost.toFixed(2)} x {data.target}</span>
+                                    <span>{formatPrice(itemCost, data.region)} x {data.target}</span>
                                 </div>
                                 <div className="flex justify-between font-medium">
                                     <span>{t('seller.campaigns.wizard.summary.total_reimb', 'Total Reimbursement')}</span>
-                                    <span>${totalItemCost.toFixed(2)}</span>
+                                    <span>{formatPrice(totalItemCost, data.region)}</span>
                                 </div>
 
                                 <div className="pt-2">
@@ -97,7 +98,7 @@ export function Step4Summary({ data, onBack, onSubmit, isSubmitting }: Step4Summ
                                     </div>
                                     <div className="flex justify-between font-medium mt-1">
                                         <span>{t('seller.campaigns.wizard.summary.total_fee', 'Total Platform Fee')}</span>
-                                        <span>${totalPlatformFee.toFixed(2)}</span>
+                                        <span>{formatPrice(totalPlatformFee, data.region)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -107,7 +108,7 @@ export function Step4Summary({ data, onBack, onSubmit, isSubmitting }: Step4Summ
                             <div className="flex flex-col mb-6">
                                 <div className="flex justify-between items-center text-lg font-bold">
                                     <span>{t('seller.campaigns.wizard.summary.total', 'Total Cost')}</span>
-                                    <span className="text-brand-primary">${orderTotal.toFixed(2)}</span>
+                                    <span className="text-brand-primary">{formatPrice(orderTotal, data.region)}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right mt-1">{t('seller.campaigns.wizard.summary.due_today', 'Due today via Stripe Checkout')}</p>
                             </div>

@@ -5,6 +5,42 @@
  * This matches the seller campaign creation wizard in Step1Product.tsx.
  */
 
+/** Maps domain suffix → currency symbol and ISO code */
+export const REGION_CURRENCY: Record<string, { symbol: string; code: string }> = {
+    com: { symbol: '$', code: 'USD' },
+    ca: { symbol: 'CA$', code: 'CAD' },
+    'co.uk': { symbol: '£', code: 'GBP' },
+    de: { symbol: '€', code: 'EUR' },
+    fr: { symbol: '€', code: 'EUR' },
+    it: { symbol: '€', code: 'EUR' },
+    es: { symbol: '€', code: 'EUR' },
+    'co.jp': { symbol: '¥', code: 'JPY' },
+    in: { symbol: '₹', code: 'INR' },
+    cn: { symbol: '¥', code: 'CNY' },
+    ae: { symbol: 'AED ', code: 'AED' },
+    sa: { symbol: 'SAR ', code: 'SAR' },
+    eg: { symbol: 'EGP ', code: 'EGP' },
+    'com.au': { symbol: 'A$', code: 'AUD' },
+    'com.br': { symbol: 'R$', code: 'BRL' },
+    'com.mx': { symbol: 'MX$', code: 'MXN' },
+    nl: { symbol: '€', code: 'EUR' },
+    sg: { symbol: 'S$', code: 'SGD' },
+    se: { symbol: 'kr ', code: 'SEK' },
+    pl: { symbol: 'zł ', code: 'PLN' },
+};
+
+/** Format a price with the correct currency symbol for a given region */
+export function formatPrice(amount: number, region: string): string {
+    const currency = REGION_CURRENCY[region] || REGION_CURRENCY['com'];
+    const decimals = ['JPY', 'CNY'].includes(currency.code) ? 0 : 2;
+    return `${currency.symbol}${Number(amount).toFixed(decimals)}`;
+}
+
+/** Get the currency symbol for a region */
+export function getCurrencySymbol(region: string): string {
+    return (REGION_CURRENCY[region] || REGION_CURRENCY['com']).symbol;
+}
+
 /** Maps domain suffix → human-readable country name */
 export const REGION_DISPLAY_NAMES: Record<string, string> = {
     com: 'United States',

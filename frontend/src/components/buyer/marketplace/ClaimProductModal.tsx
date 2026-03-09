@@ -27,6 +27,7 @@ import { buyerApi } from '@/api/buyer';
 import type { MarketplaceProduct } from '@/api/buyer';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/regions';
 
 interface ClaimProductModalProps {
     product: MarketplaceProduct | null;
@@ -148,9 +149,9 @@ export function ClaimProductModal({ product, open, onOpenChange, onClaimSuccess 
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium line-clamp-2 leading-tight">{product.title}</p>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm font-bold">${Number(product.price).toFixed(2)}</span>
+                            <span className="text-sm font-bold">{formatPrice(product.price, product.region)}</span>
                             <Badge className="bg-green-600 hover:bg-green-700 text-white text-xs">
-                                +${product.reimbursement_amount} {t('buyer.marketplace.back', 'back')}
+                                +{formatPrice(Number(product.reimbursement_amount), product.region)} {t('buyer.marketplace.back', 'back')}
                             </Badge>
                         </div>
                     </div>

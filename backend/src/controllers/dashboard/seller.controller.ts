@@ -320,7 +320,7 @@ export const getSellerReviews = async (req: Request, res: Response) => {
                 model: Campaign,
                 where: { seller_id: sellerProfileId },
                 required: true,
-                attributes: ['id', 'asin', 'product_title', 'product_image_url']
+                attributes: ['id', 'asin', 'product_title', 'product_image_url', 'region']
             }],
             order: [['review_date', 'DESC NULLS LAST'], ['created_at', 'DESC']],
             limit: paginationParams.limit,
@@ -328,7 +328,7 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             subQuery: false
         });
 
-        type ReviewWithCampaign = OrderClaim & { Campaign?: { asin: string; product_title: string; product_image_url: string } };
+        type ReviewWithCampaign = OrderClaim & { Campaign?: { asin: string; product_title: string; product_image_url: string; region: string } };
         const formattedReviews = reviews.map(r => {
             const rc = r as ReviewWithCampaign;
             return {
@@ -343,7 +343,8 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             review_status: r.review_status,
             amazon_order_id: r.amazon_order_id,
             expected_payout_amount: r.expected_payout_amount,
-            rejection_reason: r.rejection_reason
+            rejection_reason: r.rejection_reason,
+            region: rc.Campaign?.region
             };
         });
 

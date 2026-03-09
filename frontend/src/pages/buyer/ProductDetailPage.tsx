@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { buyerApi } from '@/api/buyer';
 import type { MarketplaceProduct } from '@/api/buyer';
 import { ClaimProductModal } from '@/components/buyer/marketplace/ClaimProductModal';
-import { getAmazonDomain, getAmazonProductUrl } from '@/lib/regions';
+import { getAmazonDomain, getAmazonProductUrl, formatPrice, getCurrencySymbol } from '@/lib/regions';
 
 const PROCESS_STEPS = [
     {
@@ -121,6 +121,44 @@ export default function ProductDetailPage() {
                     <h1 className="text-2xl font-bold tracking-tight">
                         {t('buyer.product_detail.title', 'Product Details')}
                     </h1>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <span>ASIN: {product.asin}</span>
+                        <span>•</span>
+                        <span>{new Date(product.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* How it Works — full width at top */}
+            <div className="rounded-xl bg-brand-primary/5 p-6 sm:p-8">
+                <div className="text-center mb-8">
+                    <h2 className="text-xl font-bold tracking-tight">
+                        {t('buyer.product_detail.how_it_works', 'How It Works')}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {t('buyer.product_detail.how_it_works_subtitle', 'Earn reimbursements in 4 simple steps')}
+                    </p>
+                </div>
+
+                <div className="relative">
+                    {/* Continuous connector line behind icons — desktop only */}
+                    <div className="hidden lg:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 bg-brand-primary/20" />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0">
+                        {PROCESS_STEPS.map((step, index) => (
+                            <div key={index} className="relative flex flex-col items-center text-center px-4">
+                                <div className="relative z-10 flex items-center justify-center h-14 w-14 rounded-full bg-brand-primary text-white mb-4 shadow-md">
+                                    <step.icon className="h-6 w-6" />
+                                </div>
+                                <p className="text-sm font-bold mb-1">
+                                    {t(step.titleKey, step.titleFallback)}
+                                </p>
+                                <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">
+                                    {t(step.descKey, step.descFallback)}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -237,7 +275,7 @@ export default function ProductDetailPage() {
                     <Card className="shadow-sm border-border">
                         <CardContent className="p-5 space-y-4">
                             <div>
-                                <span className="text-3xl font-bold">${Number(product.price).toFixed(2)}</span>
+                                <span className="text-3xl font-bold">{formatPrice(product.price, product.region)}</span>
                                 <p className="text-sm text-muted-foreground mt-1">
                                     {t('buyer.product_detail.product_price', 'Product price on Amazon')}
                                 </p>
@@ -259,7 +297,7 @@ export default function ProductDetailPage() {
                                         {t('buyer.product_detail.you_get_back', 'You get back')}
                                     </span>
                                     <span className="text-green-600 font-bold text-lg">
-                                        ${product.reimbursement_amount}
+                                        {formatPrice(Number(product.reimbursement_amount), product.region)}
                                     </span>
                                 </div>
                             </div>
@@ -326,37 +364,6 @@ export default function ProductDetailPage() {
                     </Card>
                 </div>
             </div>
-
-            {/* How it Works — full width below the grid */}
-            <Card className="shadow-sm border-border">
-                <CardHeader>
-                    <CardTitle className="text-lg">
-                        {t('buyer.product_detail.how_it_works', 'How It Works')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {PROCESS_STEPS.map((step, index) => (
-                            <div
-                                key={index}
-                                className="flex gap-3 p-4 rounded-lg bg-muted/40 border border-border"
-                            >
-                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center">
-                                    <step.icon className="h-5 w-5" />
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold mb-0.5">
-                                        {index + 1}. {t(step.titleKey, step.titleFallback)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        {t(step.descKey, step.descFallback)}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
 
             {/* Claim Modal */}
             <ClaimProductModal

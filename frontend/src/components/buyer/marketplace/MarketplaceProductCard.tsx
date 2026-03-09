@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { MarketplaceProduct } from '@/api/buyer';
+import { formatPrice } from '@/lib/regions';
 
 interface MarketplaceProductCardProps {
     product: MarketplaceProduct;
@@ -70,9 +71,9 @@ export function MarketplaceProductCard({ product }: MarketplaceProductCardProps)
                 {/* Price & Reimbursement */}
                 <div className="space-y-1">
                     <div className="flex items-baseline justify-between">
-                        <span className="text-lg font-bold">${Number(product.price).toFixed(2)}</span>
+                        <span className="text-lg font-bold">{formatPrice(product.price, product.region)}</span>
                         <span className="text-sm font-semibold text-green-600">
-                            +${product.reimbursement_amount} {t('buyer.marketplace.back', 'back')}
+                            +{formatPrice(Number(product.reimbursement_amount), product.region)} {t('buyer.marketplace.back', 'back')}
                         </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
