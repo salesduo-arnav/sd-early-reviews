@@ -6,6 +6,7 @@ import campaignRoutes from './campaign.routes';
 import configRoutes from './config.routes';
 import marketplaceRoutes from './marketplace.routes';
 import uploadRoutes from './upload.routes';
+import buyerRoutes from './buyer.routes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/campaigns', campaignRoutes);
 router.use('/config', configRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/buyer', buyerRoutes);
 
 export default router;

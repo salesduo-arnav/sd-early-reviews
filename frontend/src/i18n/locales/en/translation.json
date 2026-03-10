@@ -154,15 +154,109 @@
         "claims": {
             "title": "My Claims",
             "subtitle": "Track your claimed products, upload review proof, and monitor reimbursement status.",
-            "features_title": "Planned Features",
-            "feature_list": "Table / cards listing all claims with full status pipeline (Order Submitted → Review Pending → Review Submitted → Approved → Reimbursed)",
-            "feature_status_filter": "Status filter tabs or dropdown to narrow results",
-            "feature_upload_review": "Upload review proof (review URL or screenshot)",
-            "feature_timeline": "Claim detail expansion with timeline / activity log",
-            "feature_deadline": "Deadline countdown for review submission",
-            "feature_payout": "Reimbursement amount and payout status per claim",
-            "feature_amazon_link": "Direct link to the product on Amazon",
-            "feature_cancel": "Cancel claim action (if still in early stages)"
+            "claim_details": "Claim Details",
+            "claimed_on": "Claimed on {{date}}",
+            "progress": "Progress",
+            "search_placeholder": "Search by product, ASIN, or order ID...",
+            "date_range_placeholder": "Filter by date range",
+            "sort_placeholder": "Sort by",
+
+            "status": {
+                "order_submitted": "Order Submitted",
+                "review_pending": "Review Pending",
+                "under_review": "Under Review",
+                "approved": "Approved",
+                "reimbursed": "Reimbursed",
+                "rejected": "Rejected",
+                "timed_out": "Timed Out"
+            },
+            "step": {
+                "order_submitted": "Order Submitted",
+                "review_pending": "Review Pending",
+                "review_submitted": "Review Submitted",
+                "approved": "Approved",
+                "reimbursed": "Reimbursed"
+            },
+            "filter": {
+                "all": "All Claims",
+                "order_submitted": "Order Submitted",
+                "review_pending": "Review Pending",
+                "under_review": "Under Review",
+                "approved": "Approved",
+                "reimbursed": "Reimbursed",
+                "rejected": "Rejected"
+            },
+            "sort": {
+                "newest": "Newest First",
+                "oldest": "Oldest First",
+                "payout_high": "Payout: High to Low",
+                "payout_low": "Payout: Low to High",
+                "deadline": "Deadline (Soonest)"
+            },
+
+            "status_msg_order_submitted": "Your order is being verified",
+            "status_msg_review_pending": "Write your review and upload proof to get reimbursed",
+            "status_msg_review_submitted": "Your review is being verified",
+            "status_msg_approved": "Review approved! Payout is being processed",
+            "status_msg_reimbursed": "You've been reimbursed {{amount}}",
+            "status_msg_rejected": "Your claim was rejected",
+            "status_msg_timeout": "Review deadline has passed",
+
+            "deadline_label_expired": "Expired",
+            "deadline_due_today": "Due today",
+            "deadline_days_left": "{{count}} day left",
+            "deadline_days_left_plural": "{{count}} days left",
+            "deadline_expired": "Review deadline has expired",
+            "deadline_remaining": "Review deadline: {{date}}",
+
+            "your_review_label": "Your review",
+            "your_review": "Your Review",
+            "your_rating": "Your Rating",
+            "rating_out_of": "{{rating}} out of 5",
+            "rating_of_5": "{{rating}} of 5",
+            "no_review_text": "No review text.",
+            "submitted_on": "Submitted {{date}}",
+            "view_screenshot": "View Screenshot",
+            "review_text": "Review Text",
+            "review_text_placeholder": "Paste the full text of your Amazon review here...",
+            "review_screenshot": "Review Screenshot",
+            "amazon_review_url": "Amazon Review URL",
+            "review_submitted": "Review submitted successfully! It will be verified shortly.",
+            "review_submit_failed": "Failed to submit review",
+            "submitting_review": "Submitting Review...",
+            "submit_review": "Submit Review",
+            "submit_your_review": "Submit Your Review",
+            "upload_review": "Submit Review",
+            "upload_screenshot_error": "Please upload a review screenshot.",
+
+            "seller_guidelines": "Seller Guidelines",
+
+            "payout_processed": "Payout of {{amount}} has been processed",
+            "payout_pending": "Payout of {{amount}} is pending processing",
+            "payment_completed": "Payment completed",
+            "review_approved_note": "Your review has been approved",
+
+            "rejection_reason": "Rejection Reason",
+
+            "cancel_claim": "Cancel This Claim",
+            "cancel_confirm_title": "Cancel Claim?",
+            "cancel_confirm_desc": "Are you sure you want to cancel your claim for \"{{product}}\"? This action cannot be undone.",
+            "confirm_cancel": "Yes, Cancel Claim",
+            "claim_cancelled": "Claim cancelled successfully.",
+            "cancel_failed": "Failed to cancel claim",
+            "cancelling": "Cancelling...",
+
+            "no_claims": "No claims yet",
+            "no_claims_filter": "No claims match this filter",
+            "try_different_filter": "Try a different filter or search term.",
+            "browse_marketplace": "Browse the marketplace to find products and start earning reimbursements.",
+            "go_to_marketplace": "Browse Marketplace",
+
+            "validation": {
+                "select_rating": "Please select a rating",
+                "review_min_length": "Review must be at least 10 characters",
+                "screenshot_required": "Review screenshot is required"
+            }
         },
         "account": {
             "title": "Profile & Earnings",
@@ -356,7 +450,12 @@
         "actions": "Actions",
         "view": "View",
         "order_id": "Order ID",
-        "asin": "ASIN"
+        "asin": "ASIN",
+        "no_image": "No Img",
+        "view_details": "Details",
+        "keep": "Keep Claim",
+        "clear": "Clear",
+        "optional": "(optional)"
     },
     "status": {
         "pending": "Pending",

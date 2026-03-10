@@ -154,15 +154,109 @@
         "claims": {
             "title": "Mis Reclamos",
             "subtitle": "Rastrea tus productos reclamados, sube prueba de reseña y monitorea el estado de reembolso.",
-            "features_title": "Funciones Planificadas",
-            "feature_list": "Tabla / tarjetas con todos los reclamos con pipeline de estado (Pedido Enviado → Reseña Pendiente → Reseña Enviada → Aprobado → Reembolsado)",
-            "feature_status_filter": "Pestañas de filtro de estado o menú desplegable para reducir resultados",
-            "feature_upload_review": "Subir prueba de reseña (URL de reseña o captura de pantalla)",
-            "feature_timeline": "Expansión de detalle de reclamo con línea de tiempo / registro de actividad",
-            "feature_deadline": "Cuenta regresiva de fecha límite para envío de reseña",
-            "feature_payout": "Monto de reembolso y estado de pago por reclamo",
-            "feature_amazon_link": "Enlace directo al producto en Amazon",
-            "feature_cancel": "Acción de cancelar reclamo (si aún está en etapas tempranas)"
+            "claim_details": "Detalles del Reclamo",
+            "claimed_on": "Reclamado el {{date}}",
+            "progress": "Progreso",
+            "search_placeholder": "Buscar por producto, ASIN o ID de pedido...",
+            "date_range_placeholder": "Filtrar por rango de fechas",
+            "sort_placeholder": "Ordenar por",
+
+            "status": {
+                "order_submitted": "Pedido Enviado",
+                "review_pending": "Reseña Pendiente",
+                "under_review": "En Revisión",
+                "approved": "Aprobado",
+                "reimbursed": "Reembolsado",
+                "rejected": "Rechazado",
+                "timed_out": "Tiempo Agotado"
+            },
+            "step": {
+                "order_submitted": "Pedido Enviado",
+                "review_pending": "Reseña Pendiente",
+                "review_submitted": "Reseña Enviada",
+                "approved": "Aprobado",
+                "reimbursed": "Reembolsado"
+            },
+            "filter": {
+                "all": "Todos los Reclamos",
+                "order_submitted": "Pedido Enviado",
+                "review_pending": "Reseña Pendiente",
+                "under_review": "En Revisión",
+                "approved": "Aprobado",
+                "reimbursed": "Reembolsado",
+                "rejected": "Rechazado"
+            },
+            "sort": {
+                "newest": "Más Recientes",
+                "oldest": "Más Antiguos",
+                "payout_high": "Pago: Mayor a Menor",
+                "payout_low": "Pago: Menor a Mayor",
+                "deadline": "Fecha Límite (Más Próxima)"
+            },
+
+            "status_msg_order_submitted": "Tu pedido está siendo verificado",
+            "status_msg_review_pending": "Escribe tu reseña y sube la prueba para recibir el reembolso",
+            "status_msg_review_submitted": "Tu reseña está siendo verificada",
+            "status_msg_approved": "¡Reseña aprobada! El pago está siendo procesado",
+            "status_msg_reimbursed": "Has sido reembolsado {{amount}}",
+            "status_msg_rejected": "Tu reclamo fue rechazado",
+            "status_msg_timeout": "La fecha límite de la reseña ha pasado",
+
+            "deadline_label_expired": "Expirado",
+            "deadline_due_today": "Vence hoy",
+            "deadline_days_left": "{{count}} día restante",
+            "deadline_days_left_plural": "{{count}} días restantes",
+            "deadline_expired": "La fecha límite de la reseña ha expirado",
+            "deadline_remaining": "Fecha límite de reseña: {{date}}",
+
+            "your_review_label": "Tu reseña",
+            "your_review": "Tu Reseña",
+            "your_rating": "Tu Calificación",
+            "rating_out_of": "{{rating}} de 5",
+            "rating_of_5": "{{rating}} de 5",
+            "no_review_text": "Sin texto de reseña.",
+            "submitted_on": "Enviado el {{date}}",
+            "view_screenshot": "Ver Captura de Pantalla",
+            "review_text": "Texto de la Reseña",
+            "review_text_placeholder": "Pega el texto completo de tu reseña de Amazon aquí...",
+            "review_screenshot": "Captura de Pantalla de la Reseña",
+            "amazon_review_url": "URL de la Reseña de Amazon",
+            "review_submitted": "¡Reseña enviada exitosamente! Será verificada en breve.",
+            "review_submit_failed": "Error al enviar la reseña",
+            "submitting_review": "Enviando Reseña...",
+            "submit_review": "Enviar Reseña",
+            "submit_your_review": "Envía Tu Reseña",
+            "upload_review": "Enviar Reseña",
+            "upload_screenshot_error": "Por favor sube una captura de pantalla de la reseña.",
+
+            "seller_guidelines": "Pautas del Vendedor",
+
+            "payout_processed": "El pago de {{amount}} ha sido procesado",
+            "payout_pending": "El pago de {{amount}} está pendiente de procesamiento",
+            "payment_completed": "Pago completado",
+            "review_approved_note": "Tu reseña ha sido aprobada",
+
+            "rejection_reason": "Razón de Rechazo",
+
+            "cancel_claim": "Cancelar Este Reclamo",
+            "cancel_confirm_title": "¿Cancelar Reclamo?",
+            "cancel_confirm_desc": "¿Estás seguro de que deseas cancelar tu reclamo de \"{{product}}\"? Esta acción no se puede deshacer.",
+            "confirm_cancel": "Sí, Cancelar Reclamo",
+            "claim_cancelled": "Reclamo cancelado exitosamente.",
+            "cancel_failed": "Error al cancelar el reclamo",
+            "cancelling": "Cancelando...",
+
+            "no_claims": "Aún no hay reclamos",
+            "no_claims_filter": "Ningún reclamo coincide con este filtro",
+            "try_different_filter": "Intenta un filtro o término de búsqueda diferente.",
+            "browse_marketplace": "Explora el mercado para encontrar productos y comenzar a ganar reembolsos.",
+            "go_to_marketplace": "Explorar Mercado",
+
+            "validation": {
+                "select_rating": "Por favor selecciona una calificación",
+                "review_min_length": "La reseña debe tener al menos 10 caracteres",
+                "screenshot_required": "Se requiere captura de pantalla de la reseña"
+            }
         },
         "account": {
             "title": "Perfil y Ganancias",
@@ -356,7 +450,12 @@
         "actions": "Acciones",
         "view": "Ver",
         "order_id": "ID de Pedido",
-        "asin": "ASIN"
+        "asin": "ASIN",
+        "no_image": "Sin Img",
+        "view_details": "Detalles",
+        "keep": "Mantener Reclamo",
+        "clear": "Limpiar",
+        "optional": "(opcional)"
     },
     "status": {
         "pending": "Pendiente",

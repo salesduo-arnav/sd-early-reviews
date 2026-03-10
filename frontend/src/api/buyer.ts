@@ -65,6 +65,49 @@ export interface ClaimProductPayload {
     purchase_date: string;
 }
 
+export interface BuyerClaim {
+    id: string;
+    campaign_id: string;
+    amazon_order_id: string;
+    purchase_date: string;
+    order_status: string;
+    review_status: string;
+    payout_status: string;
+    pipeline_status: string;
+    expected_payout_amount: number;
+    review_deadline: string | null;
+    review_proof_url: string | null;
+    review_rating: number | null;
+    review_text: string | null;
+    amazon_review_id: string | null;
+    review_date: string | null;
+    rejection_reason: string | null;
+    order_proof_url: string | null;
+    created_at: string;
+    product_title: string;
+    product_image_url: string;
+    asin: string;
+    region: string;
+    guidelines: string | null;
+}
+
+export interface SubmitReviewPayload {
+    review_proof_url: string;
+    review_rating: number;
+    review_text: string;
+    amazon_review_id?: string;
+}
+
+export interface ClaimsQueryParams {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    sort?: 'newest' | 'oldest' | 'payout_high' | 'payout_low' | 'deadline';
+}
+
 export interface BuyerProfile {
     id: string;
     email: string;
@@ -172,15 +215,45 @@ export const buyerApi = {
         return handleResponse(response);
     },
 
-    /** Get all claims for the current buyer */
-    // TODO: implement when buyer claims page is built
-    getMyClaims: async (params?: Record<string, unknown>) => {
-        const qs = buildQueryString(params ?? {});
+    /** Get all claims for the current buyer with pagination and filtering */
+    getMyClaims: async (params: ClaimsQueryParams = {}): Promise<PaginatedResponse<BuyerClaim>> => {
+        const qs = buildQueryString(params as Record<string, unknown>);
         const response = await fetch(`${API_BASE_URL}/buyer/claims${qs}`, {
             method: 'GET',
             headers: getHeaders(),
         });
-        return handleResponse<{ claims: ClaimData[]; total: number }>(response);
+        return handleResponse(response);
+    },
+
+    /** Get full details for a single claim */
+    getClaimDetail: async (claimId: string): Promise<BuyerClaim> => {
+        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        return handleResponse(response);
+    },
+
+    /** Submit review proof for a claim */
+    submitReviewProof: async (
+        claimId: string,
+        payload: SubmitReviewPayload,
+    ): Promise<{ message: string; claim: BuyerClaim }> => {
+        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}/review`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+        return handleResponse(response);
+    },
+
+    /** Cancel a claim (only if order is still pending verification) */
+    cancelClaim: async (claimId: string): Promise<{ message: string }> => {
+        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}`, {
+            method: 'DELETE',
+            headers: getHeaders(),
+        });
+        return handleResponse(response);
     },
 
     /** Get the buyer's account/profile details */
