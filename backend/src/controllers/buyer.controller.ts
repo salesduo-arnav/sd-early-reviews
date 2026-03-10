@@ -4,6 +4,7 @@ import { OrderClaim, OrderStatus, ReviewStatus, PayoutStatus } from '../models/O
 import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { SellerProfile } from '../models/SellerProfile';
+import { User } from '../models/User';
 import { logger } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { notificationService } from '../services/notification.service';
@@ -370,5 +371,157 @@ export const cancelClaim = async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(`Error cancelling claim: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while cancelling claim' });
+    }
+};
+
+// ─── Profile & Earnings ──────────────────────────────────────────────────────
+
+/**
+ * GET /api/buyer/profile
+ * Return profile data with computed health stats, bank details, and preferences.
+ */
+export const getAccountProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
+
+        const user = await User.findByPk(userId, { attributes: ['email'] });
+
+        // Compute claims_completed (payout processed)
+        const claimsCompleted = await OrderClaim.count({
+            where: { buyer_id: profile.id, payout_status: PayoutStatus.PROCESSED },
+        });
+
+        // Compute approval_rate from finalized reviews (approved or rejected)
+        const [approvedCount, rejectedCount] = await Promise.all([
+            OrderClaim.count({
+                where: { buyer_id: profile.id, review_status: ReviewStatus.APPROVED },
+            }),
+            OrderClaim.count({
+                where: { buyer_id: profile.id, review_status: ReviewStatus.REJECTED },
+            }),
+        ]);
+        const totalDecided = approvedCount + rejectedCount;
+        const approvalRate = totalDecided > 0 ? Math.round((approvedCount / totalDecided) * 100) : null;
+
+        return res.status(200).json({
+            id: profile.id,
+            email: user?.email ?? '',
+            amazon_profile_url: profile.amazon_profile_url,
+            on_time_rate: profile.on_time_submission_rate,
+            total_earnings: parseFloat(String(profile.total_earnings)),
+            claims_completed: claimsCompleted,
+            approval_rate: approvalRate,
+            bank_details: {
+                account_holder: profile.bank_account_name || null,
+                routing_number: profile.bank_routing_number || null,
+                account_last4: profile.bank_account_last4 || null,
+            },
+            email_notifications_enabled: profile.email_notifications_enabled,
+        });
+    } catch (error) {
+        logger.error(`Error fetching account profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error while fetching profile' });
+    }
+};
+
+/**
+ * PUT /api/buyer/bank-details
+ * Add or update bank account details. Only the last 4 digits of account_number are stored.
+ */
+export const updateBankDetails = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
+
+        const { account_holder, routing_number, account_number } = req.body;
+
+        // Validate account_holder
+        if (!account_holder || typeof account_holder !== 'string' || account_holder.trim().length < 2 || account_holder.trim().length > 100) {
+            return res.status(400).json({ message: 'account_holder must be between 2 and 100 characters' });
+        }
+
+        // Validate routing_number (exactly 9 digits)
+        if (!routing_number || !/^\d{9}$/.test(routing_number)) {
+            return res.status(400).json({ message: 'routing_number must be exactly 9 digits' });
+        }
+
+        // Validate account_number (8-17 digits)
+        if (!account_number || !/^\d{8,17}$/.test(account_number)) {
+            return res.status(400).json({ message: 'account_number must be between 8 and 17 digits' });
+        }
+
+        await profile.update({
+            bank_account_name: account_holder.trim(),
+            bank_routing_number: routing_number,
+            bank_account_last4: account_number.slice(-4),
+        });
+
+        return res.status(200).json({
+            account_holder: profile.bank_account_name,
+            routing_number: profile.bank_routing_number,
+            account_last4: profile.bank_account_last4,
+        });
+    } catch (error) {
+        logger.error(`Error updating bank details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error while updating bank details' });
+    }
+};
+
+/**
+ * DELETE /api/buyer/bank-details
+ * Remove saved bank account details.
+ */
+export const removeBankDetails = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
+
+        await profile.update({
+            bank_account_name: null,
+            bank_routing_number: null,
+            bank_account_last4: null,
+        });
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        logger.error(`Error removing bank details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error while removing bank details' });
+    }
+};
+
+/**
+ * PATCH /api/buyer/notifications
+ * Toggle email notification preference.
+ */
+export const updateNotificationPreferences = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
+
+        const { email_notifications_enabled } = req.body;
+
+        if (typeof email_notifications_enabled !== 'boolean') {
+            return res.status(400).json({ message: 'email_notifications_enabled must be a boolean' });
+        }
+
+        await profile.update({ email_notifications_enabled });
+
+        return res.status(200).json({ email_notifications_enabled: profile.email_notifications_enabled });
+    } catch (error) {
+        logger.error(`Error updating notification preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error while updating notification preferences' });
     }
 };

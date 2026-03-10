@@ -1,40 +1,77 @@
-import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ShoppingBag, ClipboardCheck, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { buyerApi } from '@/api/buyer';
+import type { BuyerProfile, BankDetailsPayload } from '@/api/buyer';
+import ProfileStatsSection from '@/components/buyer/account/ProfileStatsSection';
+import BankDetailsSection from '@/components/buyer/account/BankDetailsSection';
+import NotificationPreferencesSection from '@/components/buyer/account/NotificationPreferencesSection';
 
 export default function AccountPage() {
     const { t } = useTranslation();
+    const [profile, setProfile] = useState<BuyerProfile | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const statCards = [
-        {
-            icon: ShoppingBag,
-            title: t('buyer.account.active_claims', 'Active Claims'),
-            desc: t('buyer.account.active_claims_desc', 'Currently in progress'),
-            placeholder: '—',
-        },
-        {
-            icon: ClipboardCheck,
-            title: t('buyer.account.reviews_submitted', 'Reviews Submitted'),
-            desc: t('buyer.account.reviews_submitted_desc', 'Total lifetime'),
-            placeholder: '—',
-        },
-        {
-            icon: DollarSign,
-            title: t('buyer.account.total_earnings', 'Total Earnings'),
-            desc: t('buyer.account.total_earnings_desc', 'Reimbursements received'),
-            placeholder: '—',
-        },
-        {
-            icon: TrendingUp,
-            title: t('buyer.account.approval_rate', 'Approval Rate'),
-            desc: t('buyer.account.approval_rate_desc', 'Reviews approved'),
-            placeholder: '—',
-        },
-    ];
+    const fetchProfile = useCallback(async () => {
+        try {
+            const data = await buyerApi.getAccountProfile();
+            setProfile(data);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to load profile');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
+
+    const handleBankUpdate = async (payload: BankDetailsPayload) => {
+        try {
+            await buyerApi.updateBankDetails(payload);
+            toast.success(t('buyer.account.bank.saved_success', 'Bank details saved'));
+            await fetchProfile();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t('buyer.account.bank.save_error', 'Failed to update bank details'));
+        }
+    };
+
+    const handleBankRemove = async () => {
+        try {
+            await buyerApi.removeBankDetails();
+            toast.success(t('buyer.account.bank.removed_success', 'Bank details removed'));
+            await fetchProfile();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t('buyer.account.bank.remove_error', 'Failed to remove bank details'));
+        }
+    };
+
+    const handleNotificationToggle = async (enabled: boolean) => {
+        // Optimistic update
+        const previous = profile?.email_notifications_enabled;
+        setProfile((prev) => prev ? { ...prev, email_notifications_enabled: enabled } : prev);
+
+        try {
+            await buyerApi.updateNotificationPreferences(enabled);
+            toast.success(enabled
+                ? t('buyer.account.notifications.enabled_success', 'Email notifications enabled')
+                : t('buyer.account.notifications.disabled_success', 'Email notifications disabled'));
+        } catch (err) {
+            // Rollback
+            setProfile((prev) => prev ? { ...prev, email_notifications_enabled: previous ?? true } : prev);
+            toast.error(err instanceof Error ? err.message : t('buyer.account.notifications.toggle_error', 'Failed to update preference'));
+        }
+    };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">
                     {t('buyer.account.title', 'Profile & Earnings')}
@@ -44,42 +81,66 @@ export default function AccountPage() {
                 </p>
             </div>
 
-            {/* Quick stat cards — values will be wired to API later */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {statCards.map((card) => (
-                    <Card key={card.title} className="shadow-sm border-border">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {card.title}
-                            </CardTitle>
-                            <card.icon className="h-4 w-4 text-muted-foreground" />
+            {/* Profile Health Stats */}
+            <ProfileStatsSection profile={profile} loading={loading} />
+
+            {/* 2-column layout: Left (Amazon + Notifications) | Right (Bank Details) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Left column */}
+                <div className="space-y-6">
+                    {/* Amazon Profile URL */}
+                    <Card className="shadow-sm border-border">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-lg bg-brand-primary/10">
+                                    <LinkIcon className="h-4 w-4 text-brand-primary" />
+                                </div>
+                                <CardTitle className="text-lg">{t('buyer.account.amazon_profile.title', 'Amazon Profile')}</CardTitle>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{card.placeholder}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
+                            {loading ? (
+                                <Skeleton className="h-10 w-full" />
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={profile?.amazon_profile_url ?? ''}
+                                        readOnly
+                                        disabled
+                                        className="flex-1"
+                                    />
+                                    {profile?.amazon_profile_url && (
+                                        <a
+                                            href={profile.amazon_profile_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Button variant="outline" size="icon">
+                                                <ExternalLink className="h-4 w-4" />
+                                            </Button>
+                                        </a>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
-                ))}
-            </div>
 
-            {/* Planned features */}
-            <Card className="shadow-sm border-border">
-                <CardHeader>
-                    <CardTitle className="text-lg">
-                        {t('buyer.account.features_title', 'Planned Features')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                        <li>{t('buyer.account.feature_health', 'Profile health stats: on-time submission rate, total earnings, claims completed, approval rate')}</li>
-                        <li>{t('buyer.account.feature_amazon_url', 'Read-only Amazon Profile URL display')}</li>
-                        <li>{t('buyer.account.feature_bank', 'Bank details management: add, edit, or remove bank account for reimbursements')}</li>
-                        <li>{t('buyer.account.feature_notifications', 'Notification preferences (email toggle)')}</li>
-                        <li>{t('buyer.account.feature_tier', 'Buyer tier / reputation badge display')}</li>
-                        <li>{t('buyer.account.feature_activity', 'Account activity log (last login, recent actions)')}</li>
-                    </ul>
-                </CardContent>
-            </Card>
+                    {/* Notification Preferences */}
+                    <NotificationPreferencesSection
+                        enabled={profile?.email_notifications_enabled ?? true}
+                        loading={loading}
+                        onToggle={handleNotificationToggle}
+                    />
+                </div>
+
+                {/* Right column — Bank Details */}
+                <BankDetailsSection
+                    bankDetails={profile?.bank_details}
+                    loading={loading}
+                    onUpdate={handleBankUpdate}
+                    onRemove={handleBankRemove}
+                />
+            </div>
         </div>
     );
 }

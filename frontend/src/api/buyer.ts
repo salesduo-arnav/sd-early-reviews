@@ -115,14 +115,25 @@ export interface BuyerProfile {
     on_time_rate: number;
     total_earnings: number;
     claims_completed: number;
-    approval_rate: number;
+    approval_rate: number | null;
+    bank_details: {
+        account_holder: string | null;
+        routing_number: string | null;
+        account_last4: string | null;
+    };
+    email_notifications_enabled: boolean;
 }
 
-export interface BankDetails {
-    id?: string;
+export interface BankDetailsPayload {
     account_holder: string;
     routing_number: string;
     account_number: string;
+}
+
+export interface BankDetailsResponse {
+    account_holder: string;
+    routing_number: string;
+    account_last4: string;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -257,7 +268,6 @@ export const buyerApi = {
     },
 
     /** Get the buyer's account/profile details */
-    // TODO: implement when buyer account page is built
     getAccountProfile: async () => {
         const response = await fetch(`${API_BASE_URL}/buyer/profile`, {
             method: 'GET',
@@ -267,23 +277,31 @@ export const buyerApi = {
     },
 
     /** Add or update bank details */
-    // TODO: implement when buyer account page is built
-    updateBankDetails: async (details: BankDetails) => {
+    updateBankDetails: async (details: BankDetailsPayload) => {
         const response = await fetch(`${API_BASE_URL}/buyer/bank-details`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(details),
         });
-        return handleResponse<BankDetails>(response);
+        return handleResponse<BankDetailsResponse>(response);
     },
 
     /** Remove bank details */
-    // TODO: implement when buyer account page is built
     removeBankDetails: async () => {
         const response = await fetch(`${API_BASE_URL}/buyer/bank-details`, {
             method: 'DELETE',
             headers: getHeaders(),
         });
         return handleResponse<{ success: boolean }>(response);
+    },
+
+    /** Update email notification preference */
+    updateNotificationPreferences: async (enabled: boolean) => {
+        const response = await fetch(`${API_BASE_URL}/buyer/notifications`, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            body: JSON.stringify({ email_notifications_enabled: enabled }),
+        });
+        return handleResponse<{ email_notifications_enabled: boolean }>(response);
     },
 };

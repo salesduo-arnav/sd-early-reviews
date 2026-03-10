@@ -6,30 +6,32 @@ interface BuyerProfileAttributes {
     user_id: string;
     amazon_profile_url: string;
     region: string;
-    stripe_connect_account_id?: string;
-    bank_account_name?: string;
-    bank_routing_number?: string;
-    bank_account_last4?: string;
+    stripe_connect_account_id?: string | null;
+    bank_account_name?: string | null;
+    bank_routing_number?: string | null;
+    bank_account_last4?: string | null;
     on_time_submission_rate: number;
     is_blacklisted: boolean;
     total_earnings: number;
+    email_notifications_enabled: boolean;
     deleted_at?: Date;
 }
 
-type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'total_earnings' | 'stripe_connect_account_id' | 'bank_account_name' | 'bank_routing_number' | 'bank_account_last4' | 'deleted_at'>;
+type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'total_earnings' | 'email_notifications_enabled' | 'stripe_connect_account_id' | 'bank_account_name' | 'bank_routing_number' | 'bank_account_last4' | 'deleted_at'>;
 
 export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCreationAttributes> implements BuyerProfileAttributes {
     public id!: string;
     public user_id!: string;
     public amazon_profile_url!: string;
     public region!: string;
-    public stripe_connect_account_id!: string;
-    public bank_account_name!: string;
-    public bank_routing_number!: string;
-    public bank_account_last4!: string;
+    public stripe_connect_account_id!: string | null;
+    public bank_account_name!: string | null;
+    public bank_routing_number!: string | null;
+    public bank_account_last4!: string | null;
     public on_time_submission_rate!: number;
     public is_blacklisted!: boolean;
     public total_earnings!: number;
+    public email_notifications_enabled!: boolean;
     public deleted_at!: Date;
 }
 
@@ -84,6 +86,11 @@ BuyerProfile.init(
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0.0,
             allowNull: false
+        },
+        email_notifications_enabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: false,
         },
         deleted_at: {
             type: DataTypes.DATE,

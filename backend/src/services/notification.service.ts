@@ -1,5 +1,6 @@
 import Notification, { NotificationCategory, NotificationPriority } from '../models/Notification';
 import { User } from '../models/User';
+import { BuyerProfile } from '../models/BuyerProfile';
 import { NOTIFICATION_CATEGORY_CONFIG } from '../utils/notificationConfig';
 import { mailService } from './mail.service';
 import { getNotificationEmail } from '../utils/mailTemplates';
@@ -52,10 +53,16 @@ class NotificationService {
         });
 
         // Send email if needed (async, non-blocking)
+        // Respects buyer email_notifications_enabled preference; sellers/admins are unaffected.
         if (config.sendEmail && (priority === NotificationPriority.HIGH || priority === NotificationPriority.CRITICAL)) {
-            this.sendNotificationEmail(userId, title, overrides.message, actionLink).catch((err) => {
-                logger.error('Failed to send notification email', { userId, category, error: err });
-            });
+            const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId } });
+            const emailOptedOut = buyerProfile && buyerProfile.email_notifications_enabled === false;
+
+            if (!emailOptedOut) {
+                this.sendNotificationEmail(userId, title, overrides.message, actionLink).catch((err) => {
+                    logger.error('Failed to send notification email', { userId, category, error: err });
+                });
+            }
         }
 
         return notification;

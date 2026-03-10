@@ -261,21 +261,63 @@
         "account": {
             "title": "Profile & Earnings",
             "subtitle": "Track your performance, manage bank details, and view your earnings.",
-            "active_claims": "Active Claims",
-            "active_claims_desc": "Currently in progress",
-            "reviews_submitted": "Reviews Submitted",
-            "reviews_submitted_desc": "Total lifetime",
-            "total_earnings": "Total Earnings",
-            "total_earnings_desc": "Reimbursements received",
-            "approval_rate": "Approval Rate",
-            "approval_rate_desc": "Reviews approved",
-            "features_title": "Planned Features",
-            "feature_health": "Profile health stats: on-time submission rate, total earnings, claims completed, approval rate",
-            "feature_amazon_url": "Read-only Amazon Profile URL display",
-            "feature_bank": "Bank details management: add, edit, or remove bank account for reimbursements",
-            "feature_notifications": "Notification preferences (email toggle)",
-            "feature_tier": "Buyer tier / reputation badge display",
-            "feature_activity": "Account activity log (last login, recent actions)"
+            "stats": {
+                "on_time_rate": "On-time Rate",
+                "on_time_rate_desc": "Submission punctuality",
+                "total_earnings": "Total Earnings",
+                "total_earnings_desc": "Reimbursements received",
+                "claims_completed": "Claims Completed",
+                "claims_completed_desc": "Payouts processed",
+                "approval_rate": "Approval Rate",
+                "approval_rate_desc": "Reviews approved",
+                "na": "N/A"
+            },
+            "amazon_profile": {
+                "title": "Amazon Profile"
+            },
+            "bank": {
+                "title": "Bank Details",
+                "account_holder": "Account Holder",
+                "account_holder_name": "Account Holder Name",
+                "routing_number": "Routing Number",
+                "account_number": "Account Number",
+                "confirm_account_number": "Confirm Account Number",
+                "edit": "Edit",
+                "remove": "Remove",
+                "add": "Add Bank Details",
+                "empty_title": "No bank details on file. Add your bank account to receive reimbursements.",
+                "dialog_add_title": "Add Bank Details",
+                "dialog_edit_title": "Edit Bank Details",
+                "dialog_description": "Your full account number is never stored. Only the last 4 digits are saved for reference.",
+                "placeholder_name": "John Doe",
+                "placeholder_routing": "123456789",
+                "placeholder_account": "Enter account number",
+                "placeholder_confirm": "Re-enter account number",
+                "save": "Save",
+                "update": "Update",
+                "cancel": "Cancel",
+                "remove_title": "Remove Bank Details?",
+                "remove_description": "This will remove your saved bank information. You can add new details later.",
+                "saved_success": "Bank details saved",
+                "removed_success": "Bank details removed",
+                "save_error": "Failed to update bank details",
+                "remove_error": "Failed to remove bank details",
+                "validation": {
+                    "name_min": "Name must be at least 2 characters",
+                    "name_max": "Name must be at most 100 characters",
+                    "routing_format": "Routing number must be exactly 9 digits",
+                    "account_format": "Account number must be 8-17 digits",
+                    "account_mismatch": "Account numbers must match"
+                }
+            },
+            "notifications": {
+                "title": "Notification Preferences",
+                "email_label": "Email Notifications",
+                "email_description": "Receive email alerts for order updates, review approvals, and payouts",
+                "enabled_success": "Email notifications enabled",
+                "disabled_success": "Email notifications disabled",
+                "toggle_error": "Failed to update preference"
+            }
         }
     },
     "seller": {

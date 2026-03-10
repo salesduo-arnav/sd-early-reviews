@@ -261,21 +261,63 @@
         "account": {
             "title": "Perfil y Ganancias",
             "subtitle": "Rastrea tu rendimiento, administra datos bancarios y consulta tus ganancias.",
-            "active_claims": "Reclamos Activos",
-            "active_claims_desc": "Actualmente en progreso",
-            "reviews_submitted": "Reseñas Enviadas",
-            "reviews_submitted_desc": "Total de por vida",
-            "total_earnings": "Ganancias Totales",
-            "total_earnings_desc": "Reembolsos recibidos",
-            "approval_rate": "Tasa de Aprobación",
-            "approval_rate_desc": "Reseñas aprobadas",
-            "features_title": "Funciones Planificadas",
-            "feature_health": "Estadísticas de salud del perfil: tasa de envío a tiempo, ganancias totales, reclamos completados, tasa de aprobación",
-            "feature_amazon_url": "Visualización de URL de perfil de Amazon (solo lectura)",
-            "feature_bank": "Gestión de datos bancarios: agregar, editar o eliminar cuenta bancaria para reembolsos",
-            "feature_notifications": "Preferencias de notificación (activar/desactivar correo electrónico)",
-            "feature_tier": "Insignia de nivel / reputación del comprador",
-            "feature_activity": "Registro de actividad de la cuenta (último inicio de sesión, acciones recientes)"
+            "stats": {
+                "on_time_rate": "Tasa de Puntualidad",
+                "on_time_rate_desc": "Puntualidad de envío",
+                "total_earnings": "Ganancias Totales",
+                "total_earnings_desc": "Reembolsos recibidos",
+                "claims_completed": "Reclamos Completados",
+                "claims_completed_desc": "Pagos procesados",
+                "approval_rate": "Tasa de Aprobación",
+                "approval_rate_desc": "Reseñas aprobadas",
+                "na": "N/D"
+            },
+            "amazon_profile": {
+                "title": "Perfil de Amazon"
+            },
+            "bank": {
+                "title": "Datos Bancarios",
+                "account_holder": "Titular de la Cuenta",
+                "account_holder_name": "Nombre del Titular",
+                "routing_number": "Número de Ruta",
+                "account_number": "Número de Cuenta",
+                "confirm_account_number": "Confirmar Número de Cuenta",
+                "edit": "Editar",
+                "remove": "Eliminar",
+                "add": "Agregar Datos Bancarios",
+                "empty_title": "No hay datos bancarios registrados. Agrega tu cuenta bancaria para recibir reembolsos.",
+                "dialog_add_title": "Agregar Datos Bancarios",
+                "dialog_edit_title": "Editar Datos Bancarios",
+                "dialog_description": "Tu número de cuenta completo nunca se almacena. Solo se guardan los últimos 4 dígitos como referencia.",
+                "placeholder_name": "Juan Pérez",
+                "placeholder_routing": "123456789",
+                "placeholder_account": "Ingresa el número de cuenta",
+                "placeholder_confirm": "Reingresa el número de cuenta",
+                "save": "Guardar",
+                "update": "Actualizar",
+                "cancel": "Cancelar",
+                "remove_title": "¿Eliminar Datos Bancarios?",
+                "remove_description": "Esto eliminará tu información bancaria guardada. Puedes agregar nuevos datos después.",
+                "saved_success": "Datos bancarios guardados",
+                "removed_success": "Datos bancarios eliminados",
+                "save_error": "Error al actualizar datos bancarios",
+                "remove_error": "Error al eliminar datos bancarios",
+                "validation": {
+                    "name_min": "El nombre debe tener al menos 2 caracteres",
+                    "name_max": "El nombre debe tener como máximo 100 caracteres",
+                    "routing_format": "El número de ruta debe ser exactamente 9 dígitos",
+                    "account_format": "El número de cuenta debe tener entre 8 y 17 dígitos",
+                    "account_mismatch": "Los números de cuenta deben coincidir"
+                }
+            },
+            "notifications": {
+                "title": "Preferencias de Notificación",
+                "email_label": "Notificaciones por Correo",
+                "email_description": "Recibe alertas por correo sobre actualizaciones de pedidos, aprobaciones de reseñas y pagos",
+                "enabled_success": "Notificaciones por correo activadas",
+                "disabled_success": "Notificaciones por correo desactivadas",
+                "toggle_error": "Error al actualizar preferencia"
+            }
         }
     },
     "seller": {

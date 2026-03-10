@@ -123,6 +123,11 @@ module.exports = {
         defaultValue: 0.0,
         allowNull: false,
       },
+      email_notifications_enabled: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+        allowNull: false,
+      },
       deleted_at: {
         type: Sequelize.DATE,
         allowNull: true,
