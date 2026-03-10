@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { fetchAsinDetailsRealTime } from '../services/amazon.service';
 import { Campaign, CampaignStatus } from '../models/Campaign';
+import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
 import { SellerProfile } from '../models/SellerProfile';
 import { logger } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
@@ -96,7 +97,16 @@ export const getCampaigns = async (req: Request, res: Response) => {
             offset: pagination.offset,
         });
 
-        return res.status(200).json(buildPaginatedResponse(rows, count, pagination));
+        // Dynamically compute claimed_count (approved reviews) for each campaign
+        const campaignsWithCounts = await Promise.all(rows.map(async (campaign) => {
+            const claimedCount = await OrderClaim.count({
+                where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
+            });
+            const json = campaign.toJSON();
+            return { ...json, claimed_count: claimedCount };
+        }));
+
+        return res.status(200).json(buildPaginatedResponse(campaignsWithCounts, count, pagination));
     } catch (error) {
         logger.error(`Error fetching campaigns: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaigns' });
@@ -126,7 +136,13 @@ export const getCampaign = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Campaign not found' });
         }
 
-        return res.status(200).json(campaign);
+        // Dynamically compute claimed_count (approved reviews)
+        const claimedCount = await OrderClaim.count({
+            where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
+        });
+        const json = campaign.toJSON();
+
+        return res.status(200).json({ ...json, claimed_count: claimedCount });
     } catch (error) {
         logger.error(`Error fetching campaign details: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaign details' });
