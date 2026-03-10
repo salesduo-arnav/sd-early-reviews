@@ -218,11 +218,6 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
-      claimed_count: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0,
-        allowNull: false,
-      },
       reimbursement_percent: {
         type: Sequelize.FLOAT,
         allowNull: false,

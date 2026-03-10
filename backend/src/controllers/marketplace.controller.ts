@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Op, WhereOptions, Order } from 'sequelize';
+import { Op, WhereOptions, Order, literal } from 'sequelize';
 import { Campaign, CampaignStatus } from '../models/Campaign';
 import { SellerProfile } from '../models/SellerProfile';
 import { OrderClaim } from '../models/OrderClaim';
@@ -74,7 +74,7 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
         if (sort === 'reimbursement') {
             order = [['reimbursement_percent', 'DESC']];
         } else if (sort === 'popular') {
-            order = [['claimed_count', 'DESC']];
+            order = [[literal('(SELECT COUNT(*) FROM order_claims WHERE order_claims.campaign_id = "Campaign".id AND order_claims.deleted_at IS NULL)'), 'DESC']];
         } else if (sort === 'price_low') {
             order = [['product_price', 'ASC']];
         } else if (sort === 'price_high') {
@@ -340,9 +340,6 @@ export const claimProduct = async (req: Request, res: Response) => {
             expected_payout_amount: expectedPayout,
             review_deadline: reviewDeadline,
         });
-
-        // Note: claimed_count on Campaign tracks completed reviews (incremented when review is approved).
-        // Slot availability is derived from OrderClaim count above.
 
         // ── Notifications (non-blocking) ──
 

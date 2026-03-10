@@ -20,7 +20,6 @@ interface CampaignAttributes {
     product_rating?: number;
     product_rating_count?: number;
     target_reviews: number;
-    claimed_count: number;
     reimbursement_percent: number;
     guidelines?: string;
     status: CampaignStatus;
@@ -29,7 +28,7 @@ interface CampaignAttributes {
     deleted_at?: Date;
 }
 
-type CampaignCreationAttributes = Optional<CampaignAttributes, 'id' | 'status' | 'claimed_count' | 'product_description' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'>;
+type CampaignCreationAttributes = Optional<CampaignAttributes, 'id' | 'status' | 'product_description' | 'created_at' | 'guidelines' | 'stripe_payment_intent_id'>;
 
 export class Campaign extends Model<CampaignAttributes, CampaignCreationAttributes> implements CampaignAttributes {
     public id!: string;
@@ -44,7 +43,6 @@ export class Campaign extends Model<CampaignAttributes, CampaignCreationAttribut
     public product_rating!: number;
     public product_rating_count!: number;
     public target_reviews!: number;
-    public claimed_count!: number;
     public reimbursement_percent!: number;
     public guidelines!: string;
     public status!: CampaignStatus;
@@ -102,11 +100,6 @@ Campaign.init(
         },
         target_reviews: {
             type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        claimed_count: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
             allowNull: false,
         },
         reimbursement_percent: {
