@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Star, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ReviewDetailsModal } from './ReviewDetailsModal';
+import { formatPrice } from '@/lib/regions';
 
 export function ReviewsTable() {
     const { t } = useTranslation();
@@ -145,9 +146,10 @@ export function ReviewsTable() {
             header: () => <DataTableStaticHeader title={t('common.payout', 'Payout')} />,
             cell: ({ row }) => {
                 const amount = row.getValue('expected_payout_amount') as number;
+                const region = (row.original as SellerReview).region || 'com';
                 return (
                     <div className="text-sm font-semibold text-foreground/90 whitespace-nowrap">
-                        ${Number(amount ?? 0).toFixed(2)}
+                        {formatPrice(Number(amount ?? 0), region)}
                     </div>
                 );
             }

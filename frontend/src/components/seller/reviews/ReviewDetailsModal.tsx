@@ -12,6 +12,7 @@ import { SellerReview } from '@/api/dashboard/seller';
 import { format } from 'date-fns';
 import { Star, ExternalLink, Calendar, Receipt, AlertCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { formatPrice } from '@/lib/regions';
 
 interface ReviewDetailsModalProps {
     review: SellerReview | null;
@@ -74,7 +75,7 @@ export function ReviewDetailsModal({ review, open, onOpenChange }: ReviewDetails
                             <div className="flex flex-col justify-center">
                                 <span className="text-xs text-muted-foreground uppercase font-semibold">ASIN</span>
                                 <a
-                                    href={`https://amazon.com/dp/${review.asin}`}
+                                    href={`https://www.amazon.${review.region || 'com'}/dp/${review.asin}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="font-medium text-brand-primary hover:underline flex items-center gap-1"
@@ -97,7 +98,7 @@ export function ReviewDetailsModal({ review, open, onOpenChange }: ReviewDetails
                                         {t('common.payout', 'Payout')}
                                     </span>
                                     <div className="font-medium text-sm mt-0.5 text-green-700 bg-green-50 w-fit px-2 py-0.5 rounded border border-green-200">
-                                        ${Number(review.expected_payout_amount).toFixed(2)}
+                                        {formatPrice(Number(review.expected_payout_amount), review.region || 'com')}
                                     </div>
                                 </div>
                             </div>

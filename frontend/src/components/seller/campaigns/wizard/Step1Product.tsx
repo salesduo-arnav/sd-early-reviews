@@ -49,7 +49,9 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
             const response = await campaignsApi.lookupAsin(data.asin, data.region);
 
             const priceString = response.product_price || '0';
-            const price = parseFloat(priceString.replace(/[^0-9.]/g, '')) || 0;
+            // Strip currency symbols; handle comma as decimal separator (e.g. "€29,99")
+            const normalized = priceString.replace(/[^0-9.,]/g, '').replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
+            const price = parseFloat(normalized) || 0;
 
             updateData({
                 product_title: response.product_title,

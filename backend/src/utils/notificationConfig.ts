@@ -73,9 +73,9 @@ export const NOTIFICATION_CATEGORY_CONFIG: Record<NotificationCategory, Category
     },
     [NotificationCategory.NEW_ORDER_CLAIM]: {
         defaultTitle: 'New Order Claim',
-        defaultPriority: NotificationPriority.MEDIUM,
+        defaultPriority: NotificationPriority.HIGH,
         actionRoute: '/seller/claims',
-        sendEmail: false,
+        sendEmail: true,
     },
     [NotificationCategory.REVIEW_SUBMITTED]: {
         defaultTitle: 'Review Submitted',

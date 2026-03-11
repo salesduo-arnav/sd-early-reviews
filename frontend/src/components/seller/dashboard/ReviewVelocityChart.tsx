@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { dashboardApi, ReviewVelocity } from '@/api/dashboard/seller';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { subDays, startOfDay } from 'date-fns';
+import { subDays, format } from 'date-fns';
 
 export function ReviewVelocityChart() {
     const { t } = useTranslation();
@@ -17,8 +17,8 @@ export function ReviewVelocityChart() {
         const fetchVelocity = async () => {
             setLoading(true);
             try {
-                const endDate = new Date().toISOString();
-                const startDate = startOfDay(subDays(new Date(), parseInt(timeRange) - 1)).toISOString();
+                const endDate = format(new Date(), 'yyyy-MM-dd');
+                const startDate = format(subDays(new Date(), parseInt(timeRange) - 1), 'yyyy-MM-dd');
                 const velocityData = await dashboardApi.getSellerVelocity(startDate, endDate);
 
                 const formattedData = velocityData.map(item => {

@@ -3,11 +3,43 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { campaignsApi, Campaign } from '@/api/campaigns';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, PauseCircle, PlayCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Loader2, PauseCircle, PlayCircle, ExternalLink, Megaphone, ShoppingCart, Star, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formatPrice } from '@/lib/regions';
+
+const CAMPAIGN_STEPS = [
+    {
+        icon: Megaphone,
+        titleKey: 'seller.campaigns.detail.step_1_title',
+        titleFallback: 'Campaign Published',
+        descKey: 'seller.campaigns.detail.step_1_desc',
+        descFallback: 'Your campaign goes live on the marketplace for verified buyers to discover.',
+    },
+    {
+        icon: ShoppingCart,
+        titleKey: 'seller.campaigns.detail.step_2_title',
+        titleFallback: 'Buyers Purchase & Claim',
+        descKey: 'seller.campaigns.detail.step_2_desc',
+        descFallback: 'Buyers purchase your product on Amazon and submit their order proof for verification.',
+    },
+    {
+        icon: Star,
+        titleKey: 'seller.campaigns.detail.step_3_title',
+        titleFallback: 'Reviews Submitted',
+        descKey: 'seller.campaigns.detail.step_3_desc',
+        descFallback: 'After order verification, buyers write honest reviews on Amazon within 14 days.',
+    },
+    {
+        icon: CheckCircle2,
+        titleKey: 'seller.campaigns.detail.step_4_title',
+        titleFallback: 'Verified & Reimbursed',
+        descKey: 'seller.campaigns.detail.step_4_desc',
+        descFallback: 'Our team verifies each review. Once approved, reimbursement is sent to the buyer automatically.',
+    },
+];
 
 export default function CampaignDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -107,6 +139,39 @@ export default function CampaignDetailPage() {
                 </div>
             </div>
 
+            {/* How It Works — full width at top */}
+            <div className="rounded-xl bg-brand-primary/5 p-6 sm:p-8">
+                <div className="text-center mb-8">
+                    <h2 className="text-xl font-bold tracking-tight">
+                        {t('seller.campaigns.detail.how_it_works', 'How It Works')}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {t('seller.campaigns.detail.how_it_works_subtitle', 'Your campaign lifecycle from start to finish')}
+                    </p>
+                </div>
+
+                <div className="relative">
+                    {/* Continuous connector line behind icons — desktop only */}
+                    <div className="hidden lg:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 bg-brand-primary/20" />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0">
+                        {CAMPAIGN_STEPS.map((step, index) => (
+                            <div key={index} className="relative flex flex-col items-center text-center px-4">
+                                <div className="relative z-10 flex items-center justify-center h-14 w-14 rounded-full bg-brand-primary text-white mb-4 shadow-md">
+                                    <step.icon className="h-6 w-6" />
+                                </div>
+                                <p className="text-sm font-bold mb-1">
+                                    {t(step.titleKey, step.titleFallback)}
+                                </p>
+                                <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">
+                                    {t(step.descKey, step.descFallback)}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Product Info Column */}
                 <div className="md:col-span-2 space-y-6">
@@ -186,15 +251,25 @@ export default function CampaignDetailPage() {
                                         <span className="text-sm font-medium">{Math.round(progressPercent)}%</span>
                                     </div>
                                     <Progress value={progressPercent} className={`h-3 ${isCompleted ? '[&>div]:bg-green-500' : '[&>div]:bg-brand-primary'}`} />
-                                    <p className="text-xs text-muted-foreground mt-2">{t('seller.campaigns.detail.claimed_desc', 'Units claimed by reviewers')}</p>
+                                    <p className="text-xs text-muted-foreground mt-2">{t('seller.campaigns.detail.claimed_desc', 'Reviews Completed')}</p>
                                 </div>
 
                                 <div className="pt-4 border-t border-border">
                                     <h4 className="text-sm font-semibold mb-3">{t('seller.campaigns.detail.financials', 'Financial Setup')}</h4>
                                     <div className="space-y-3 text-sm">
                                         <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('seller.campaigns.detail.product_price', 'Product Price')}</span>
+                                            <span className="font-semibold">{formatPrice(campaign.product_price, campaign.region)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('seller.campaigns.detail.reimbursement', 'Reimbursement Rate')}</span>
                                             <span className="font-semibold text-brand-primary">{campaign.reimbursement_percent}%</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('seller.campaigns.detail.payout_per_review', 'Payout per Review')}</span>
+                                            <span className="font-semibold text-green-600">
+                                                {formatPrice(campaign.product_price * campaign.reimbursement_percent / 100, campaign.region)}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('seller.campaigns.detail.upfront', 'Upfront Payment')}</span>

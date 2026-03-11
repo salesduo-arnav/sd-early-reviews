@@ -39,6 +39,7 @@ export interface SellerReview {
     amazon_order_id: string;
     expected_payout_amount: number;
     rejection_reason?: string | null;
+    region?: string;
 }
 
 export interface SellerReviewStats {

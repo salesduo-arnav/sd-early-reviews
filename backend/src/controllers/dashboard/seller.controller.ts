@@ -7,7 +7,7 @@ import { Transaction, TransactionStatus } from '../../models/Transaction';
 import { SellerProfile } from '../../models/SellerProfile';
 import { logger } from '../../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
-import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek } from 'date-fns';
+import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek, format } from 'date-fns';
 
 /** Shared helper — resolves SellerProfile.id from JWT userId, returns null if not found */
 const resolveSellerProfileId = async (userId: string): Promise<string | null> => {
@@ -50,10 +50,14 @@ export const getMetrics = async (req: Request, res: Response) => {
                 where: { seller_id: sellerProfileId },
                 required: true
             }],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: { [Op.gte]: startOfCurrentWeek }
-            }
+                [Op.or]: [
+                    { review_date: { [Op.gte]: startOfCurrentWeek } },
+                    { review_date: null, created_at: { [Op.gte]: startOfCurrentWeek } }
+                ]
+            } as any
         });
 
         const previousWeekReviews = await OrderClaim.count({
@@ -62,10 +66,14 @@ export const getMetrics = async (req: Request, res: Response) => {
                 where: { seller_id: sellerProfileId },
                 required: true
             }],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] }
-            }
+                [Op.or]: [
+                    { review_date: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] } },
+                    { review_date: null, created_at: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] } }
+                ]
+            } as any
         });
 
         let reviewChangePercent = 0;
@@ -107,6 +115,8 @@ export const getReviewVelocity = async (req: Request, res: Response) => {
         const endDate = endDateStr ? endOfDay(new Date(endDateStr)) : endOfDay(new Date());
         const startDate = startDateStr ? startOfDay(new Date(startDateStr)) : startOfDay(subDays(endDate, 6));
 
+        // Fetch approved reviews where review_date OR created_at falls in range
+        // (review_date can be null if status was updated manually)
         const reviews = await OrderClaim.findAll({
             include: [{
                 model: Campaign,
@@ -114,22 +124,27 @@ export const getReviewVelocity = async (req: Request, res: Response) => {
                 required: true,
                 attributes: []
             }],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
-                review_date: { [Op.between]: [startDate, endDate] }
-            },
-            attributes: ['review_date']
+                [Op.or]: [
+                    { review_date: { [Op.between]: [startDate, endDate] } },
+                    { review_date: null, created_at: { [Op.between]: [startDate, endDate] } }
+                ]
+            } as any,
+            attributes: ['review_date', 'created_at']
         });
 
         const velocityMap: Record<string, number> = {};
 
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            velocityMap[d.toISOString().split('T')[0]] = 0;
+            velocityMap[format(d, 'yyyy-MM-dd')] = 0;
         }
 
         reviews.forEach(review => {
-            if (review.review_date) {
-                const dateStr = new Date(review.review_date).toISOString().split('T')[0];
+            const effectiveDate = review.review_date || review.created_at;
+            if (effectiveDate) {
+                const dateStr = format(new Date(effectiveDate), 'yyyy-MM-dd');
                 if (velocityMap[dateStr] !== undefined) velocityMap[dateStr]++;
             }
         });
@@ -320,7 +335,7 @@ export const getSellerReviews = async (req: Request, res: Response) => {
                 model: Campaign,
                 where: { seller_id: sellerProfileId },
                 required: true,
-                attributes: ['id', 'asin', 'product_title', 'product_image_url']
+                attributes: ['id', 'asin', 'product_title', 'product_image_url', 'region']
             }],
             order: [['review_date', 'DESC NULLS LAST'], ['created_at', 'DESC']],
             limit: paginationParams.limit,
@@ -328,7 +343,7 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             subQuery: false
         });
 
-        type ReviewWithCampaign = OrderClaim & { Campaign?: { asin: string; product_title: string; product_image_url: string } };
+        type ReviewWithCampaign = OrderClaim & { Campaign?: { asin: string; product_title: string; product_image_url: string; region: string } };
         const formattedReviews = reviews.map(r => {
             const rc = r as ReviewWithCampaign;
             return {
@@ -343,7 +358,8 @@ export const getSellerReviews = async (req: Request, res: Response) => {
             review_status: r.review_status,
             amazon_order_id: r.amazon_order_id,
             expected_payout_amount: r.expected_payout_amount,
-            rejection_reason: r.rejection_reason
+            rejection_reason: r.rejection_reason,
+            region: rc.Campaign?.region
             };
         });
 

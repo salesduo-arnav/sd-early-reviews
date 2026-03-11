@@ -5,13 +5,18 @@ import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import BuyerDashboard from './pages/buyer/BuyerDashboard';
+
+import MarketplacePage from './pages/buyer/MarketplacePage';
+import ProductDetailPage from './pages/buyer/ProductDetailPage';
+import MyClaimsPage from './pages/buyer/MyClaimsPage';
+import AccountPage from './pages/buyer/AccountPage';
 import SellerDashboard from './pages/seller/SellerDashboard';
 import CampaignsPage from './pages/seller/CampaignsPage';
 import CampaignDetailPage from './pages/seller/CampaignDetailPage';
 import ReviewsPage from './pages/seller/ReviewsPage';
 import BillingPage from './pages/seller/BillingPage';
 import { SellerLayout } from './components/layout/SellerLayout';
+import { BuyerLayout } from './components/layout/BuyerLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 import NotFoundPage from './pages/NotFound';
@@ -58,9 +63,15 @@ function App() {
             </Route>
           </Route>
 
-          {/* Placeholders for buyer */}
+          {/* Buyer Portal */}
           <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-            <Route path="/buyer/*" element={<BuyerDashboard />} />
+            <Route path="/buyer" element={<BuyerLayout />}>
+              <Route index element={<MarketplacePage />} />
+              <Route path="marketplace" element={<MarketplacePage />} />
+              <Route path="marketplace/:id" element={<ProductDetailPage />} />
+              <Route path="claims" element={<MyClaimsPage />} />
+              <Route path="account" element={<AccountPage />} />
+            </Route>
           </Route>
 
           {/* Admin Dashboard */}
