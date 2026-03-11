@@ -83,8 +83,7 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
         });
         if (!claim) return res.status(404).json({ message: 'Claim not found' });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateData: any = { payout_status: status };
+        const updateData: Partial<OrderClaim> = { payout_status: status as PayoutStatus };
         if (override_amount !== undefined && override_amount !== null) {
             updateData.expected_payout_amount = override_amount;
         }
@@ -104,8 +103,10 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
         );
 
         // Notify buyer
-        const buyerUserId = (claim as any).BuyerProfile?.user_id;
-        const productTitle = (claim as any).Campaign?.product_title || 'your product';
+        type ClaimWithAssociations = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
+        const claimWithAssoc = claim as ClaimWithAssociations;
+        const buyerUserId = claimWithAssoc.BuyerProfile?.user_id;
+        const productTitle = claimWithAssoc.Campaign?.product_title || 'your product';
         if (buyerUserId) {
             const category = status === 'PROCESSED' ? NotificationCategory.PAYOUT_PROCESSED : NotificationCategory.PAYOUT_FAILED;
             const message = status === 'PROCESSED'
@@ -160,8 +161,8 @@ export const batchUpdatePayouts = async (req: Request, res: Response) => {
             );
 
             // Notify buyer
-            const buyerUserId = (claim as any).BuyerProfile?.user_id;
-            const productTitle = (claim as any).Campaign?.product_title || 'your product';
+            const buyerUserId = (claim as OrderClaim & { BuyerProfile?: { user_id: string } }).BuyerProfile?.user_id;
+            const productTitle = (claim as OrderClaim & { Campaign?: { product_title: string } }).Campaign?.product_title || 'your product';
             if (buyerUserId) {
                 const category = status === 'PROCESSED' ? NotificationCategory.PAYOUT_PROCESSED : NotificationCategory.PAYOUT_FAILED;
                 const message = status === 'PROCESSED'

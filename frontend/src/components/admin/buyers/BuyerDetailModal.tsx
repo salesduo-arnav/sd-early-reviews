@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,27 @@ import { Globe, Clock, DollarSign, CheckCircle, ChevronLeft, ChevronRight, Packa
 import { adminApi } from '@/api/admin';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
+
+interface BuyerUser { full_name: string; email: string; created_at: string; is_verified: boolean; }
+interface BuyerData {
+    User?: BuyerUser;
+    region: string;
+    is_blacklisted: boolean;
+    blacklist_reason?: string;
+    on_time_submission_rate: number;
+    total_earnings: string;
+}
+interface ClaimCampaign { product_image_url: string; product_title: string; asin: string; region: string; }
+interface ClaimItem {
+    id: string;
+    Campaign?: ClaimCampaign;
+    expected_payout_amount: string;
+    order_status: string;
+    review_status: string;
+    payout_status: string;
+}
+interface PaginationMeta { page: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean; }
+interface PaginatedClaims { data: ClaimItem[]; pagination: PaginationMeta; }
 
 interface BuyerDetailModalProps {
     open: boolean;
@@ -27,11 +48,11 @@ const claimStatusBadge = (orderStatus: string, reviewStatus: string, payoutStatu
 
 export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailModalProps) {
     const [loading, setLoading] = useState(true);
-    const [buyer, setBuyer] = useState<any>(null);
-    const [claims, setClaims] = useState<any>(null);
+    const [buyer, setBuyer] = useState<BuyerData | null>(null);
+    const [claims, setClaims] = useState<PaginatedClaims | null>(null);
     const [claimsPage, setClaimsPage] = useState(1);
 
-    const fetchDetail = async (page: number) => {
+    const fetchDetail = useCallback(async (page: number) => {
         setLoading(true);
         try {
             const result = await adminApi.getBuyerDetail(buyerId, page, 5);
@@ -39,20 +60,20 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
             setClaims(result.claims);
         } catch { /* empty */ }
         finally { setLoading(false); }
-    };
+    }, [buyerId]);
 
     useEffect(() => {
         if (open && buyerId) {
             setClaimsPage(1);
             fetchDetail(1);
         }
-    }, [open, buyerId]);
+    }, [open, buyerId, fetchDetail]);
 
     useEffect(() => {
         if (open && buyerId) {
             fetchDetail(claimsPage);
         }
-    }, [claimsPage]);
+    }, [claimsPage, open, buyerId, fetchDetail]);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -102,7 +123,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                             </div>
                             <div className="rounded-lg border p-3 text-center">
                                 <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                                <p className="text-base font-semibold">{formatPrice(parseFloat(buyer.total_earnings || 0), buyer.region || 'com')}</p>
+                                <p className="text-base font-semibold">{formatPrice(parseFloat(buyer.total_earnings || '0'), buyer.region || 'com')}</p>
                                 <p className="text-[11px] text-muted-foreground">Earnings</p>
                             </div>
                             <div className="rounded-lg border p-3 text-center">
@@ -126,7 +147,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                             <h4 className="text-sm font-semibold mb-3">Claims History</h4>
                             {claims?.data?.length > 0 ? (
                                 <div className="space-y-2">
-                                    {claims.data.map((claim: any) => (
+                                    {claims.data.map((claim: ClaimItem) => (
                                         <div key={claim.id} className="rounded-lg border p-3 space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-7 w-7 rounded border bg-muted/50 overflow-hidden flex-shrink-0">
@@ -138,7 +159,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {claim.Campaign?.asin} · {formatPrice(parseFloat(claim.expected_payout_amount || 0), claim.Campaign?.region || 'com')}
+                                                    {claim.Campaign?.asin} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), claim.Campaign?.region || 'com')}
                                                 </span>
                                                 {claimStatusBadge(claim.order_status, claim.review_status, claim.payout_status)}
                                             </div>

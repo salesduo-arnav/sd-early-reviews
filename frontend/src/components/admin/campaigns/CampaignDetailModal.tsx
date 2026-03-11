@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,22 @@ import { Package, User, ChevronLeft, ChevronRight, Globe, Target, DollarSign, Pe
 import { adminApi } from '@/api/admin';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
+
+interface CampaignUser { full_name: string; email: string; }
+interface CampaignSeller { company_name: string; User?: CampaignUser; }
+interface CampaignData {
+    product_title: string; product_image_url: string; status: string; asin: string;
+    created_at: string; SellerProfile?: CampaignSeller; region: string;
+    product_price: string; reimbursement_percent: number; target_reviews: number; guidelines?: string;
+}
+interface ClaimBuyerUser { full_name: string; email: string; }
+interface ClaimBuyer { User?: ClaimBuyerUser; }
+interface CampaignClaimItem {
+    id: string; BuyerProfile?: ClaimBuyer; expected_payout_amount: string;
+    order_status: string; review_status: string; payout_status: string;
+}
+interface PaginationMeta { page: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean; }
+interface PaginatedClaims { data: CampaignClaimItem[]; pagination: PaginationMeta; }
 
 interface CampaignDetailModalProps {
     open: boolean;
@@ -36,11 +52,11 @@ const claimStatusBadge = (orderStatus: string, reviewStatus: string, payoutStatu
 
 export function CampaignDetailModal({ open, onOpenChange, campaignId }: CampaignDetailModalProps) {
     const [loading, setLoading] = useState(true);
-    const [campaign, setCampaign] = useState<any>(null);
-    const [claims, setClaims] = useState<any>(null);
+    const [campaign, setCampaign] = useState<CampaignData | null>(null);
+    const [claims, setClaims] = useState<PaginatedClaims | null>(null);
     const [claimsPage, setClaimsPage] = useState(1);
 
-    const fetchDetail = async (page: number) => {
+    const fetchDetail = useCallback(async (page: number) => {
         setLoading(true);
         try {
             const result = await adminApi.getCampaignDetail(campaignId, page, 5);
@@ -48,20 +64,20 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
             setClaims(result.claims);
         } catch { /* empty */ }
         finally { setLoading(false); }
-    };
+    }, [campaignId]);
 
     useEffect(() => {
         if (open && campaignId) {
             setClaimsPage(1);
             fetchDetail(1);
         }
-    }, [open, campaignId]);
+    }, [open, campaignId, fetchDetail]);
 
     useEffect(() => {
         if (open && campaignId) {
             fetchDetail(claimsPage);
         }
-    }, [claimsPage]);
+    }, [claimsPage, open, campaignId, fetchDetail]);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -144,7 +160,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
                             <h4 className="text-sm font-semibold mb-3">Claims</h4>
                             {claims?.data?.length > 0 ? (
                                 <div className="space-y-2">
-                                    {claims.data.map((claim: any) => (
+                                    {claims.data.map((claim: CampaignClaimItem) => (
                                         <div key={claim.id} className="rounded-lg border p-3 space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-6 w-6 rounded-full border bg-muted/50 flex items-center justify-center flex-shrink-0">
@@ -154,7 +170,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {claim.BuyerProfile?.User?.email} · {formatPrice(parseFloat(claim.expected_payout_amount || 0), campaign.region || 'com')}
+                                                    {claim.BuyerProfile?.User?.email} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), campaign.region || 'com')}
                                                 </span>
                                                 {claimStatusBadge(claim.order_status, claim.review_status, claim.payout_status)}
                                             </div>

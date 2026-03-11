@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,8 +25,17 @@ const statusBadge = (status: string) => {
     }
 };
 
+interface CampaignRowUser { full_name: string; email: string; }
+interface CampaignRowSeller { company_name: string; User?: CampaignRowUser; }
+interface CampaignRow {
+    id: string; product_title: string; product_image_url: string; asin: string;
+    SellerProfile?: CampaignRowSeller; region: string; status: string;
+    completed_reviews?: number; target_reviews: number; product_price: string;
+    reimbursement_percent: number; created_at: string;
+}
+
 export function AdminCampaignsTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<CampaignRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -35,28 +44,28 @@ export function AdminCampaignsTable() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [detailModal, setDetailModal] = useState<{ open: boolean; campaignId: string }>({ open: false, campaignId: '' });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getCampaigns(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, statusFilter);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const handleToggleStatus = async (campaignId: string) => {
+    const handleToggleStatus = useCallback(async (campaignId: string) => {
         setActionLoading(campaignId);
         try {
             await adminApi.toggleCampaignStatus(campaignId);
             toast.success('Campaign status updated');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
-    };
+    }, [fetchData]);
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<CampaignRow, unknown>[]>(() => [
         {
             accessorKey: 'product',
             header: () => <DataTableStaticHeader title="Product" />,
@@ -159,7 +168,7 @@ export function AdminCampaignsTable() {
                 </div>
             ),
         },
-    ], [actionLoading]);
+    ], [actionLoading, handleToggleStatus]);
 
     return (
         <div className="space-y-4">

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +18,14 @@ import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
 import { BuyerDetailModal } from './BuyerDetailModal';
 
+interface BuyerUser { full_name: string; email: string; created_at: string; }
+interface BuyerRow {
+    id: string; User?: BuyerUser; region: string; on_time_submission_rate: number;
+    total_earnings: string; is_blacklisted: boolean;
+}
+
 export function BuyersTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<BuyerRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -30,7 +36,7 @@ export function BuyersTable() {
     const [actionLoading, setActionLoading] = useState(false);
     const [detailModal, setDetailModal] = useState<{ open: boolean; buyerId: string }>({ open: false, buyerId: '' });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getBuyers(
@@ -41,9 +47,9 @@ export function BuyersTable() {
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, blacklistFilter]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery, blacklistFilter]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleToggleBlacklist = async () => {
         setActionLoading(true);
@@ -54,11 +60,11 @@ export function BuyersTable() {
             setBlacklistDialog({ open: false, buyerId: '', currentStatus: false, buyerName: '' });
             setBlacklistReason('');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(false); }
     };
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<BuyerRow, unknown>[]>(() => [
         {
             accessorKey: 'name',
             header: () => <DataTableStaticHeader title="Buyer" />,
@@ -87,7 +93,7 @@ export function BuyersTable() {
         {
             accessorKey: 'total_earnings',
             header: () => <DataTableStaticHeader title="Earnings" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.total_earnings || 0), row.original.region || 'com')}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.total_earnings || '0'), row.original.region || 'com')}</span>,
         },
         {
             accessorKey: 'is_blacklisted',

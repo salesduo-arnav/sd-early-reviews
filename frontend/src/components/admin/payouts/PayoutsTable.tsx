@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,8 +26,16 @@ const payoutBadge = (status: string) => {
     }
 };
 
+interface PayoutRowUser { full_name: string; email: string; }
+interface PayoutRowBuyer { User?: PayoutRowUser; }
+interface PayoutRowCampaign { product_title: string; region: string; }
+interface PayoutRow {
+    id: string; BuyerProfile?: PayoutRowBuyer; Campaign?: PayoutRowCampaign;
+    amazon_order_id: string; expected_payout_amount: number; payout_status: string;
+}
+
 export function PayoutsTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<PayoutRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -38,26 +46,26 @@ export function PayoutsTable() {
     const [overrideAmount, setOverrideAmount] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getPayouts(pagination.pageIndex + 1, pagination.pageSize, statusFilter, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const handleUpdateStatus = async (claimId: string, status: 'PROCESSED' | 'FAILED') => {
+    const handleUpdateStatus = useCallback(async (claimId: string, status: 'PROCESSED' | 'FAILED') => {
         setActionLoading(claimId);
         try {
             await adminApi.updatePayoutStatus(claimId, status);
             toast.success(`Payout marked as ${status.toLowerCase()}`);
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
-    };
+    }, [fetchData]);
 
     const handleOverride = async () => {
         const amount = parseFloat(overrideAmount);
@@ -69,7 +77,7 @@ export function PayoutsTable() {
             setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' });
             setOverrideAmount('');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
     };
 
@@ -80,17 +88,17 @@ export function PayoutsTable() {
             toast.success(`${selectedIds.length} payouts processed`);
             setSelectedIds([]);
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
     };
 
     const toggleSelect = (id: string) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
-    const pendingIds = data.filter((c: any) => c.payout_status === 'PENDING').map((c: any) => c.id);
-    const allPendingSelected = pendingIds.length > 0 && pendingIds.every((id: string) => selectedIds.includes(id));
+    const pendingIds = useMemo(() => data.filter((c: PayoutRow) => c.payout_status === 'PENDING').map((c: PayoutRow) => c.id), [data]);
+    const allPendingSelected = useMemo(() => pendingIds.length > 0 && pendingIds.every((id: string) => selectedIds.includes(id)), [pendingIds, selectedIds]);
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<PayoutRow, unknown>[]>(() => [
         {
             id: 'select',
             size: 40,
@@ -142,7 +150,7 @@ export function PayoutsTable() {
         {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Amount" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.expected_payout_amount), row.original.Campaign?.region || 'com')}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>,
         },
         {
             accessorKey: 'payout_status',
@@ -190,7 +198,7 @@ export function PayoutsTable() {
                 </div>
             ) : null,
         },
-    ], [actionLoading, selectedIds, data]);
+    ], [actionLoading, selectedIds, allPendingSelected, handleUpdateStatus, pendingIds]);
 
     return (
         <div className="space-y-4">

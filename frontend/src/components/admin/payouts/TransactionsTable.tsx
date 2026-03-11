@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from 'lucide-react';
@@ -25,8 +25,15 @@ const statusBadge = (status: string) => {
     }
 };
 
+interface TransactionUser { full_name: string; email: string; }
+interface TransactionRow {
+    id: string; User?: TransactionUser; type: string; gross_amount: string;
+    platform_fee: string; net_amount: string; stripe_transaction_id: string;
+    status: string; created_at: string;
+}
+
 export function TransactionsTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<TransactionRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -34,18 +41,18 @@ export function TransactionsTable() {
     const [typeFilter, setTypeFilter] = useState('ALL');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getTransactions(pagination.pageIndex + 1, pagination.pageSize, typeFilter, statusFilter, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, typeFilter, statusFilter]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery, typeFilter, statusFilter]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<TransactionRow, unknown>[]>(() => [
         {
             accessorKey: 'user',
             header: () => <DataTableStaticHeader title="User" />,

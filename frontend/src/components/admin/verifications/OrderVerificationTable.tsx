@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,8 +15,17 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatPrice } from '@/lib/regions';
 
+interface OrderRowUser { full_name: string; email: string; }
+interface OrderRowBuyer { User?: OrderRowUser; }
+interface OrderRowCampaign { product_image_url: string; product_title: string; asin: string; region: string; }
+interface OrderRow {
+    id: string; BuyerProfile?: OrderRowBuyer; Campaign?: OrderRowCampaign;
+    amazon_order_id: string; purchase_date: string; expected_payout_amount: number;
+    order_proof_url: string;
+}
+
 export function OrderVerificationTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<OrderRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -26,7 +35,7 @@ export function OrderVerificationTable() {
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getPendingOrders(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
@@ -34,19 +43,19 @@ export function OrderVerificationTable() {
             setPageCount(result.pagination.totalPages);
             setTotalPending(result.pagination.total);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const handleApprove = async (claimId: string) => {
+    const handleApprove = useCallback(async (claimId: string) => {
         setActionLoading(claimId);
         try {
             await adminApi.verifyOrder(claimId, 'APPROVE');
             toast.success('Order approved');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
-    };
+    }, [fetchData]);
 
     const handleReject = async () => {
         if (!rejectReason.trim()) { toast.error('Rejection reason is required'); return; }
@@ -57,11 +66,11 @@ export function OrderVerificationTable() {
             setRejectModal({ open: false, claimId: '' });
             setRejectReason('');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
     };
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<OrderRow, unknown>[]>(() => [
         {
             accessorKey: 'buyer',
             header: () => <DataTableStaticHeader title="Buyer" />,
@@ -113,7 +122,7 @@ export function OrderVerificationTable() {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Payout" />,
             cell: ({ row }) => (
-                <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.expected_payout_amount), row.original.Campaign?.region || 'com')}</span>
+                <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>
             ),
         },
         {
@@ -159,7 +168,7 @@ export function OrderVerificationTable() {
                 </div>
             ),
         },
-    ], [actionLoading]);
+    ], [actionLoading, handleApprove]);
 
     return (
         <div className="space-y-4">

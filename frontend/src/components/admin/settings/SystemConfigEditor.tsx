@@ -49,7 +49,7 @@ export function SystemConfigEditor() {
             await adminApi.updateConfig(key, value);
             toast.success(`Config "${key}" updated`);
             fetchConfigs();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setSavingKey(null); }
     };
 
@@ -63,7 +63,7 @@ export function SystemConfigEditor() {
             setNewValue('');
             setNewDescription('');
             fetchConfigs();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
     };
 
     const handleDelete = async () => {
@@ -72,7 +72,7 @@ export function SystemConfigEditor() {
             toast.success('Config deleted');
             setDeleteDialog({ open: false, key: '' });
             fetchConfigs();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
     };
 
     if (loading) {

@@ -10,6 +10,8 @@ import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagin
 import { notificationService } from '../../services/notification.service';
 import { NotificationCategory } from '../../models/Notification';
 
+type ClaimWithAssociations = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
+
 export const getPendingOrders = async (req: Request, res: Response) => {
     try {
         const paginationParams = parsePaginationParams(req.query, 10);
@@ -180,8 +182,9 @@ export const verifyOrder = async (req: Request, res: Response) => {
         );
 
         // Notify buyer
-        const buyerUserId = (claim as any).BuyerProfile?.user_id;
-        const productTitle = (claim as any).Campaign?.product_title || 'your product';
+        const claimWithAssoc = claim as ClaimWithAssociations;
+        const buyerUserId = claimWithAssoc.BuyerProfile?.user_id;
+        const productTitle = claimWithAssoc.Campaign?.product_title || 'your product';
         if (buyerUserId) {
             if (action === 'APPROVE') {
                 notificationService.send(buyerUserId, NotificationCategory.ORDER_APPROVED, {
@@ -249,8 +252,9 @@ export const verifyReview = async (req: Request, res: Response) => {
         );
 
         // Notify buyer
-        const buyerUserId = (claim as any).BuyerProfile?.user_id;
-        const productTitle = (claim as any).Campaign?.product_title || 'your product';
+        const reviewClaimWithAssoc = claim as ClaimWithAssociations;
+        const buyerUserId = reviewClaimWithAssoc.BuyerProfile?.user_id;
+        const productTitle = reviewClaimWithAssoc.Campaign?.product_title || 'your product';
         if (buyerUserId) {
             if (action === 'APPROVE') {
                 notificationService.send(buyerUserId, NotificationCategory.REVIEW_APPROVED, {

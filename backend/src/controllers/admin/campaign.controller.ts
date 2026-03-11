@@ -128,7 +128,7 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
         );
 
         // Notify seller
-        const sellerUserId = (campaign as any).SellerProfile?.user_id;
+        const sellerUserId = (campaign as Campaign & { SellerProfile?: { user_id: string } }).SellerProfile?.user_id;
         if (sellerUserId && newStatus === CampaignStatus.PAUSED) {
             notificationService.send(sellerUserId, NotificationCategory.CAMPAIGN_PAUSED, {
                 message: `Your campaign "${campaign.product_title}" has been paused by an admin.`,

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { User, Building2, Eye } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -7,26 +7,29 @@ import { adminApi } from '@/api/admin';
 import { format } from 'date-fns';
 import { SellerDetailModal } from './SellerDetailModal';
 
+interface SellerRowUser { full_name: string; email: string; created_at: string; }
+interface SellerRow { id: string; User?: SellerRowUser; company_name?: string; }
+
 export function SellersTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<SellerRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
     const [searchQuery, setSearchQuery] = useState('');
     const [detailModal, setDetailModal] = useState<{ open: boolean; sellerId: string }>({ open: false, sellerId: '' });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getSellers(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<SellerRow, unknown>[]>(() => [
         {
             accessorKey: 'name',
             header: () => <DataTableStaticHeader title="Seller" />,

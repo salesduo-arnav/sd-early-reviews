@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,8 +13,16 @@ import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
 import { toast } from 'sonner';
 
+interface ReviewRowUser { full_name: string; email: string; }
+interface ReviewRowBuyer { User?: ReviewRowUser; }
+interface ReviewRowCampaign { product_image_url: string; product_title: string; asin: string; }
+interface ReviewRow {
+    id: string; BuyerProfile?: ReviewRowBuyer; Campaign?: ReviewRowCampaign;
+    review_rating: number; review_text: string; review_proof_url: string;
+}
+
 export function ReviewVerificationTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<ReviewRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
@@ -24,7 +32,7 @@ export function ReviewVerificationTable() {
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const result = await adminApi.getPendingReviews(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
@@ -32,19 +40,19 @@ export function ReviewVerificationTable() {
             setPageCount(result.pagination.totalPages);
             setTotalPending(result.pagination.total);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const handleApprove = async (claimId: string) => {
+    const handleApprove = useCallback(async (claimId: string) => {
         setActionLoading(claimId);
         try {
             await adminApi.verifyReview(claimId, 'APPROVE');
             toast.success('Review approved');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
-    };
+    }, [fetchData]);
 
     const handleReject = async () => {
         if (!rejectReason.trim()) { toast.error('Rejection reason is required'); return; }
@@ -55,7 +63,7 @@ export function ReviewVerificationTable() {
             setRejectModal({ open: false, claimId: '' });
             setRejectReason('');
             fetchData();
-        } catch (e: any) { toast.error(e.message); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
         finally { setActionLoading(null); }
     };
 
@@ -67,7 +75,7 @@ export function ReviewVerificationTable() {
         </div>
     );
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<ReviewRow, unknown>[]>(() => [
         {
             accessorKey: 'buyer',
             header: () => <DataTableStaticHeader title="Buyer" />,
@@ -158,7 +166,7 @@ export function ReviewVerificationTable() {
                 </div>
             ),
         },
-    ], [actionLoading]);
+    ], [actionLoading, handleApprove]);
 
     return (
         <div className="space-y-4">

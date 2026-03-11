@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -28,17 +28,23 @@ const formatDetails = (details: string | null) => {
     }
 };
 
+interface AuditLogUser { full_name: string; email: string; }
+interface AuditLogRow {
+    id: string; User?: AuditLogUser; action: string; target_type: string;
+    target_id: string; created_at: string; ip_address?: string; details?: string;
+}
+
 export function AuditLogsTable() {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<AuditLogRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
     const [pageCount, setPageCount] = useState(-1);
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [detailModal, setDetailModal] = useState<{ open: boolean; log: any | null }>({ open: false, log: null });
+    const [detailModal, setDetailModal] = useState<{ open: boolean; log: AuditLogRow | null }>({ open: false, log: null });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const startStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
@@ -47,11 +53,11 @@ export function AuditLogsTable() {
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch { /* empty */ } finally { setLoading(false); }
-    };
+    }, [pagination.pageIndex, pagination.pageSize, searchQuery, startDate, endDate]);
 
-    useEffect(() => { fetchData(); }, [pagination.pageIndex, pagination.pageSize, searchQuery, startDate, endDate]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<AuditLogRow, unknown>[]>(() => [
         {
             accessorKey: 'admin',
             header: () => <DataTableStaticHeader title="Admin" />,

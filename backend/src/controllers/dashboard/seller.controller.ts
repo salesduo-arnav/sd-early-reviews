@@ -50,13 +50,13 @@ export const getMetrics = async (req: Request, res: Response) => {
                 where: { seller_id: sellerProfileId },
                 required: true
             }],
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
                 [Op.or]: [
                     { review_date: { [Op.gte]: startOfCurrentWeek } },
                     { review_date: null, created_at: { [Op.gte]: startOfCurrentWeek } }
                 ]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             } as any
         });
 
@@ -66,13 +66,13 @@ export const getMetrics = async (req: Request, res: Response) => {
                 where: { seller_id: sellerProfileId },
                 required: true
             }],
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
                 [Op.or]: [
                     { review_date: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] } },
                     { review_date: null, created_at: { [Op.between]: [startOfPreviousWeek, endOfPreviousWeek] } }
                 ]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             } as any
         });
 
@@ -124,13 +124,13 @@ export const getReviewVelocity = async (req: Request, res: Response) => {
                 required: true,
                 attributes: []
             }],
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             where: {
                 review_status: ReviewStatus.APPROVED,
                 [Op.or]: [
                     { review_date: { [Op.between]: [startDate, endDate] } },
                     { review_date: null, created_at: { [Op.between]: [startDate, endDate] } }
                 ]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sequelize Op.or with null check requires any cast
             } as any,
             attributes: ['review_date', 'created_at']
         });
