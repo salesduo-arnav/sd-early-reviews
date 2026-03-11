@@ -12,12 +12,15 @@ interface BuyerProfileAttributes {
     bank_account_last4?: string | null;
     on_time_submission_rate: number;
     is_blacklisted: boolean;
+    blacklist_reason?: string | null;
+    blacklisted_at?: Date | null;
+    blacklisted_by?: string | null;
     total_earnings: number;
     email_notifications_enabled: boolean;
     deleted_at?: Date;
 }
 
-type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'total_earnings' | 'email_notifications_enabled' | 'stripe_connect_account_id' | 'bank_account_name' | 'bank_routing_number' | 'bank_account_last4' | 'deleted_at'>;
+type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'blacklist_reason' | 'blacklisted_at' | 'blacklisted_by' | 'total_earnings' | 'email_notifications_enabled' | 'stripe_connect_account_id' | 'bank_account_name' | 'bank_routing_number' | 'bank_account_last4' | 'deleted_at'>;
 
 export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCreationAttributes> implements BuyerProfileAttributes {
     public id!: string;
@@ -30,6 +33,9 @@ export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCrea
     public bank_account_last4!: string | null;
     public on_time_submission_rate!: number;
     public is_blacklisted!: boolean;
+    public blacklist_reason!: string | null;
+    public blacklisted_at!: Date | null;
+    public blacklisted_by!: string | null;
     public total_earnings!: number;
     public email_notifications_enabled!: boolean;
     public deleted_at!: Date;
@@ -81,6 +87,18 @@ BuyerProfile.init(
             type: DataTypes.BOOLEAN,
             defaultValue: false,
             allowNull: false
+        },
+        blacklist_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        blacklisted_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        blacklisted_by: {
+            type: DataTypes.UUID,
+            allowNull: true,
         },
         total_earnings: {
             type: DataTypes.DECIMAL(10, 2),

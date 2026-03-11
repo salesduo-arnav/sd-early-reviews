@@ -172,7 +172,10 @@ OrderClaim.init(
                 unique: true,
                 fields: ['campaign_id', 'buyer_id'],
                 name: 'one_claim_per_product_per_buyer'
-            }
+            },
+            { fields: ['order_status'], name: 'idx_order_claims_order_status' },
+            { fields: ['review_status'], name: 'idx_order_claims_review_status' },
+            { fields: ['payout_status'], name: 'idx_order_claims_payout_status' },
         ]
     }
 );

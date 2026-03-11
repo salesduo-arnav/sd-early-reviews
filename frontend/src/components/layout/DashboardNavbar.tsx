@@ -37,15 +37,19 @@ export function DashboardNavbar({ links = [] }: DashboardNavbarProps) {
 
     const isBuyer = user?.role === 'BUYER';
     const isSeller = user?.role === 'SELLER';
+    const isAdmin = user?.role === 'ADMIN';
+
+    const homeLink = isAdmin ? '/admin' : isBuyer ? '/buyer' : isSeller ? '/seller' : '/';
+    const dashboardLabel = isAdmin ? 'Admin Panel' : isBuyer ? t('nav.buyer_dashboard', 'Buyer Dashboard') : isSeller ? t('nav.seller_dashboard', 'Seller Dashboard') : 'SalesDuo';
 
     return (
         <nav className="fixed top-0 left-0 right-0 h-16 flex items-center z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="w-full px-4 md:px-8 flex justify-between items-center h-full">
-                <Link to={isBuyer ? '/buyer' : isSeller ? '/seller' : '/'} className="flex items-center gap-2 font-bold tracking-tight text-lg">
+                <Link to={homeLink} className="flex items-center gap-2 font-bold tracking-tight text-lg">
                     <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
                         <Star className="text-primary fill-primary w-4 h-4" />
                     </div>
-                    <span>{isBuyer ? t('nav.buyer_dashboard', 'Buyer Dashboard') : isSeller ? t('nav.seller_dashboard', 'Seller Dashboard') : 'SalesDuo'}</span>
+                    <span>{dashboardLabel}</span>
                 </Link>
 
                 {links.length > 0 && (

@@ -118,6 +118,24 @@ module.exports = {
         defaultValue: false,
         allowNull: false,
       },
+      blacklist_reason: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      blacklisted_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      blacklisted_by: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
       total_earnings: {
         type: Sequelize.DECIMAL(10, 2),
         defaultValue: 0.0,
@@ -364,6 +382,11 @@ module.exports = {
       name: 'one_claim_per_product_per_buyer',
     });
 
+    // OrderClaim status indexes for admin verification queries
+    await queryInterface.addIndex('order_claims', ['order_status'], { name: 'idx_order_claims_order_status' });
+    await queryInterface.addIndex('order_claims', ['review_status'], { name: 'idx_order_claims_review_status' });
+    await queryInterface.addIndex('order_claims', ['payout_status'], { name: 'idx_order_claims_payout_status' });
+
     // 7. Create Transactions Table
     await queryInterface.createTable('transactions', {
       id: {
@@ -503,6 +526,18 @@ module.exports = {
         type: Sequelize.UUID,
         allowNull: false,
       },
+      target_type: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      details: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      ip_address: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn('now'),
@@ -512,6 +547,11 @@ module.exports = {
         allowNull: true,
       },
     });
+
+    // AdminAuditLog indexes
+    await queryInterface.addIndex('admin_audit_logs', ['admin_id'], { name: 'idx_audit_logs_admin_id' });
+    await queryInterface.addIndex('admin_audit_logs', ['action'], { name: 'idx_audit_logs_action' });
+    await queryInterface.addIndex('admin_audit_logs', ['created_at'], { name: 'idx_audit_logs_created_at' });
 
     // Create system_configs table for admin-managed platform settings
     await queryInterface.createTable('system_configs', {

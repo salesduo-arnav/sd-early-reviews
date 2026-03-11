@@ -17,7 +17,13 @@ import ReviewsPage from './pages/seller/ReviewsPage';
 import BillingPage from './pages/seller/BillingPage';
 import { SellerLayout } from './components/layout/SellerLayout';
 import { BuyerLayout } from './components/layout/BuyerLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import { AdminLayout } from './components/layout/AdminLayout';
+import AdminOverviewPage from './pages/admin/AdminOverviewPage';
+import AdminVerificationsPage from './pages/admin/AdminVerificationsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminCampaignsPage from './pages/admin/AdminCampaignsPage';
+import AdminPayoutsPage from './pages/admin/AdminPayoutsPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 import NotFoundPage from './pages/NotFound';
 import { Toaster } from '@/components/ui/sonner';
@@ -74,9 +80,17 @@ function App() {
             </Route>
           </Route>
 
-          {/* Admin Dashboard */}
+          {/* Admin Panel */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-            <Route path="/admin/*" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverviewPage />} />
+              <Route path="overview" element={<AdminOverviewPage />} />
+              <Route path="verifications" element={<AdminVerificationsPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="campaigns" element={<AdminCampaignsPage />} />
+              <Route path="payouts" element={<AdminPayoutsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+            </Route>
           </Route>
 
           {/* 404 */}
