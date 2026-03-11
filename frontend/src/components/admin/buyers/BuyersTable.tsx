@@ -8,13 +8,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreHorizontal, Shield, ShieldOff, User } from 'lucide-react';
+import { MoreHorizontal, Shield, ShieldOff, User, Eye } from 'lucide-react';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { formatPrice } from '@/lib/regions';
+import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
+import { BuyerDetailModal } from './BuyerDetailModal';
 
 export function BuyersTable() {
     const [data, setData] = useState<any[]>([]);
@@ -26,6 +28,7 @@ export function BuyersTable() {
     const [blacklistDialog, setBlacklistDialog] = useState<{ open: boolean; buyerId: string; currentStatus: boolean; buyerName: string }>({ open: false, buyerId: '', currentStatus: false, buyerName: '' });
     const [blacklistReason, setBlacklistReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [detailModal, setDetailModal] = useState<{ open: boolean; buyerId: string }>({ open: false, buyerId: '' });
 
     const fetchData = async () => {
         setLoading(true);
@@ -74,7 +77,7 @@ export function BuyersTable() {
         {
             accessorKey: 'region',
             header: () => <DataTableStaticHeader title="Region" />,
-            cell: ({ row }) => <span className="text-muted-foreground">{row.original.region}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{REGION_DISPLAY_NAMES[row.original.region] || row.original.region}</span>,
         },
         {
             accessorKey: 'on_time_submission_rate',
@@ -116,6 +119,14 @@ export function BuyersTable() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                    onClick={() => setDetailModal({ open: true, buyerId: buyer.id })}
+                                    className="cursor-pointer"
+                                >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 {buyer.is_blacklisted ? (
                                     <DropdownMenuItem
                                         onClick={() => setBlacklistDialog({ open: true, buyerId: buyer.id, currentStatus: true, buyerName: buyer.User?.full_name || '' })}
@@ -193,6 +204,12 @@ export function BuyersTable() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <BuyerDetailModal
+                open={detailModal.open}
+                onOpenChange={(open) => { if (!open) setDetailModal({ open: false, buyerId: '' }); }}
+                buyerId={detailModal.buyerId}
+            />
         </div>
     );
 }

@@ -6,13 +6,15 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, CirclePause, CirclePlay, Package } from 'lucide-react';
+import { MoreHorizontal, CirclePause, CirclePlay, Package, Eye } from 'lucide-react';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { formatPrice } from '@/lib/regions';
+import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
+import { CampaignDetailModal } from './CampaignDetailModal';
 
 const statusBadge = (status: string) => {
     switch (status) {
@@ -31,6 +33,7 @@ export function AdminCampaignsTable() {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [detailModal, setDetailModal] = useState<{ open: boolean; campaignId: string }>({ open: false, campaignId: '' });
 
     const fetchData = async () => {
         setLoading(true);
@@ -81,7 +84,7 @@ export function AdminCampaignsTable() {
         {
             accessorKey: 'region',
             header: () => <DataTableStaticHeader title="Region" />,
-            cell: ({ row }) => <span className="text-muted-foreground">{row.original.region}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{REGION_DISPLAY_NAMES[row.original.region] || row.original.region}</span>,
         },
         {
             accessorKey: 'status',
@@ -121,7 +124,7 @@ export function AdminCampaignsTable() {
         {
             id: 'actions',
             header: () => <DataTableStaticHeader title="Actions" srOnly />,
-            cell: ({ row }) => row.original.status !== 'COMPLETED' ? (
+            cell: ({ row }) => (
                 <div className="text-right">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -131,18 +134,30 @@ export function AdminCampaignsTable() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem
-                                onClick={() => handleToggleStatus(row.original.id)}
-                                disabled={actionLoading === row.original.id}
+                                onClick={() => setDetailModal({ open: true, campaignId: row.original.id })}
                                 className="cursor-pointer"
                             >
-                                {row.original.status === 'ACTIVE'
-                                    ? <><CirclePause className="h-4 w-4 mr-2" /> Pause Campaign</>
-                                    : <><CirclePlay className="h-4 w-4 mr-2" /> Resume Campaign</>}
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
                             </DropdownMenuItem>
+                            {row.original.status !== 'COMPLETED' && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={() => handleToggleStatus(row.original.id)}
+                                        disabled={actionLoading === row.original.id}
+                                        className="cursor-pointer"
+                                    >
+                                        {row.original.status === 'ACTIVE'
+                                            ? <><CirclePause className="h-4 w-4 mr-2" /> Pause Campaign</>
+                                            : <><CirclePlay className="h-4 w-4 mr-2" /> Resume Campaign</>}
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-            ) : null,
+            ),
         },
     ], [actionLoading]);
 
@@ -173,10 +188,16 @@ export function AdminCampaignsTable() {
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                    placeholder="Search by title or ASIN..."
+                    placeholder="Search by title, ASIN, seller, or company..."
                     isLoading={loading}
                 />
             </div>
+
+            <CampaignDetailModal
+                open={detailModal.open}
+                onOpenChange={(open) => { if (!open) setDetailModal({ open: false, campaignId: '' }); }}
+                campaignId={detailModal.campaignId}
+            />
         </div>
     );
 }

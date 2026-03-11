@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { User, Building2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, Building2, Eye } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
 import { format } from 'date-fns';
+import { SellerDetailModal } from './SellerDetailModal';
 
 export function SellersTable() {
     const [data, setData] = useState<any[]>([]);
@@ -11,6 +13,7 @@ export function SellersTable() {
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [pageCount, setPageCount] = useState(-1);
     const [searchQuery, setSearchQuery] = useState('');
+    const [detailModal, setDetailModal] = useState<{ open: boolean; sellerId: string }>({ open: false, sellerId: '' });
 
     const fetchData = async () => {
         setLoading(true);
@@ -58,23 +61,48 @@ export function SellersTable() {
                 </span>
             ),
         },
+        {
+            id: 'actions',
+            header: () => <DataTableStaticHeader title="Actions" srOnly />,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                        onClick={() => setDetailModal({ open: true, sellerId: row.original.id })}
+                    >
+                        <Eye className="h-4 w-4" />
+                        Details
+                    </Button>
+                </div>
+            ),
+        },
     ], []);
 
     return (
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <DataTable
-                columns={columns}
-                data={data}
-                pageCount={pageCount}
-                pagination={pagination}
-                onPaginationChange={setPagination}
-                sorting={[]}
-                onSortingChange={() => {}}
-                searchQuery={searchQuery}
-                onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                placeholder="Search by name, email, or company..."
-                isLoading={loading}
+        <>
+            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    pageCount={pageCount}
+                    pagination={pagination}
+                    onPaginationChange={setPagination}
+                    sorting={[]}
+                    onSortingChange={() => {}}
+                    searchQuery={searchQuery}
+                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    placeholder="Search by name, email, or company..."
+                    isLoading={loading}
+                />
+            </div>
+
+            <SellerDetailModal
+                open={detailModal.open}
+                onOpenChange={(open) => { if (!open) setDetailModal({ open: false, sellerId: '' }); }}
+                sellerId={detailModal.sellerId}
             />
-        </div>
+        </>
     );
 }

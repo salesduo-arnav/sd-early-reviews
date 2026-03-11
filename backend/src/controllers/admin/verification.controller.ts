@@ -26,6 +26,8 @@ export const getPendingOrders = async (req: Request, res: Response) => {
                 { amazon_order_id: { [Op.iLike]: searchTerm } },
                 { '$Campaign.product_title$': { [Op.iLike]: searchTerm } },
                 { '$Campaign.asin$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.full_name$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.email$': { [Op.iLike]: searchTerm } },
             ];
         }
 
@@ -71,7 +73,10 @@ export const getPendingReviews = async (req: Request, res: Response) => {
             whereClause[Op.or] = [
                 { amazon_order_id: { [Op.iLike]: searchTerm } },
                 { review_text: { [Op.iLike]: searchTerm } },
+                { '$Campaign.product_title$': { [Op.iLike]: searchTerm } },
                 { '$Campaign.asin$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.full_name$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.email$': { [Op.iLike]: searchTerm } },
             ];
         }
 
@@ -161,7 +166,6 @@ export const verifyOrder = async (req: Request, res: Response) => {
 
         if (action === 'REJECT') {
             updateData.rejection_reason = reason;
-            updateData.review_status = ReviewStatus.REJECTED;
         }
 
         await claim.update(updateData);

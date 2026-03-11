@@ -27,6 +27,9 @@ export const getCampaigns = async (req: Request, res: Response) => {
             whereClause[Op.or] = [
                 { product_title: { [Op.iLike]: searchTerm } },
                 { asin: { [Op.iLike]: searchTerm } },
+                { '$SellerProfile.company_name$': { [Op.iLike]: searchTerm } },
+                { '$SellerProfile.User.full_name$': { [Op.iLike]: searchTerm } },
+                { '$SellerProfile.User.email$': { [Op.iLike]: searchTerm } },
             ];
         }
 
@@ -108,7 +111,8 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Cannot change status of a completed campaign' });
         }
 
-        const newStatus = campaign.status === CampaignStatus.ACTIVE
+        const oldStatus = campaign.status;
+        const newStatus = oldStatus === CampaignStatus.ACTIVE
             ? CampaignStatus.PAUSED
             : CampaignStatus.ACTIVE;
 
@@ -119,7 +123,7 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
             newStatus === CampaignStatus.PAUSED ? 'CAMPAIGN_PAUSED' : 'CAMPAIGN_RESUMED',
             id,
             'CAMPAIGN',
-            JSON.stringify({ previous_status: campaign.status, new_status: newStatus }),
+            JSON.stringify({ previous_status: oldStatus, new_status: newStatus }),
             req.ip
         );
 

@@ -224,7 +224,7 @@ export function PayoutsTable() {
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                    placeholder="Search by order ID..."
+                    placeholder="Search by order ID, product, ASIN, or buyer..."
                     isLoading={loading}
                 />
             </div>

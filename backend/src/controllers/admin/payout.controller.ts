@@ -30,6 +30,10 @@ export const getPayouts = async (req: Request, res: Response) => {
             const searchTerm = `%${search}%`;
             whereClause[Op.or] = [
                 { amazon_order_id: { [Op.iLike]: searchTerm } },
+                { '$Campaign.product_title$': { [Op.iLike]: searchTerm } },
+                { '$Campaign.asin$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.full_name$': { [Op.iLike]: searchTerm } },
+                { '$BuyerProfile.User.email$': { [Op.iLike]: searchTerm } },
             ];
         }
 
@@ -136,9 +140,9 @@ export const batchUpdatePayouts = async (req: Request, res: Response) => {
             { where: { id: { [Op.in]: claim_ids }, payout_status: PayoutStatus.PENDING } }
         );
 
-        // Fetch claims with buyer info for notifications
+        // Fetch only claims that were actually updated (PENDING -> new status)
         const claims = await OrderClaim.findAll({
-            where: { id: { [Op.in]: claim_ids } },
+            where: { id: { [Op.in]: claim_ids }, payout_status: status },
             include: [
                 { model: Campaign, attributes: ['product_title'] },
                 { model: BuyerProfile, attributes: ['user_id'] },

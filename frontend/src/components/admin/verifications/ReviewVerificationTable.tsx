@@ -179,7 +179,7 @@ export function ReviewVerificationTable() {
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                    placeholder="Search by order ID, ASIN, or review text..."
+                    placeholder="Search by order ID, product, ASIN, buyer, or review text..."
                     isLoading={loading}
                 />
             </div>
