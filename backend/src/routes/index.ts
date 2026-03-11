@@ -7,6 +7,7 @@ import configRoutes from './config.routes';
 import marketplaceRoutes from './marketplace.routes';
 import uploadRoutes from './upload.routes';
 import buyerRoutes from './buyer.routes';
+import adminRoutes from './admin';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/config', configRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/buyer', buyerRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

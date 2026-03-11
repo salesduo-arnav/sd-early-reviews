@@ -219,9 +219,14 @@ export const submitReviewProof = async (req: Request, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        const buyerProfileId = await resolveBuyerProfileId(userId);
-        if (!buyerProfileId) return res.status(403).json({ message: 'Buyer profile not found' });
+        const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!buyerProfile) return res.status(403).json({ message: 'Buyer profile not found' });
 
+        if (buyerProfile.is_blacklisted) {
+            return res.status(403).json({ message: 'Your account has been restricted. Contact support.' });
+        }
+
+        const buyerProfileId = buyerProfile.id;
         const { id } = req.params;
         const { review_proof_url, review_rating, review_text, amazon_review_id } = req.body;
 
@@ -421,6 +426,8 @@ export const getAccountProfile = async (req: Request, res: Response) => {
                 account_last4: profile.bank_account_last4 || null,
             },
             email_notifications_enabled: profile.email_notifications_enabled,
+            is_blacklisted: profile.is_blacklisted,
+            blacklist_reason: profile.blacklist_reason || null,
         });
     } catch (error) {
         logger.error(`Error fetching account profile: ${error instanceof Error ? error.message : 'Unknown error'}`);

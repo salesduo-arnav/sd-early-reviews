@@ -122,6 +122,8 @@ export interface BuyerProfile {
         account_last4: string | null;
     };
     email_notifications_enabled: boolean;
+    is_blacklisted: boolean;
+    blacklist_reason: string | null;
 }
 
 export interface BankDetailsPayload {
