@@ -37,7 +37,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated && tokens?.accessToken) {
-      authApi.me(tokens.accessToken).catch(() => {
+      authApi.me().catch(() => {
         logout(); // Auto-logout if token is invalid or user was deleted from DB
       });
     }

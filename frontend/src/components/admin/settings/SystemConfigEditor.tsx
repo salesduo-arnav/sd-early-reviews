@@ -36,7 +36,7 @@ export function SystemConfigEditor() {
             const data = await adminApi.getConfigs();
             setConfigs(data);
             setEditedValues({});
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     };
 
     useEffect(() => { fetchConfigs(); }, []);

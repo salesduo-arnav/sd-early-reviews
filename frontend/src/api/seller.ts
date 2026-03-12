@@ -1,6 +1,5 @@
-import { API_BASE_URL } from '../../config';
-import { useAuthStore } from '../../store/authStore';
-import { PaginatedResponse } from '../campaigns';
+import { fetchWithAuth } from './httpClient';
+import type { PaginatedResponse } from './types';
 
 export interface DashboardMetrics {
     activeCampaigns: number;
@@ -48,22 +47,6 @@ export interface SellerReviewStats {
     pendingReviews: number;
     averageRating: number;
 }
-
-const fetchWithAuth = async (endpoint: string) => {
-    const token = useAuthStore.getState().tokens?.accessToken;
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-    }
-
-    return response.json();
-};
 
 export const dashboardApi = {
     getSellerMetrics: async (): Promise<DashboardMetrics> => {

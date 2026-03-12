@@ -48,7 +48,7 @@ function timeAgo(dateString: string): string {
 }
 
 export function NotificationBell() {
-    const { tokens } = useAuthStore();
+    const { isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
     const {
         notifications,
@@ -60,47 +60,42 @@ export function NotificationBell() {
         markAllAsRead,
     } = useNotificationStore();
 
-    const token = tokens?.accessToken;
-
-    // Fetch notifications on mount
     useEffect(() => {
-        if (!token) return;
-        fetchNotifications(token);
-    }, [token, fetchNotifications]);
+        if (!isAuthenticated) return;
+        fetchNotifications();
+    }, [isAuthenticated, fetchNotifications]);
 
-    // Poll unread count
     useEffect(() => {
-        if (!token) return;
-        const interval = setInterval(() => fetchUnreadCount(token), POLL_INTERVAL);
+        if (!isAuthenticated) return;
+        const interval = setInterval(() => fetchUnreadCount(), POLL_INTERVAL);
         return () => clearInterval(interval);
-    }, [token, fetchUnreadCount]);
+    }, [isAuthenticated, fetchUnreadCount]);
 
     const handleNotificationClick = useCallback(
         (id: string, actionLink: string | null, isRead: boolean) => {
-            if (!token) return;
+            if (!isAuthenticated) return;
             if (!isRead) {
-                markAsRead(token, id);
+                markAsRead(id);
             }
             if (actionLink) {
                 navigate(actionLink);
             }
         },
-        [token, markAsRead, navigate],
+        [isAuthenticated, markAsRead, navigate],
     );
 
     const handleMarkAllAsRead = useCallback(() => {
-        if (!token) return;
-        markAllAsRead(token);
-    }, [token, markAllAsRead]);
+        if (!isAuthenticated) return;
+        markAllAsRead();
+    }, [isAuthenticated, markAllAsRead]);
 
-    // Refetch when popover opens
     const handleOpenChange = useCallback(
         (open: boolean) => {
-            if (open && token) {
-                fetchNotifications(token);
+            if (open && isAuthenticated) {
+                fetchNotifications();
             }
         },
-        [token, fetchNotifications],
+        [isAuthenticated, fetchNotifications],
     );
 
     return (

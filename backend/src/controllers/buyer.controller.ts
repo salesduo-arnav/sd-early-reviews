@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Op, Order } from 'sequelize';
+import { Op, Order, Sequelize } from 'sequelize';
 import { OrderClaim, OrderStatus, ReviewStatus, PayoutStatus } from '../models/OrderClaim';
 import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
@@ -401,14 +401,17 @@ export const getAccountProfile = async (req: Request, res: Response) => {
         });
 
         // Compute approval_rate from finalized reviews (approved or rejected)
-        const [approvedCount, rejectedCount] = await Promise.all([
-            OrderClaim.count({
-                where: { buyer_id: profile.id, review_status: ReviewStatus.APPROVED },
-            }),
-            OrderClaim.count({
-                where: { buyer_id: profile.id, review_status: ReviewStatus.REJECTED },
-            }),
-        ]);
+        const statusCounts = await OrderClaim.findAll({
+            where: {
+                buyer_id: profile.id,
+                review_status: { [Op.in]: [ReviewStatus.APPROVED, ReviewStatus.REJECTED] },
+            },
+            attributes: ['review_status', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+            group: ['review_status'],
+            raw: true,
+        }) as unknown as { review_status: string; count: string }[];
+        const approvedCount = parseInt(statusCounts.find(r => r.review_status === ReviewStatus.APPROVED)?.count || '0', 10);
+        const rejectedCount = parseInt(statusCounts.find(r => r.review_status === ReviewStatus.REJECTED)?.count || '0', 10);
         const totalDecided = approvedCount + rejectedCount;
         const approvalRate = totalDecided > 0 ? Math.round((approvedCount / totalDecided) * 100) : null;
 

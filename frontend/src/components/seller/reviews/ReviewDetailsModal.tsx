@@ -8,7 +8,7 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { SellerReview } from '@/api/dashboard/seller';
+import { SellerReview } from '@/api/seller';
 import { format } from 'date-fns';
 import { Star, ExternalLink, Calendar, Receipt, AlertCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';

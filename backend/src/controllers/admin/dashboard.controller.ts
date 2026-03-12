@@ -5,7 +5,24 @@ import { OrderClaim, OrderStatus, ReviewStatus, PayoutStatus } from '../../model
 import { Transaction, TransactionStatus } from '../../models/Transaction';
 import { User, UserRole } from '../../models/User';
 import { logger } from '../../utils/logger';
-import { startOfDay, endOfDay, subDays, format } from 'date-fns';
+import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from 'date-fns';
+
+const DEFAULT_CHART_DAYS = 30;
+
+function parseDateRange(query: Request['query']): { startDate: Date; endDate: Date } {
+    const { startDate: startDateStr, endDate: endDateStr } = query;
+    const endDate = endDateStr ? endOfDay(new Date(endDateStr as string)) : endOfDay(new Date());
+    const startDate = startDateStr ? startOfDay(new Date(startDateStr as string)) : startOfDay(subDays(endDate, DEFAULT_CHART_DAYS - 1));
+    return { startDate, endDate };
+}
+
+function initDateMap<T>(startDate: Date, endDate: Date, defaultValue: () => T): Record<string, T> {
+    const map: Record<string, T> = {};
+    for (const day of eachDayOfInterval({ start: startDate, end: endDate })) {
+        map[format(day, 'yyyy-MM-dd')] = defaultValue();
+    }
+    return map;
+}
 
 export const getMetrics = async (req: Request, res: Response) => {
     try {
@@ -44,9 +61,7 @@ export const getMetrics = async (req: Request, res: Response) => {
 
 export const getRevenueChart = async (req: Request, res: Response) => {
     try {
-        const { startDate: startDateStr, endDate: endDateStr } = req.query;
-        const endDate = endDateStr ? endOfDay(new Date(endDateStr as string)) : endOfDay(new Date());
-        const startDate = startDateStr ? startOfDay(new Date(startDateStr as string)) : startOfDay(subDays(endDate, 29));
+        const { startDate, endDate } = parseDateRange(req.query);
 
         const transactions = await Transaction.findAll({
             where: {
@@ -56,10 +71,7 @@ export const getRevenueChart = async (req: Request, res: Response) => {
             attributes: ['platform_fee', 'created_at'],
         });
 
-        const revenueMap: Record<string, number> = {};
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            revenueMap[format(d, 'yyyy-MM-dd')] = 0;
-        }
+        const revenueMap = initDateMap(startDate, endDate, () => 0);
 
         transactions.forEach(t => {
             const dateStr = format(new Date(t.created_at), 'yyyy-MM-dd');
@@ -78,19 +90,14 @@ export const getRevenueChart = async (req: Request, res: Response) => {
 
 export const getClaimsChart = async (req: Request, res: Response) => {
     try {
-        const { startDate: startDateStr, endDate: endDateStr } = req.query;
-        const endDate = endDateStr ? endOfDay(new Date(endDateStr as string)) : endOfDay(new Date());
-        const startDate = startDateStr ? startOfDay(new Date(startDateStr as string)) : startOfDay(subDays(endDate, 29));
+        const { startDate, endDate } = parseDateRange(req.query);
 
         const claims = await OrderClaim.findAll({
             where: { created_at: { [Op.between]: [startDate, endDate] } },
             attributes: ['created_at'],
         });
 
-        const claimsMap: Record<string, number> = {};
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            claimsMap[format(d, 'yyyy-MM-dd')] = 0;
-        }
+        const claimsMap = initDateMap(startDate, endDate, () => 0);
 
         claims.forEach(c => {
             const dateStr = format(new Date(c.created_at), 'yyyy-MM-dd');
@@ -107,19 +114,14 @@ export const getClaimsChart = async (req: Request, res: Response) => {
 
 export const getUsersChart = async (req: Request, res: Response) => {
     try {
-        const { startDate: startDateStr, endDate: endDateStr } = req.query;
-        const endDate = endDateStr ? endOfDay(new Date(endDateStr as string)) : endOfDay(new Date());
-        const startDate = startDateStr ? startOfDay(new Date(startDateStr as string)) : startOfDay(subDays(endDate, 29));
+        const { startDate, endDate } = parseDateRange(req.query);
 
         const users = await User.findAll({
             where: { created_at: { [Op.between]: [startDate, endDate] } },
             attributes: ['created_at', 'role'],
         });
 
-        const usersMap: Record<string, { buyers: number; sellers: number }> = {};
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            usersMap[format(d, 'yyyy-MM-dd')] = { buyers: 0, sellers: 0 };
-        }
+        const usersMap = initDateMap(startDate, endDate, () => ({ buyers: 0, sellers: 0 }));
 
         users.forEach(u => {
             const dateStr = format(new Date(u.created_at), 'yyyy-MM-dd');

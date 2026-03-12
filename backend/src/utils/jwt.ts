@@ -2,9 +2,12 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev-only-DO-NOT-USE-IN-PROD';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
 
 export interface TokenPayload {
     userId: string;

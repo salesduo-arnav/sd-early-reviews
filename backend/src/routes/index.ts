@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
 import notificationRoutes from './notification.routes';
-import dashboardRoutes from './dashboard';
+import sellerDashboardRoutes from './seller.routes';
 import campaignRoutes from './campaign.routes';
 import configRoutes from './config.routes';
 import marketplaceRoutes from './marketplace.routes';
@@ -17,7 +17,7 @@ router.get('/health', (req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/notifications', notificationRoutes);
-router.use('/dashboard', dashboardRoutes);
+router.use('/dashboard/seller', sellerDashboardRoutes);
 router.use('/campaigns', campaignRoutes);
 router.use('/config', configRoutes);
 router.use('/marketplace', marketplaceRoutes);

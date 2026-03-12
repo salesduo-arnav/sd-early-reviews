@@ -47,7 +47,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
             setSeller(result.seller);
             setCampaigns(result.campaigns);
             setTotalSpent(result.totalSpent);
-        } catch { /* empty */ }
+        } catch (err) { console.error('Failed to fetch data:', err); }
         finally { setLoading(false); }
     }, [sellerId]);
 

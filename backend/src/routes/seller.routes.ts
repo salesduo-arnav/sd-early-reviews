@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticateJWT, authorizeRole } from '../../middlewares/auth.middleware';
-import { getMetrics, getReviewVelocity, getCampaignProgress, getSellerReviews, getSellerReviewStats } from '../../controllers/dashboard/seller.controller';
+import { authenticateJWT, authorizeRole } from '../middlewares/auth.middleware';
+import { getMetrics, getReviewVelocity, getCampaignProgress, getSellerReviews, getSellerReviewStats } from '../controllers/seller.controller';
 
 const router = Router();
 

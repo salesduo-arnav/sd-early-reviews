@@ -1,21 +1,9 @@
-import { API_BASE_URL } from '../config';
-import { useAuthStore } from '../store/authStore';
+import { fetchWithAuth } from './httpClient';
+import type { PaginatedResponse } from './types';
+
+export type { PaginationMeta, PaginatedResponse } from './types';
 
 export type CampaignStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
-
-export interface PaginationMeta {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-}
-
-export interface PaginatedResponse<T> {
-    data: T[];
-    pagination: PaginationMeta;
-}
 
 export interface Campaign {
     id: string;
@@ -36,22 +24,6 @@ export interface Campaign {
     reimbursement_percent: number;
 }
 
-const getHeaders = () => {
-    const token = useAuthStore.getState().tokens?.accessToken;
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-};
-
-const handleResponse = async (response: Response) => {
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-    }
-    return data;
-};
-
 export interface AsinLookupResponse {
     product_title: string;
     product_photo: string;
@@ -67,43 +39,25 @@ export interface AsinLookupResponse {
 
 export const campaignsApi = {
     lookupAsin: async (asin: string, country: string): Promise<AsinLookupResponse> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns/lookup?asin=${asin}&country=${country}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/campaigns/lookup?asin=${asin}&country=${country}`);
     },
 
     getCampaigns: async (page = 1, limit = 12): Promise<PaginatedResponse<Campaign>> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns?page=${page}&limit=${limit}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/campaigns?page=${page}&limit=${limit}`);
     },
 
     getCampaignById: async (id: string): Promise<Campaign | undefined> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns/${id}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/campaigns/${id}`);
     },
 
     togglePauseStatus: async (id: string): Promise<Campaign> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns/${id}/status`, {
-            method: 'PATCH',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/campaigns/${id}/status`, { method: 'PATCH' });
     },
 
     createCampaign: async (data: Partial<Campaign>): Promise<Campaign> => {
-        const response = await fetch(`${API_BASE_URL}/campaigns`, {
+        return fetchWithAuth('/campaigns', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(data),
         });
-        return handleResponse(response);
     }
 };

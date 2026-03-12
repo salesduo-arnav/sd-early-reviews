@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 
 const RAPID_API_KEY = process.env.RAPID_API_KEY || "";
-const REALTIME_API_BASE = "https://real-time-amazon-data.p.rapidapi.com";
+const REALTIME_API_BASE = process.env.RAPID_API_BASE_URL || "https://real-time-amazon-data.p.rapidapi.com";
 
 const COUNTRY_DOMAINS: Record<string, string> = {
     "US": "com", "UK": "co.uk", "GB": "co.uk", "DE": "de", "FR": "fr",

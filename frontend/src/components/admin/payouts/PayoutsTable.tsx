@@ -52,7 +52,7 @@ export function PayoutsTable() {
             const result = await adminApi.getPayouts(pagination.pageIndex + 1, pagination.pageSize, statusFilter, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

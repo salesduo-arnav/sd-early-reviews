@@ -50,7 +50,7 @@ export function AdminCampaignsTable() {
             const result = await adminApi.getCampaigns(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, statusFilter);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

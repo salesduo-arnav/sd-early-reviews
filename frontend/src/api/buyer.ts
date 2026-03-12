@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useAuthStore } from '../store/authStore';
-import type { PaginatedResponse } from './campaigns';
+import { fetchWithAuth, buildQueryString } from './httpClient';
+import type { PaginatedResponse } from './types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -138,69 +139,25 @@ export interface BankDetailsResponse {
     account_last4: string;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-const getHeaders = () => {
-    const token = useAuthStore.getState().tokens?.accessToken;
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-};
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-    }
-    return data as T;
-};
-
-const buildQueryString = (params: Record<string, unknown>): string => {
-    const searchParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null && value !== '') {
-            searchParams.append(key, String(value));
-        }
-    }
-    const qs = searchParams.toString();
-    return qs ? `?${qs}` : '';
-};
-
 // ─── API ────────────────────────────────────────────────────────────────────
 
 export const buyerApi = {
-    /** Fetch paginated marketplace products with optional filters & sorting */
     getMarketplaceProducts: async (
         params: MarketplaceQueryParams = {},
     ): Promise<PaginatedResponse<MarketplaceProduct>> => {
         const qs = buildQueryString(params as Record<string, unknown>);
-        const response = await fetch(`${API_BASE_URL}/marketplace${qs}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/marketplace${qs}`);
     },
 
-    /** Fetch single product details */
     getProductDetails: async (productId: string): Promise<MarketplaceProduct> => {
-        const response = await fetch(`${API_BASE_URL}/marketplace/${productId}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/marketplace/${productId}`);
     },
 
-    /** Fetch available filter options (categories, regions) */
     getFilters: async (): Promise<MarketplaceFilters> => {
-        const response = await fetch(`${API_BASE_URL}/marketplace/filters`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth('/marketplace/filters');
     },
 
-    /** Upload an image file and return its URL */
+    /** Upload an image file — uses FormData so we bypass the JSON httpClient */
     uploadImage: async (file: File): Promise<{ url: string }> => {
         const token = useAuthStore.getState().tokens?.accessToken;
         const formData = new FormData();
@@ -212,98 +169,65 @@ export const buyerApi = {
             },
             body: formData,
         });
-        return handleResponse(response);
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Upload failed');
+        }
+        return data;
     },
 
-    /** Claim a product by submitting order proof */
     claimProduct: async (
         campaignId: string,
         payload: ClaimProductPayload,
     ): Promise<{ message: string; claim: ClaimData }> => {
-        const response = await fetch(`${API_BASE_URL}/marketplace/${campaignId}/claim`, {
+        return fetchWithAuth(`/marketplace/${campaignId}/claim`, {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(payload),
         });
-        return handleResponse(response);
     },
 
-    /** Get all claims for the current buyer with pagination and filtering */
     getMyClaims: async (params: ClaimsQueryParams = {}): Promise<PaginatedResponse<BuyerClaim>> => {
         const qs = buildQueryString(params as Record<string, unknown>);
-        const response = await fetch(`${API_BASE_URL}/buyer/claims${qs}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/buyer/claims${qs}`);
     },
 
-    /** Get full details for a single claim */
     getClaimDetail: async (claimId: string): Promise<BuyerClaim> => {
-        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/buyer/claims/${claimId}`);
     },
 
-    /** Submit review proof for a claim */
     submitReviewProof: async (
         claimId: string,
         payload: SubmitReviewPayload,
     ): Promise<{ message: string; claim: BuyerClaim }> => {
-        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}/review`, {
+        return fetchWithAuth(`/buyer/claims/${claimId}/review`, {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(payload),
         });
-        return handleResponse(response);
     },
 
-    /** Cancel a claim (only if order is still pending verification) */
     cancelClaim: async (claimId: string): Promise<{ message: string }> => {
-        const response = await fetch(`${API_BASE_URL}/buyer/claims/${claimId}`, {
-            method: 'DELETE',
-            headers: getHeaders(),
-        });
-        return handleResponse(response);
+        return fetchWithAuth(`/buyer/claims/${claimId}`, { method: 'DELETE' });
     },
 
-    /** Get the buyer's account/profile details */
-    getAccountProfile: async () => {
-        const response = await fetch(`${API_BASE_URL}/buyer/profile`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        return handleResponse<BuyerProfile>(response);
+    getAccountProfile: async (): Promise<BuyerProfile> => {
+        return fetchWithAuth('/buyer/profile');
     },
 
-    /** Add or update bank details */
-    updateBankDetails: async (details: BankDetailsPayload) => {
-        const response = await fetch(`${API_BASE_URL}/buyer/bank-details`, {
+    updateBankDetails: async (details: BankDetailsPayload): Promise<BankDetailsResponse> => {
+        return fetchWithAuth('/buyer/bank-details', {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(details),
         });
-        return handleResponse<BankDetailsResponse>(response);
     },
 
-    /** Remove bank details */
-    removeBankDetails: async () => {
-        const response = await fetch(`${API_BASE_URL}/buyer/bank-details`, {
-            method: 'DELETE',
-            headers: getHeaders(),
-        });
-        return handleResponse<{ success: boolean }>(response);
+    removeBankDetails: async (): Promise<{ success: boolean }> => {
+        return fetchWithAuth('/buyer/bank-details', { method: 'DELETE' });
     },
 
-    /** Update email notification preference */
-    updateNotificationPreferences: async (enabled: boolean) => {
-        const response = await fetch(`${API_BASE_URL}/buyer/notifications`, {
+    updateNotificationPreferences: async (enabled: boolean): Promise<{ email_notifications_enabled: boolean }> => {
+        return fetchWithAuth('/buyer/notifications', {
             method: 'PATCH',
-            headers: getHeaders(),
             body: JSON.stringify({ email_notifications_enabled: enabled }),
         });
-        return handleResponse<{ email_notifications_enabled: boolean }>(response);
     },
 };

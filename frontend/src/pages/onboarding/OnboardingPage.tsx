@@ -49,7 +49,7 @@ const OnboardingPage: React.FC = () => {
                 company_name: companyName
             };
 
-            await authApi.onboarding(data, tokens.accessToken);
+            await authApi.onboarding(data);
             completeOnboarding();
             toast.success(t('onboarding.success', 'Onboarding completed!'));
 

@@ -39,7 +39,7 @@ export function ReviewVerificationTable() {
             setData(result.data);
             setPageCount(result.pagination.totalPages);
             setTotalPending(result.pagination.total);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
