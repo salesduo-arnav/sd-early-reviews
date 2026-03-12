@@ -62,7 +62,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
             const result = await adminApi.getCampaignDetail(campaignId, page, 5);
             setCampaign(result.campaign);
             setClaims(result.claims);
-        } catch { /* empty */ }
+        } catch (err) { console.error('Failed to fetch data:', err); }
         finally { setLoading(false); }
     }, [campaignId]);
 

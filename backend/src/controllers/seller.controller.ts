@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Campaign, CampaignStatus } from '../../models/Campaign';
-import { OrderClaim, ReviewStatus } from '../../models/OrderClaim';
-import sequelize from '../../config/db';
-import { Transaction, TransactionStatus } from '../../models/Transaction';
-import { SellerProfile } from '../../models/SellerProfile';
-import { logger } from '../../utils/logger';
-import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
+import { Campaign, CampaignStatus } from '../models/Campaign';
+import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
+import sequelize from '../config/db';
+import { Transaction, TransactionStatus } from '../models/Transaction';
+import { SellerProfile } from '../models/SellerProfile';
+import { logger } from '../utils/logger';
+import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek, format } from 'date-fns';
 
 /** Shared helper — resolves SellerProfile.id from JWT userId, returns null if not found */
@@ -115,8 +115,6 @@ export const getReviewVelocity = async (req: Request, res: Response) => {
         const endDate = endDateStr ? endOfDay(new Date(endDateStr)) : endOfDay(new Date());
         const startDate = startDateStr ? startOfDay(new Date(startDateStr)) : startOfDay(subDays(endDate, 6));
 
-        // Fetch approved reviews where review_date OR created_at falls in range
-        // (review_date can be null if status was updated manually)
         const reviews = await OrderClaim.findAll({
             include: [{
                 model: Campaign,
@@ -369,4 +367,3 @@ export const getSellerReviews = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
-

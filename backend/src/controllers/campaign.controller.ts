@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Sequelize } from 'sequelize';
 import { fetchAsinDetailsRealTime } from '../services/amazon.service';
 import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
@@ -97,13 +98,21 @@ export const getCampaigns = async (req: Request, res: Response) => {
             offset: pagination.offset,
         });
 
-        // Dynamically compute claimed_count (approved reviews) for each campaign
-        const campaignsWithCounts = await Promise.all(rows.map(async (campaign) => {
-            const claimedCount = await OrderClaim.count({
-                where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
-            });
-            const json = campaign.toJSON();
-            return { ...json, claimed_count: claimedCount };
+        // Compute claimed_count (approved reviews) in a single query
+        const campaignIds = rows.map(c => c.id);
+        const claimedCounts = campaignIds.length > 0
+            ? await OrderClaim.findAll({
+                where: { campaign_id: campaignIds, review_status: ReviewStatus.APPROVED },
+                attributes: ['campaign_id', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+                group: ['campaign_id'],
+                raw: true,
+            }) as unknown as { campaign_id: string; count: string }[]
+            : [];
+        const countMap = new Map(claimedCounts.map(r => [r.campaign_id, parseInt(r.count, 10)]));
+
+        const campaignsWithCounts = rows.map(campaign => ({
+            ...campaign.toJSON(),
+            claimed_count: countMap.get(campaign.id) || 0,
         }));
 
         return res.status(200).json(buildPaginatedResponse(campaignsWithCounts, count, pagination));
@@ -177,7 +186,11 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
 
         await campaign.save();
 
-        return res.status(200).json(campaign);
+        const claimedCount = await OrderClaim.count({
+            where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
+        });
+
+        return res.status(200).json({ ...campaign.toJSON(), claimed_count: claimedCount });
     } catch (error) {
         logger.error(`Error toggling campaign status: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while toggling campaign status' });

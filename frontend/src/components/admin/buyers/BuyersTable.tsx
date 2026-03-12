@@ -46,7 +46,7 @@ export function BuyersTable() {
             );
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, blacklistFilter]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

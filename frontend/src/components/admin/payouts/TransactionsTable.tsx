@@ -47,7 +47,7 @@ export function TransactionsTable() {
             const result = await adminApi.getTransactions(pagination.pageIndex + 1, pagination.pageSize, typeFilter, statusFilter, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, typeFilter, statusFilter]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

@@ -24,7 +24,7 @@ export function SellersTable() {
             const result = await adminApi.getSellers(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

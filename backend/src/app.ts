@@ -24,9 +24,6 @@ app.use(express.json());
 // Log HTTP requests
 app.use(morgan('tiny', { stream }));
 
-
-app.use(express.json());
-
 import routes from './routes/index';
 
 // Mount generic resource routes here

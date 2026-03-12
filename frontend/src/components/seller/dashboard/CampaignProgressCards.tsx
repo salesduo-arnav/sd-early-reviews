@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { dashboardApi, CampaignProgress } from '@/api/dashboard/seller';
+import { dashboardApi, CampaignProgress } from '@/api/seller';
 import { Badge } from '@/components/ui/badge';
 import { AppPagination, PaginationMeta } from '@/components/common/AppPagination';
 

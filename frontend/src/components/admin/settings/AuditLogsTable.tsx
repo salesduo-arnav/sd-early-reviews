@@ -52,7 +52,7 @@ export function AuditLogsTable() {
             const result = await adminApi.getAuditLogs(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, startStr, endStr);
             setData(result.data);
             setPageCount(result.pagination.totalPages);
-        } catch { /* empty */ } finally { setLoading(false); }
+        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
     }, [pagination.pageIndex, pagination.pageSize, searchQuery, startDate, endDate]);
 
     useEffect(() => { fetchData(); }, [fetchData]);

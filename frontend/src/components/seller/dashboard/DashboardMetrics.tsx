@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, TrendingUp, DollarSign } from 'lucide-react';
-import { dashboardApi, DashboardMetrics as IDashboardMetrics } from '@/api/dashboard/seller';
+import { dashboardApi, DashboardMetrics as IDashboardMetrics } from '@/api/seller';
 
 export function DashboardMetrics() {
     const { t } = useTranslation();

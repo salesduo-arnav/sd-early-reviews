@@ -11,6 +11,18 @@ import { getSignupOtpEmail, getLoginOtpEmail, getResetPasswordOtpEmail } from '.
 import { logger } from '../utils/logger';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
+import { isAdminEmail } from '../utils/adminEmails';
+import { hasUserProfile } from '../utils/profileCheck';
+
+async function buildAuthResponse(user: User) {
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
+    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
+    const has_profile = await hasUserProfile(user.id, user.role);
+    return {
+        tokens: { accessToken, refreshToken },
+        user: { id: user.id, email: user.email, role: user.role, is_verified: user.is_verified, has_profile },
+    };
+}
 
 // SIGNUP
 export const signup = async (req: Request, res: Response): Promise<void> => {
@@ -42,8 +54,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         }
 
         // Admin Interception
-        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-        const isEmailAdmin = adminEmails.includes(email.toLowerCase());
+        const isEmailAdmin = isAdminEmail(email);
 
         const userRole = isEmailAdmin ? UserRole.ADMIN : (role === 'BUYER' ? UserRole.BUYER : UserRole.SELLER);
         const password_hash = await bcrypt.hash(password, 10);
@@ -67,7 +78,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
             await SellerProfile.create({
                 user_id: newUser.id,
                 company_name,
-                stripe_customer_id: 'pending_stripe_customer_id_on_signup', // Mock for now
+                stripe_customer_id: '',
             });
         }
         // If ADMIN, we intentionally skip creating a BuyerProfile or SellerProfile
@@ -129,19 +140,11 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
         user.is_verified = true;
         await user.save();
 
-        const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
-        const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
-
-        // Check for existing profile
-        const has_profile = user.role === UserRole.ADMIN ? true :
-            (user.role === UserRole.BUYER ?
-                (await BuyerProfile.count({ where: { user_id: user.id } }) > 0) :
-                (await SellerProfile.count({ where: { user_id: user.id } }) > 0));
+        const authResponse = await buildAuthResponse(user);
 
         res.status(200).json({
             message: 'Email verified successfully',
-            tokens: { accessToken, refreshToken },
-            user: { id: user.id, email: user.email, role: user.role, is_verified: user.is_verified, has_profile }
+            ...authResponse,
         });
     } catch (error) {
         logger.error('Verify Email error', { error });
@@ -171,27 +174,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
 
         // Retroactive Admin Interception
-        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-        const isEmailAdmin = adminEmails.includes(email.toLowerCase());
-
-        if (isEmailAdmin && user.role !== UserRole.ADMIN) {
+        if (isAdminEmail(email) && user.role !== UserRole.ADMIN) {
             user.role = UserRole.ADMIN;
             await user.save();
         }
 
-        const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
-        const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
-
-        // Check for existing profile
-        const has_profile = user.role === UserRole.ADMIN ? true :
-            (user.role === UserRole.BUYER ?
-                (await BuyerProfile.count({ where: { user_id: user.id } }) > 0) :
-                (await SellerProfile.count({ where: { user_id: user.id } }) > 0));
+        const authResponse = await buildAuthResponse(user);
 
         res.status(200).json({
             message: 'Logged in successfully',
-            tokens: { accessToken, refreshToken },
-            user: { id: user.id, email: user.email, role: user.role, is_verified: user.is_verified, has_profile }
+            ...authResponse,
         });
     } catch (error) {
         logger.error('Login error', { error });
@@ -257,27 +249,16 @@ export const loginOtpVerify = async (req: Request, res: Response): Promise<void>
         }
 
         // Retroactive Admin Interception
-        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-        const isEmailAdmin = adminEmails.includes(user.email.toLowerCase());
-
-        if (isEmailAdmin && user.role !== UserRole.ADMIN) {
+        if (isAdminEmail(user.email) && user.role !== UserRole.ADMIN) {
             user.role = UserRole.ADMIN;
             await user.save();
         }
 
-        const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
-        const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
-
-        // Check for existing profile
-        const has_profile = user.role === UserRole.ADMIN ? true :
-            (user.role === UserRole.BUYER ?
-                (await BuyerProfile.count({ where: { user_id: user.id } }) > 0) :
-                (await SellerProfile.count({ where: { user_id: user.id } }) > 0));
+        const authResponse = await buildAuthResponse(user);
 
         res.status(200).json({
             message: 'Logged in successfully via OTP',
-            tokens: { accessToken, refreshToken },
-            user: { id: user.id, email: user.email, role: user.role, is_verified: user.is_verified, has_profile }
+            ...authResponse,
         });
     } catch (error) {
         logger.error('Login OTP verify error', { error });
@@ -417,8 +398,7 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
 
         if (!user) {
             // New user via Google
-            const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-            const isEmailAdmin = adminEmails.includes(email.toLowerCase());
+            const isEmailAdmin = isAdminEmail(email);
             let userRole: UserRole;
 
             if (isEmailAdmin) {
@@ -454,28 +434,17 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
             });
         } else {
             // Retroactive Admin Interception check for existing users
-            const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-            const isEmailAdmin = adminEmails.includes(email.toLowerCase());
-
-            if (isEmailAdmin && user.role !== UserRole.ADMIN) {
+            if (isAdminEmail(email) && user.role !== UserRole.ADMIN) {
                 user.role = UserRole.ADMIN;
                 await user.save();
             }
         }
 
-        const accessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
-        const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
-
-        // Check for existing profile
-        const has_profile = user.role === UserRole.ADMIN ? true :
-            (user.role === UserRole.BUYER ?
-                (await BuyerProfile.count({ where: { user_id: user.id } }) > 0) :
-                (await SellerProfile.count({ where: { user_id: user.id } }) > 0));
+        const authResponse = await buildAuthResponse(user);
 
         res.status(200).json({
             message: 'Google Auth successful',
-            tokens: { accessToken, refreshToken },
-            user: { id: user.id, email: user.email, role: user.role, is_verified: user.is_verified, has_profile }
+            ...authResponse,
         });
 
     } catch (error) {
@@ -529,7 +498,7 @@ export const onboarding = async (req: Request, res: Response): Promise<void> => 
             await SellerProfile.create({
                 user_id: dbUser.id,
                 company_name: company_name || null,
-                stripe_customer_id: 'pending_stripe_customer_id_on_onboarding', // Mock for now
+                stripe_customer_id: '',
             });
         }
 
@@ -558,11 +527,7 @@ export const me = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Check for existing profile
-        const has_profile = dbUser.role === UserRole.ADMIN ? true :
-            (dbUser.role === UserRole.BUYER ?
-                (await BuyerProfile.count({ where: { user_id: dbUser.id } }) > 0) :
-                (await SellerProfile.count({ where: { user_id: dbUser.id } }) > 0));
+        const has_profile = await hasUserProfile(dbUser.id, dbUser.role);
 
         res.status(200).json({
             user: { id: dbUser.id, email: dbUser.email, role: dbUser.role, is_verified: dbUser.is_verified, has_profile }

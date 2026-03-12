@@ -58,7 +58,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
             const result = await adminApi.getBuyerDetail(buyerId, page, 5);
             setBuyer(result.buyer);
             setClaims(result.claims);
-        } catch { /* empty */ }
+        } catch (err) { console.error('Failed to fetch data:', err); }
         finally { setLoading(false); }
     }, [buyerId]);
 

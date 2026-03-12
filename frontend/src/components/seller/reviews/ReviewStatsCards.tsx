@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, CheckCircle, Clock, Star } from 'lucide-react';
-import { dashboardApi, SellerReviewStats } from '@/api/dashboard/seller';
+import { dashboardApi, SellerReviewStats } from '@/api/seller';
 
 export function ReviewStatsCards() {
     const { t } = useTranslation();

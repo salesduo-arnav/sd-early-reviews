@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config';
+import { fetchWithAuth } from './httpClient';
 
 export interface NotificationData {
     id: string;
@@ -24,48 +24,21 @@ interface MessageResponse {
     message: string;
 }
 
-const authHeaders = (token: string) => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-});
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-    }
-    return data;
-};
-
 export const notificationsApi = {
-    getAll: async (token: string, limit?: number): Promise<NotificationsResponse> => {
+    getAll: async (limit?: number): Promise<NotificationsResponse> => {
         const params = limit ? `?limit=${limit}` : '';
-        const response = await fetch(`${API_BASE_URL}/notifications${params}`, {
-            headers: authHeaders(token),
-        });
-        return handleResponse<NotificationsResponse>(response);
+        return fetchWithAuth(`/notifications${params}`);
     },
 
-    getUnreadCount: async (token: string): Promise<UnreadCountResponse> => {
-        const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
-            headers: authHeaders(token),
-        });
-        return handleResponse<UnreadCountResponse>(response);
+    getUnreadCount: async (): Promise<UnreadCountResponse> => {
+        return fetchWithAuth('/notifications/unread-count');
     },
 
-    markAsRead: async (token: string, id: string): Promise<MessageResponse> => {
-        const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
-            method: 'PATCH',
-            headers: authHeaders(token),
-        });
-        return handleResponse<MessageResponse>(response);
+    markAsRead: async (id: string): Promise<MessageResponse> => {
+        return fetchWithAuth(`/notifications/${id}/read`, { method: 'PATCH' });
     },
 
-    markAllAsRead: async (token: string): Promise<MessageResponse> => {
-        const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
-            method: 'PATCH',
-            headers: authHeaders(token),
-        });
-        return handleResponse<MessageResponse>(response);
+    markAllAsRead: async (): Promise<MessageResponse> => {
+        return fetchWithAuth('/notifications/read-all', { method: 'PATCH' });
     },
 };

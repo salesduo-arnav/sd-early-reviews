@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dashboardApi, SellerReview } from '@/api/dashboard/seller';
+import { dashboardApi, SellerReview } from '@/api/seller';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableColumnHeader, DataTableStaticHeader } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
