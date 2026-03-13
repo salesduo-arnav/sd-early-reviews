@@ -11,6 +11,7 @@ export function SellerLayout() {
         { label: t('seller.nav.campaigns', 'Campaigns'), href: '/seller/campaigns' },
         { label: t('seller.nav.reviews', 'Reviews'), href: '/seller/reviews' },
         { label: t('seller.nav.billing', 'Billing'), href: '/seller/billing' },
+        { label: t('seller.nav.settings', 'Settings'), href: '/seller/settings' },
     ];
 
     return (

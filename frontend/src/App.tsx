@@ -4,6 +4,7 @@ import LandingPage from './pages/landing/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import SpapiCallbackPage from './pages/auth/SpapiCallbackPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 import MarketplacePage from './pages/buyer/MarketplacePage';
@@ -15,6 +16,7 @@ import CampaignsPage from './pages/seller/CampaignsPage';
 import CampaignDetailPage from './pages/seller/CampaignDetailPage';
 import ReviewsPage from './pages/seller/ReviewsPage';
 import BillingPage from './pages/seller/BillingPage';
+import SellerSettingsPage from './pages/seller/SellerSettingsPage';
 import { SellerLayout } from './components/layout/SellerLayout';
 import { BuyerLayout } from './components/layout/BuyerLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -51,6 +53,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/spapi-callback" element={<SpapiCallbackPage />} />
 
           {/* Onboarding */}
           <Route element={<ProtectedRoute requireProfile={false} />}>
@@ -66,6 +69,7 @@ function App() {
               <Route path="campaigns/:id" element={<CampaignDetailPage />} />
               <Route path="reviews" element={<ReviewsPage />} />
               <Route path="billing" element={<BillingPage />} />
+              <Route path="settings" element={<SellerSettingsPage />} />
             </Route>
           </Route>
 

@@ -48,6 +48,26 @@ export interface SellerReviewStats {
     averageRating: number;
 }
 
+export interface SpapiStatus {
+    authorized: boolean;
+    authorizedAt: string | null;
+    sellingPartnerId: string | null;
+}
+
+export const spapiApi = {
+    getAuthUrl: async (): Promise<{ authUrl: string }> => {
+        return fetchWithAuth('/spapi/auth-url');
+    },
+
+    getStatus: async (): Promise<SpapiStatus> => {
+        return fetchWithAuth('/spapi/status');
+    },
+
+    revoke: async (): Promise<{ message: string }> => {
+        return fetchWithAuth('/spapi/revoke', { method: 'POST' });
+    },
+};
+
 export const dashboardApi = {
     getSellerMetrics: async (): Promise<DashboardMetrics> => {
         return fetchWithAuth('/dashboard/seller/metrics');

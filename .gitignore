@@ -47,6 +47,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+notes.txt
 
 # =========================
 # Playwright

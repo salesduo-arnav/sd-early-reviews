@@ -152,7 +152,7 @@ module.exports = {
       },
     });
 
-    // 4. Create SellerProfiles Table
+    // 4. Create SellerProfiles Table (includes SP-API fields)
     await queryInterface.createTable('seller_profiles', {
       id: {
         type: Sequelize.UUID,
@@ -177,6 +177,31 @@ module.exports = {
       stripe_customer_id: {
         type: Sequelize.STRING,
         allowNull: false,
+      },
+      amzn_selling_partner_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      amzn_refresh_token_encrypted: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      amzn_refresh_token_iv: {
+        type: Sequelize.STRING(64),
+        allowNull: true,
+      },
+      amzn_refresh_token_tag: {
+        type: Sequelize.STRING(64),
+        allowNull: true,
+      },
+      amzn_authorized_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      amzn_authorization_status: {
+        type: Sequelize.STRING,
+        allowNull: true,
       },
       deleted_at: {
         type: Sequelize.DATE,
@@ -268,7 +293,7 @@ module.exports = {
       },
     });
 
-    // 6. Create OrderClaims Table
+    // 6. Create OrderClaims Table (includes verification tracking fields)
     await queryInterface.createTable('order_claims', {
       id: {
         type: Sequelize.UUID,
@@ -366,6 +391,18 @@ module.exports = {
         defaultValue: 'NOT_ELIGIBLE',
         allowNull: false,
       },
+      verification_method: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      verification_details: {
+        type: Sequelize.JSONB,
+        allowNull: true,
+      },
+      auto_verified_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn('now'),
@@ -376,13 +413,11 @@ module.exports = {
       },
     });
 
-    // Add unique constraint for one_claim_per_product_per_buyer
+    // OrderClaims indexes
     await queryInterface.addIndex('order_claims', ['campaign_id', 'buyer_id'], {
       unique: true,
       name: 'one_claim_per_product_per_buyer',
     });
-
-    // OrderClaim status indexes for admin verification queries
     await queryInterface.addIndex('order_claims', ['order_status'], { name: 'idx_order_claims_order_status' });
     await queryInterface.addIndex('order_claims', ['review_status'], { name: 'idx_order_claims_review_status' });
     await queryInterface.addIndex('order_claims', ['payout_status'], { name: 'idx_order_claims_payout_status' });
@@ -501,7 +536,7 @@ module.exports = {
       },
     });
 
-    // 9. Create AdminAuditLogs Table
+    // 9. Create AdminAuditLogs Table (target_id is STRING to support non-UUID targets)
     await queryInterface.createTable('admin_audit_logs', {
       id: {
         type: Sequelize.UUID,
@@ -516,14 +551,14 @@ module.exports = {
           key: 'id',
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE', // Keep logs, or delete? usually 'SET NULL' or 'CASCADE'
+        onDelete: 'CASCADE',
       },
       action: {
         type: Sequelize.STRING,
         allowNull: false,
       },
       target_id: {
-        type: Sequelize.UUID,
+        type: Sequelize.STRING,
         allowNull: false,
       },
       target_type: {
@@ -553,7 +588,7 @@ module.exports = {
     await queryInterface.addIndex('admin_audit_logs', ['action'], { name: 'idx_audit_logs_action' });
     await queryInterface.addIndex('admin_audit_logs', ['created_at'], { name: 'idx_audit_logs_created_at' });
 
-    // Create system_configs table for admin-managed platform settings
+    // 10. Create SystemConfigs Table
     await queryInterface.createTable('system_configs', {
       key: {
         type: Sequelize.STRING,
@@ -582,10 +617,16 @@ module.exports = {
         description: 'Platform fee charged as a percentage of total reimbursement cost',
         updated_at: new Date(),
       },
+      {
+        key: 'auto_order_verification_enabled',
+        value: 'false',
+        description: 'Enable automatic order verification via Amazon SP-API. Falls back to manual if auto-verification fails.',
+        updated_at: new Date(),
+      },
     ]);
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     // Drop tables in reverse order of creation
     await queryInterface.dropTable('system_configs');
     await queryInterface.dropTable('admin_audit_logs');

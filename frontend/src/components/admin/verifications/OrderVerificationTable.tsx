@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreHorizontal, Check, X, ExternalLink, User, Package } from 'lucide-react';
+import { MoreHorizontal, Check, X, ExternalLink, User, Package, Zap } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
@@ -22,6 +22,8 @@ interface OrderRow {
     id: string; BuyerProfile?: OrderRowBuyer; Campaign?: OrderRowCampaign;
     amazon_order_id: string; purchase_date: string; expected_payout_amount: number;
     order_proof_url: string;
+    verification_method?: string | null;
+    verification_details?: Record<string, unknown> | null;
 }
 
 export function OrderVerificationTable() {
@@ -124,6 +126,20 @@ export function OrderVerificationTable() {
             cell: ({ row }) => (
                 <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>
             ),
+        },
+        {
+            id: 'auto_check',
+            header: () => <DataTableStaticHeader title="Auto-Check" />,
+            cell: ({ row }) => {
+                if (row.original.verification_details) {
+                    return (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 gap-1">
+                            <Zap className="h-3 w-3" /> Failed
+                        </Badge>
+                    );
+                }
+                return <span className="text-xs text-muted-foreground">—</span>;
+            },
         },
         {
             accessorKey: 'order_proof_url',
