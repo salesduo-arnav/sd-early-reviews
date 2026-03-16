@@ -21,9 +21,10 @@ interface SubmitReviewFormProps {
 
 const reviewSchema = z.object({
     review_rating: z.number().min(1, 'validation.select_rating').max(5),
+    review_title: z.string().min(1, 'validation.review_title_required'),
     review_text: z.string().min(10, 'validation.review_min_length'),
     review_proof_url: z.string().min(1, 'validation.screenshot_required'),
-    amazon_review_id: z.string().optional(),
+    amazon_review_id: z.string().min(1, 'validation.review_url_required'),
 });
 
 type ReviewFormData = z.infer<typeof reviewSchema>;
@@ -45,6 +46,7 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
         resolver: zodResolver(reviewSchema),
         defaultValues: {
             review_rating: 0,
+            review_title: '',
             review_text: '',
             review_proof_url: '',
             amazon_review_id: '',
@@ -66,8 +68,10 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
         if (!key) return undefined;
         const messages: Record<string, string> = {
             'validation.select_rating': t('buyer.claims.validation.select_rating', 'Please select a rating'),
+            'validation.review_title_required': t('buyer.claims.validation.review_title_required', 'Review title is required'),
             'validation.review_min_length': t('buyer.claims.validation.review_min_length', 'Review must be at least 10 characters'),
             'validation.screenshot_required': t('buyer.claims.validation.screenshot_required', 'Review screenshot is required'),
+            'validation.review_url_required': t('buyer.claims.validation.review_url_required', 'Amazon Review URL is required for verification'),
         };
         return messages[key] || key;
     };
@@ -88,8 +92,9 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
             await buyerApi.submitReviewProof(claimId, {
                 review_proof_url: url,
                 review_rating: data.review_rating,
+                review_title: data.review_title,
                 review_text: data.review_text,
-                amazon_review_id: data.amazon_review_id || undefined,
+                amazon_review_id: data.amazon_review_id,
             });
 
             toast.success(t('buyer.claims.review_submitted', 'Review submitted successfully! It will be verified shortly.'));
@@ -145,6 +150,19 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
                 )}
             </div>
 
+            {/* Review Title */}
+            <div className="space-y-2">
+                <Label htmlFor="review_title">{t('buyer.claims.review_title', 'Review Title')}</Label>
+                <Input
+                    id="review_title"
+                    placeholder={t('buyer.claims.review_title_placeholder', 'Paste the title/headline of your Amazon review...')}
+                    {...register('review_title')}
+                />
+                {errors.review_title && (
+                    <p className="text-xs text-destructive">{getValidationMessage(errors.review_title.message)}</p>
+                )}
+            </div>
+
             {/* Review Text */}
             <div className="space-y-2">
                 <Label htmlFor="review_text">{t('buyer.claims.review_text', 'Review Text')}</Label>
@@ -172,14 +190,14 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
                 )}
             </div>
 
-            {/* Amazon Review URL (optional) */}
+            {/* Amazon Review URL (required) */}
             <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                    <Label htmlFor="amazon_review_id">
-                        {t('buyer.claims.amazon_review_url', 'Amazon Review URL')}
-                    </Label>
-                    <span className="text-xs text-muted-foreground">{t('common.optional', '(optional)')}</span>
-                </div>
+                <Label htmlFor="amazon_review_id">
+                    {t('buyer.claims.amazon_review_url', 'Amazon Review URL')}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                    {t('buyer.claims.review_url_help', 'Paste the URL of your review from Amazon. This is used to automatically verify your review.')}
+                </p>
                 <div className="relative">
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -189,6 +207,9 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
                         {...register('amazon_review_id')}
                     />
                 </div>
+                {errors.amazon_review_id && (
+                    <p className="text-xs text-destructive">{getValidationMessage(errors.amazon_review_id.message)}</p>
+                )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting || !proofFile || selectedRating === 0}>

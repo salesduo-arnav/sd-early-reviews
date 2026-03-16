@@ -33,6 +33,7 @@ interface OrderClaimAttributes {
     order_status: OrderStatus;
     review_proof_url?: string;
     review_rating?: number;
+    review_title?: string;
     review_text?: string;
     amazon_review_id?: string;
     review_date?: Date;
@@ -41,11 +42,17 @@ interface OrderClaimAttributes {
     rejection_reason?: string;
     verified_by_admin_id?: string;
     payout_status: PayoutStatus;
+    verification_method?: string;
+    verification_details?: Record<string, unknown>;
+    auto_verified_at?: Date;
+    review_verification_method?: string;
+    review_verification_details?: Record<string, unknown>;
+    review_auto_verified_at?: Date;
     created_at?: Date;
     deleted_at?: Date;
 }
 
-type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'deleted_at'>;
+type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_title' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'verification_method' | 'verification_details' | 'auto_verified_at' | 'review_verification_method' | 'review_verification_details' | 'review_auto_verified_at' | 'deleted_at'>;
 
 export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAttributes> implements OrderClaimAttributes {
     public id!: string;
@@ -58,6 +65,7 @@ export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAt
     public order_status!: OrderStatus;
     public review_proof_url!: string;
     public review_rating!: number;
+    public review_title!: string;
     public review_text!: string;
     public amazon_review_id!: string;
     public review_date!: Date;
@@ -66,6 +74,12 @@ export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAt
     public rejection_reason!: string;
     public verified_by_admin_id!: string;
     public payout_status!: PayoutStatus;
+    public verification_method!: string;
+    public verification_details!: Record<string, unknown>;
+    public auto_verified_at!: Date;
+    public review_verification_method!: string;
+    public review_verification_details!: Record<string, unknown>;
+    public review_auto_verified_at!: Date;
     public created_at!: Date;
     public deleted_at!: Date;
 }
@@ -115,6 +129,10 @@ OrderClaim.init(
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        review_title: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         review_text: {
             type: DataTypes.TEXT,
             allowNull: true,
@@ -149,6 +167,30 @@ OrderClaim.init(
             type: DataTypes.ENUM(...Object.values(PayoutStatus)),
             defaultValue: PayoutStatus.NOT_ELIGIBLE,
             allowNull: false
+        },
+        verification_method: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        verification_details: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+        },
+        auto_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        review_verification_method: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        review_verification_details: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+        },
+        review_auto_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
         },
         created_at: {
             type: DataTypes.DATE,

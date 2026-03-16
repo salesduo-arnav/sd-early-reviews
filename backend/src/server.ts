@@ -7,7 +7,7 @@ import { logger as Logger } from "./utils/logger";
 
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3030;
 
 const validateEnv = () => {
     const requiredEnv = [

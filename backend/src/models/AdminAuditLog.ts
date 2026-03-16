@@ -43,7 +43,7 @@ AdminAuditLog.init(
             allowNull: false,
         },
         target_id: {
-            type: DataTypes.UUID,
+            type: DataTypes.STRING,
             allowNull: false,
         },
         target_type: {

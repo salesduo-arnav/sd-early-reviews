@@ -8,6 +8,7 @@ import { logger } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
+import { attemptAutoVerification } from '../services/verification';
 
 /**
  * GET /api/marketplace
@@ -341,6 +342,12 @@ export const claimProduct = async (req: Request, res: Response) => {
             review_deadline: reviewDeadline,
         });
 
+        // ── Attempt automatic order verification ──
+        const verificationResult = await attemptAutoVerification(claim, campaignId);
+        if (verificationResult.autoVerified) {
+            await claim.reload();
+        }
+
         // ── Notifications (non-blocking) ──
 
         // Notify the seller about the new claim
@@ -352,15 +359,19 @@ export const claimProduct = async (req: Request, res: Response) => {
             }).catch((err) => logger.error('Failed to send NEW_ORDER_CLAIM notification', { err }));
         }
 
-        // Notify the buyer with confirmation
-        notificationService.send(userId, NotificationCategory.ORDER_APPROVED, {
-            title: 'Claim Submitted',
-            message: `Your claim for "${campaign.product_title}" has been submitted. You have 14 days to write and submit your review.`,
-            actionLink: '/buyer/claims',
-        }).catch((err) => logger.error('Failed to send claim confirmation notification', { err }));
+        // Notify the buyer with confirmation (only if not auto-verified, since auto-verify sends its own notification)
+        if (!verificationResult.autoVerified) {
+            notificationService.send(userId, NotificationCategory.ORDER_APPROVED, {
+                title: 'Claim Submitted',
+                message: `Your claim for "${campaign.product_title}" has been submitted and is pending verification.`,
+                actionLink: '/buyer/claims',
+            }).catch((err) => logger.error('Failed to send claim confirmation notification', { err }));
+        }
 
         return res.status(201).json({
-            message: 'Product claimed successfully',
+            message: verificationResult.autoVerified
+                ? 'Product claimed and order verified automatically'
+                : 'Product claimed successfully',
             claim,
         });
     } catch (error) {

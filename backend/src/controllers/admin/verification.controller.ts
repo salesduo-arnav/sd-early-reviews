@@ -164,6 +164,7 @@ export const verifyOrder = async (req: Request, res: Response) => {
         const updateData: Partial<OrderClaim> = {
             order_status: action === 'APPROVE' ? OrderStatus.APPROVED : OrderStatus.REJECTED,
             verified_by_admin_id: adminId,
+            verification_method: 'MANUAL',
         };
 
         if (action === 'REJECT') {

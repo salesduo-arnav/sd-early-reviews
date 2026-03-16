@@ -25,9 +25,13 @@ app.use(express.json());
 app.use(morgan('tiny', { stream }));
 
 import routes from './routes/index';
+import { spapiCallback } from './controllers/spapi-callback.controller';
 
 // Mount generic resource routes here
 app.use('/api', routes);
+
+// SP-API OAuth callback at root level (matches AMZN_SP_REDIRECT_URI)
+app.get('/callback', spapiCallback);
 
 // Standard Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
