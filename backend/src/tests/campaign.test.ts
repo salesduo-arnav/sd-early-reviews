@@ -60,7 +60,7 @@ describe('Campaign API', () => {
         it('should return product data for valid ASIN', async () => {
             const { token } = await createSellerAndLogin(app);
             fetchAsinDetailsRealTime.mockResolvedValue({
-                data: { product_title: 'Mock Product', product_price: '19.99' },
+                data: { asin: 'B08TEST123', product_title: 'Mock Product', product_price: '19.99' },
             });
 
             const res = await request(app)

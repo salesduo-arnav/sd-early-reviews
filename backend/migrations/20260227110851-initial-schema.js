@@ -635,14 +635,14 @@ module.exports = {
       },
       {
         key: 'auto_order_verification_enabled',
-        value: 'false',
+        value: 'true',
         description: 'Enable automatic order verification via Amazon SP-API. Falls back to manual if auto-verification fails.',
         updated_at: new Date(),
       },
       {
         key: 'auto_review_verification_enabled',
         value: 'true',
-        description: 'Enable automatic review verification via Amazon profile scraping.',
+        description: 'Enable automatic review verification via Amazon profile scraping. Falls back to manual if auto-verification fails.',
         updated_at: new Date(),
       },
     ]);

@@ -21,9 +21,30 @@ export const lookupAsin = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Product details not found or failed to fetch' });
         }
 
-        logger.info(`RapidAPI ASIN Lookup Details: ${JSON.stringify(details.data, null, 2)}`);
+        const data = details.data as Record<string, unknown> | undefined;
 
-        return res.status(200).json(details.data);
+        // Validate the response has actual product data (not empty/null from wrong region or invalid ASIN)
+        if (!data || !data.product_title || !data.asin) {
+            return res.status(404).json({
+                message: 'Product not found in the selected marketplace. Please verify the ASIN and region.',
+                code: 'PRODUCT_NOT_FOUND_IN_REGION',
+            });
+        }
+
+        // Validate price - reject products with $0 price (corrupted data)
+        const priceStr = (data.product_price as string) || '';
+        const priceCleaned = priceStr.replace(/[^0-9.,]/g, '').replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
+        const price = parseFloat(priceCleaned) || 0;
+        if (price <= 0) {
+            return res.status(422).json({
+                message: 'Product data appears incomplete or corrupted — price is unavailable. Please try again or use a different ASIN.',
+                code: 'INVALID_PRODUCT_DATA',
+            });
+        }
+
+        logger.debug(`RapidAPI ASIN Lookup Details: ${JSON.stringify(data, null, 2)}`);
+
+        return res.status(200).json(data);
     } catch (error) {
         logger.error(`Error looking up ASIN: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while fetching ASIN details' });

@@ -4,6 +4,7 @@ import path from "path";
 import http from "http";
 import { closeDB, connectDB } from "./config/db";
 import { logger as Logger } from "./utils/logger";
+import { SystemConfig } from "./models/SystemConfig";
 
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 
@@ -60,6 +61,15 @@ const startServer = async () => {
         Logger.info("Initializing services...");
 
         await connectDB();
+
+        // Seed default boolean configs (only if they don't already exist)
+        const defaultConfigs = [
+            { key: 'auto_order_verification_enabled', value: 'true', description: 'Enable automatic order verification via SP-API' },
+            { key: 'auto_review_verification_enabled', value: 'true', description: 'Enable automatic review verification via profile scraping' },
+        ];
+        for (const cfg of defaultConfigs) {
+            await SystemConfig.findOrCreate({ where: { key: cfg.key }, defaults: cfg });
+        }
 
         server = app.listen(PORT, () => {
             Logger.info(`✅ Server running on port ${PORT}`);

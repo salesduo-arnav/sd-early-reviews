@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, AlertTriangle } from 'lucide-react';
 import { CampaignWizardData } from '../wizard/CampaignWizardModal';
 import { campaignsApi } from '@/api/campaigns';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
     const { t } = useTranslation();
     const [isFetching, setIsFetching] = useState(false);
     const [mockProduct, setMockProduct] = useState<{ title: string; image: string } | null>(null);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
     const handleFetch = async () => {
         if (!data.asin || !data.region) {
@@ -45,13 +46,27 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
         }
 
         setIsFetching(true);
+        setFetchError(null);
+        setMockProduct(null);
         try {
             const response = await campaignsApi.lookupAsin(data.asin, data.region);
+
+            // Client-side validation: ensure we got meaningful data back
+            if (!response.product_title) {
+                setFetchError('This ASIN was not found in the selected marketplace. Please double-check the ASIN and region.');
+                return;
+            }
 
             const priceString = response.product_price || '0';
             // Strip currency symbols; handle comma as decimal separator (e.g. "€29,99")
             const normalized = priceString.replace(/[^0-9.,]/g, '').replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
             const price = parseFloat(normalized) || 0;
+
+            // Client-side price validation as safety net
+            if (price <= 0) {
+                setFetchError('Product data appears incomplete — the price is unavailable or zero. Please try a different ASIN.');
+                return;
+            }
 
             updateData({
                 product_title: response.product_title,
@@ -72,8 +87,10 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
             });
             toast.success(t('seller.campaigns.wizard.fetch_success', 'Product details fetched successfully!'));
         } catch (error) {
-            toast.error(t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));
-            setMockProduct(null);
+            const message = error instanceof Error ? error.message : '';
+            // Show the backend's descriptive message if available
+            setFetchError(message || 'Failed to fetch product details. Please check the ASIN and selected region.');
+            toast.error(message || t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));
         } finally {
             setIsFetching(false);
         }
@@ -122,6 +139,16 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
                     <p className="text-xs text-muted-foreground">{t('seller.campaigns.wizard.asin_help', 'Enter the 10-character Amazon Standard Identification Number.')}</p>
                 </div>
             </div>
+
+            {fetchError && !mockProduct && (
+                <div className="mt-6 p-4 border border-destructive/30 rounded-lg bg-destructive/5 flex items-start space-x-3 animate-in zoom-in-95 duration-300">
+                    <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-destructive mb-0.5">Product Lookup Failed</p>
+                        <p className="text-sm text-muted-foreground">{fetchError}</p>
+                    </div>
+                </div>
+            )}
 
             {mockProduct && (
                 <div className="mt-6 p-4 border border-border rounded-lg bg-card shadow-sm flex items-center space-x-4 animate-in zoom-in-95 duration-300">
