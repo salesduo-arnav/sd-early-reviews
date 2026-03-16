@@ -350,6 +350,10 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true,
       },
+      review_title: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       review_text: {
         type: Sequelize.TEXT,
         allowNull: true,
@@ -400,6 +404,18 @@ module.exports = {
         allowNull: true,
       },
       auto_verified_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      review_verification_method: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      review_verification_details: {
+        type: Sequelize.JSONB,
+        allowNull: true,
+      },
+      review_auto_verified_at: {
         type: Sequelize.DATE,
         allowNull: true,
       },
@@ -621,6 +637,12 @@ module.exports = {
         key: 'auto_order_verification_enabled',
         value: 'false',
         description: 'Enable automatic order verification via Amazon SP-API. Falls back to manual if auto-verification fails.',
+        updated_at: new Date(),
+      },
+      {
+        key: 'auto_review_verification_enabled',
+        value: 'true',
+        description: 'Enable automatic review verification via Amazon profile scraping.',
         updated_at: new Date(),
       },
     ]);

@@ -10,6 +10,7 @@ import { parsePaginationParams, buildPaginatedResponse } from '../utils/paginati
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { startOfDay, endOfDay } from 'date-fns';
+import { attemptAutoReviewVerification } from '../services/verification';
 
 // Helpers
 
@@ -80,6 +81,7 @@ function formatClaimResponse(claim: OrderClaim): Record<string, unknown> {
         review_deadline: c.review_deadline,
         review_proof_url: c.review_proof_url,
         review_rating: c.review_rating,
+        review_title: c.review_title,
         review_text: c.review_text,
         amazon_review_id: c.amazon_review_id,
         review_date: c.review_date,
@@ -228,11 +230,11 @@ export const submitReviewProof = async (req: Request, res: Response) => {
 
         const buyerProfileId = buyerProfile.id;
         const { id } = req.params;
-        const { review_proof_url, review_rating, review_text, amazon_review_id } = req.body;
+        const { review_proof_url, review_rating, review_title, review_text, amazon_review_id } = req.body;
 
         // Validate required fields
-        if (!review_proof_url || !review_rating || !review_text) {
-            return res.status(400).json({ message: 'review_proof_url, review_rating, and review_text are required' });
+        if (!review_proof_url || !review_rating || !review_title || !review_text || !amazon_review_id) {
+            return res.status(400).json({ message: 'review_proof_url, review_rating, review_title, review_text, and amazon_review_id are required' });
         }
 
         // Validate review_proof_url
@@ -246,6 +248,11 @@ export const submitReviewProof = async (req: Request, res: Response) => {
         const rating = parseInt(review_rating, 10);
         if (isNaN(rating) || rating < 1 || rating > 5) {
             return res.status(400).json({ message: 'review_rating must be an integer between 1 and 5' });
+        }
+
+        // Validate review title
+        if (typeof review_title !== 'string' || review_title.trim().length < 1) {
+            return res.status(400).json({ message: 'review_title is required' });
         }
 
         // Validate review text
@@ -285,6 +292,7 @@ export const submitReviewProof = async (req: Request, res: Response) => {
         await claim.update({
             review_proof_url,
             review_rating: rating,
+            review_title: review_title.trim(),
             review_text: review_text.trim(),
             amazon_review_id: amazon_review_id || null,
             review_date: new Date(),
@@ -300,6 +308,10 @@ export const submitReviewProof = async (req: Request, res: Response) => {
             }],
         });
 
+        // Attempt automatic review verification (non-blocking)
+        attemptAutoReviewVerification(claim, claim.campaign_id)
+            .catch(err => logger.error('Background review auto-verification failed', { claimId: claim.id, err }));
+
         // Notify the seller (non-blocking)
         type ClaimWithCampaign = OrderClaim & { Campaign?: { seller_id: string; product_title: string } };
         const claimData = claim as ClaimWithCampaign;
@@ -314,7 +326,7 @@ export const submitReviewProof = async (req: Request, res: Response) => {
         }
 
         return res.status(200).json({
-            message: 'Review submitted successfully',
+            message: 'Review submitted successfully. Pending verification.',
             claim: formatClaimResponse(claim),
         });
     } catch (error) {

@@ -95,6 +95,7 @@ export interface BuyerClaim {
 export interface SubmitReviewPayload {
     review_proof_url: string;
     review_rating: number;
+    review_title: string;
     review_text: string;
     amazon_review_id?: string;
 }
