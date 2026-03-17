@@ -330,7 +330,7 @@
         "coming_soon": "Esta sección está en construcción.",
         "campaigns_page_desc": "Gestiona todas tus campañas de productos activas y pasadas.",
         "reviews_page_desc": "Monitorea y verifica reseñas entrantes de compradores.",
-        "billing_page_desc": "Gestiona tus métodos de pago y ve transacciones pasadas.",
+        "billing_page_desc": "Consulta tu historial de pagos y descarga facturas.",
         "nav": {
             "dashboard": "Panel",
             "campaigns": "Campañas",
@@ -454,6 +454,10 @@
                     "pay": "Pagar y Publicar Campaña"
                 }
             },
+            "payment_success_title": "¡Pago exitoso!",
+            "payment_success_desc": "Tu campaña está activa y visible para nuestro grupo de reseñadores.",
+            "payment_cancelled_title": "Pago cancelado",
+            "payment_cancelled_desc": "No se realizaron cargos. Puedes crear una nueva campaña cuando estés listo.",
             "reviews": {
                 "all_reviews": "Todas las Reseñas",
                 "total_reviews": "Total de Reseñas",
@@ -473,12 +477,29 @@
                 "no_text_provided": "Ningún texto de reseña fue proporcionado por el comprador.",
                 "rejection_reason": "Razón de Rechazo"
             }
+        },
+        "billing": {
+            "history": "Historial de Transacciones",
+            "total_spent": "Total Gastado",
+            "lifetime_charges": "Cargos de campañas acumulados",
+            "transactions": "Transacciones",
+            "total_charges": "Total de cargos realizados",
+            "pending": "Pendiente",
+            "awaiting_processing": "En espera de procesamiento",
+            "search_placeholder": "Buscar por ID de transacción...",
+            "download_invoice": "Descargar Factura",
+            "invoice_unavailable": "Factura no disponible para esta transacción."
         }
     },
     "common": {
         "cancel": "Cancelar",
+        "back": "Volver",
         "status": "Estado",
+        "all_status": "Todos los Estados",
         "all_statuses": "Todos los Estados",
+        "success": "Exitoso",
+        "pending": "Pendiente",
+        "failed": "Fallido",
         "rating": "Calificación",
         "all_ratings": "Todas las Calificaciones",
         "stars_short": "Estrellas",

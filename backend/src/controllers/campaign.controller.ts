@@ -4,8 +4,19 @@ import { fetchAsinDetailsRealTime } from '../services/amazon.service';
 import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
 import { SellerProfile } from '../models/SellerProfile';
+import { User } from '../models/User';
+import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';
+import { SystemConfig } from '../models/SystemConfig';
 import { logger } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
+import * as stripeService from '../services/stripe.service';
+
+const DEFAULT_PLATFORM_FEE_PERCENT = 10;
+
+async function getPlatformFeePercent(): Promise<number> {
+    const cfg = await SystemConfig.findByPk('platform_fee_percent');
+    return cfg ? parseFloat(cfg.value) : DEFAULT_PLATFORM_FEE_PERCENT;
+}
 
 export const lookupAsin = async (req: Request, res: Response) => {
     try {
@@ -53,49 +64,80 @@ export const lookupAsin = async (req: Request, res: Response) => {
 
 export const createCampaign = async (req: Request, res: Response) => {
     try {
-        const user_id = req.user?.userId;
-        if (!user_id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        const sellerProfile = await SellerProfile.findOne({ where: { user_id } });
-        if (!sellerProfile) {
-            return res.status(403).json({ message: 'Seller profile not found' });
-        }
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(401).json({ message: 'User not found' });
+
+        const sellerProfile = await SellerProfile.findOne({ where: { user_id: userId } });
+        if (!sellerProfile) return res.status(403).json({ message: 'Seller profile not found' });
 
         const {
-            asin,
-            region,
-            category,
-            product_title,
-            product_image_url,
-            product_description,
-            product_price,
-            product_rating,
-            product_rating_count,
-            target_reviews,
-            reimbursement_percent,
-            guidelines
+            asin, region, category,
+            product_title, product_image_url, product_description,
+            product_price, product_rating, product_rating_count,
+            target_reviews, reimbursement_percent, guidelines,
         } = req.body;
 
+        // --- Server-side cost calculation ---
+        const price = parseFloat(product_price) || 0;
+        if (price <= 0 || target_reviews <= 0 || reimbursement_percent <= 0) {
+            return res.status(400).json({ message: 'Invalid pricing or target values' });
+        }
+
+        const platformFeePercent = await getPlatformFeePercent();
+        const reimbursementCost = price * (reimbursement_percent / 100) * target_reviews;
+        const platformFee = reimbursementCost * (platformFeePercent / 100);
+        const grossAmount = reimbursementCost + platformFee;
+
+        // --- Create campaign in PENDING_PAYMENT state ---
         const campaign = await Campaign.create({
             seller_id: sellerProfile.id,
-            asin,
-            region,
-            category,
-            product_title,
-            product_image_url,
-            product_description,
-            product_price,
+            asin, region,
+            category: category || 'Uncategorized',
+            product_title, product_image_url,
+            product_description: product_description || '',
+            product_price: price,
             product_rating: product_rating ?? null,
             product_rating_count: product_rating_count ?? null,
-            target_reviews,
-            reimbursement_percent,
-            guidelines,
-            status: CampaignStatus.ACTIVE
+            target_reviews, reimbursement_percent,
+            guidelines: guidelines || '',
+            status: CampaignStatus.PENDING_PAYMENT,
         });
 
-        return res.status(201).json(campaign);
+        // --- Create Stripe customer (lazy) and Checkout Session ---
+        const customerId = await stripeService.getOrCreateStripeCustomer(sellerProfile, user.email);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+        const reimbursementCents = Math.round(reimbursementCost * 100);
+        const platformFeeCents = Math.round(platformFee * 100);
+
+        const checkoutUrl = await stripeService.createCheckoutSession({
+            customerId,
+            campaignId: campaign.id,
+            productTitle: product_title,
+            asin,
+            region,
+            targetReviews: target_reviews,
+            reimbursementCents,
+            platformFeeCents,
+            successUrl: `${frontendUrl}/seller/campaigns?payment=success&campaign=${campaign.id}`,
+            cancelUrl: `${frontendUrl}/seller/campaigns?payment=cancelled&campaign=${campaign.id}`,
+        });
+
+        // --- Create a PENDING transaction record ---
+        await Transaction.create({
+            user_id: userId,
+            gross_amount: grossAmount,
+            platform_fee: platformFee,
+            net_amount: reimbursementCost,
+            type: TransactionType.SELLER_CHARGE,
+            stripe_transaction_id: campaign.id, // updated to checkout session ID via webhook
+            status: TransactionStatus.PENDING,
+        });
+
+        return res.status(201).json({ campaign, checkoutUrl });
     } catch (error) {
         logger.error(`Error creating campaign: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while creating campaign' });
@@ -113,7 +155,10 @@ export const getCampaigns = async (req: Request, res: Response) => {
         const pagination = parsePaginationParams(req.query, 12);
 
         const { count, rows } = await Campaign.findAndCountAll({
-            where: { seller_id: sellerProfile.id },
+            where: {
+                seller_id: sellerProfile.id,
+                status: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED, CampaignStatus.COMPLETED],
+            },
             order: [['created_at', 'DESC']],
             limit: pagination.limit,
             offset: pagination.offset,
@@ -149,30 +194,23 @@ export const getCampaign = async (req: Request, res: Response) => {
         const user_id = req.user?.userId;
         const { id } = req.params;
 
-        if (!user_id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
 
         const sellerProfile = await SellerProfile.findOne({ where: { user_id } });
-        if (!sellerProfile) {
-            return res.status(403).json({ message: 'Seller profile not found' });
-        }
+        if (!sellerProfile) return res.status(403).json({ message: 'Seller profile not found' });
 
         const campaign = await Campaign.findOne({
             where: { id, seller_id: sellerProfile.id }
         });
 
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
+        if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
 
         // Dynamically compute claimed_count (approved reviews)
         const claimedCount = await OrderClaim.count({
             where: { campaign_id: campaign.id, review_status: ReviewStatus.APPROVED }
         });
-        const json = campaign.toJSON();
 
-        return res.status(200).json({ ...json, claimed_count: claimedCount });
+        return res.status(200).json({ ...campaign.toJSON(), claimed_count: claimedCount });
     } catch (error) {
         logger.error(`Error fetching campaign details: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaign details' });
@@ -184,21 +222,19 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
         const user_id = req.user?.userId;
         const { id } = req.params;
 
-        if (!user_id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
 
         const sellerProfile = await SellerProfile.findOne({ where: { user_id } });
-        if (!sellerProfile) {
-            return res.status(403).json({ message: 'Seller profile not found' });
-        }
+        if (!sellerProfile) return res.status(403).json({ message: 'Seller profile not found' });
 
         const campaign = await Campaign.findOne({
             where: { id, seller_id: sellerProfile.id }
         });
 
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
+        if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
+
+        if (campaign.status === CampaignStatus.PENDING_PAYMENT) {
+            return res.status(400).json({ message: 'Cannot toggle a campaign that is pending payment' });
         }
 
         campaign.status = campaign.status === CampaignStatus.ACTIVE

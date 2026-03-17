@@ -12,7 +12,7 @@ const PORT = Number(process.env.PORT) || 3030;
 
 const validateEnv = () => {
     const requiredEnv = [
-        'PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'GOOGLE_CLIENT_ID', 'FRONTEND_URL', 'CORS_ORIGINS'
+        'PGHOST', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'GOOGLE_CLIENT_ID', 'FRONTEND_URL', 'CORS_ORIGINS', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'
     ];
 
     const missing = requiredEnv.filter(env => !process.env[env]);
@@ -66,6 +66,7 @@ const startServer = async () => {
         const defaultConfigs = [
             { key: 'auto_order_verification_enabled', value: 'true', description: 'Enable automatic order verification via SP-API' },
             { key: 'auto_review_verification_enabled', value: 'true', description: 'Enable automatic review verification via profile scraping' },
+            { key: 'platform_fee_percent', value: '10', description: 'Platform fee percentage charged on campaign reimbursement costs' },
         ];
         for (const cfg of defaultConfigs) {
             await SystemConfig.findOrCreate({ where: { key: cfg.key }, defaults: cfg });

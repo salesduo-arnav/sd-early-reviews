@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { campaignsApi, Campaign, PaginationMeta } from '@/api/campaigns';
 import { CampaignList } from '@/components/seller/campaigns/CampaignList';
 import { CampaignWizardModal } from '@/components/seller/campaigns/wizard/CampaignWizardModal';
@@ -10,14 +11,29 @@ import { toast } from 'sonner';
 
 const PAGE_SIZE = 12;
 
+type PaymentBanner = 'success' | 'cancelled' | null;
+
 export default function CampaignsPage() {
     const { t } = useTranslation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [pagination, setPagination] = useState<PaginationMeta | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [paymentBanner, setPaymentBanner] = useState<PaymentBanner>(null);
+
+    // Handle return from Stripe Checkout
+    useEffect(() => {
+        const paymentStatus = searchParams.get('payment');
+        if (paymentStatus === 'success' || paymentStatus === 'cancelled') {
+            setPaymentBanner(paymentStatus);
+            searchParams.delete('payment');
+            searchParams.delete('campaign');
+            setSearchParams(searchParams, { replace: true });
+        }
+    }, []);
 
     const loadCampaigns = useCallback(async (page: number) => {
         setIsLoading(true);
@@ -45,13 +61,64 @@ export default function CampaignsPage() {
     };
 
     const handleSuccess = () => {
-        // Always go back to page 1 after creating a new campaign (it's the latest)
         setCurrentPage(1);
         loadCampaigns(1);
     };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {paymentBanner === 'success' && (
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/40 px-5 py-4 animate-in slide-in-from-top-4 fade-in duration-500">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+                            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-green-800 dark:text-green-200">
+                                {t('seller.campaigns.payment_success_title', 'Payment successful!')}
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                                {t('seller.campaigns.payment_success_desc', 'Your campaign is now live and visible to our reviewer pool.')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/50"
+                        onClick={() => setPaymentBanner(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+
+            {paymentBanner === 'cancelled' && (
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/40 px-5 py-4 animate-in slide-in-from-top-4 fade-in duration-500">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/50">
+                            <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-orange-800 dark:text-orange-200">
+                                {t('seller.campaigns.payment_cancelled_title', 'Payment cancelled')}
+                            </p>
+                            <p className="text-sm text-orange-700 dark:text-orange-300">
+                                {t('seller.campaigns.payment_cancelled_desc', 'No charges were made. You can create a new campaign whenever you\'re ready.')}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-orange-600 hover:text-orange-800 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/50"
+                        onClick={() => setPaymentBanner(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('seller.nav.campaigns', 'Campaigns')}</h1>

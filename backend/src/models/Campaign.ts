@@ -2,6 +2,7 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/db';
 
 export enum CampaignStatus {
+    PENDING_PAYMENT = 'PENDING_PAYMENT',
     ACTIVE = 'ACTIVE',
     PAUSED = 'PAUSED',
     COMPLETED = 'COMPLETED'

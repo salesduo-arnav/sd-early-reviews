@@ -6,7 +6,7 @@ module.exports = {
     // 1. Create ENUMs native types first (PostgreSQL specific)
     await queryInterface.sequelize.query(`
       CREATE TYPE "enum_users_role" AS ENUM ('SELLER', 'BUYER', 'ADMIN');
-      CREATE TYPE "enum_campaigns_status" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED');
+      CREATE TYPE "enum_campaigns_status" AS ENUM ('PENDING_PAYMENT', 'ACTIVE', 'PAUSED', 'COMPLETED');
       CREATE TYPE "enum_order_claims_order_status" AS ENUM ('PENDING_VERIFICATION', 'APPROVED', 'REJECTED');
       CREATE TYPE "enum_order_claims_review_status" AS ENUM ('AWAITING_UPLOAD', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'TIMEOUT');
       CREATE TYPE "enum_order_claims_payout_status" AS ENUM ('NOT_ELIGIBLE', 'PENDING', 'PROCESSED', 'FAILED');

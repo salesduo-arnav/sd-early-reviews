@@ -3,7 +3,7 @@ import type { PaginatedResponse } from './types';
 
 export type { PaginationMeta, PaginatedResponse } from './types';
 
-export type CampaignStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+export type CampaignStatus = 'PENDING_PAYMENT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
 
 export interface Campaign {
     id: string;
@@ -54,7 +54,7 @@ export const campaignsApi = {
         return fetchWithAuth(`/campaigns/${id}/status`, { method: 'PATCH' });
     },
 
-    createCampaign: async (data: Partial<Campaign>): Promise<Campaign> => {
+    createCampaign: async (data: Partial<Campaign>): Promise<{ campaign: Campaign; checkoutUrl: string }> => {
         return fetchWithAuth('/campaigns', {
             method: 'POST',
             body: JSON.stringify(data),

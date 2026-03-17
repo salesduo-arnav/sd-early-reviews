@@ -73,7 +73,7 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
         if (isSubmitting) return;
         setIsSubmitting(true);
         try {
-            await campaignsApi.createCampaign({
+            const { checkoutUrl } = await campaignsApi.createCampaign({
                 asin: data.asin,
                 region: data.region,
                 category: data.category || 'Uncategorized',
@@ -87,12 +87,11 @@ export function CampaignWizardModal({ open, onOpenChange, onSuccess }: CampaignW
                 product_rating: data.product_rating,
                 product_rating_count: data.product_rating_count,
             });
-            toast.success(t('seller.campaigns.wizard.success', 'Campaign published successfully!'));
-            onSuccess();
-            handleClose();
+
+            // Redirect to Stripe Checkout — user pays on Stripe's hosted page
+            window.location.href = checkoutUrl;
         } catch (error) {
-            toast.error(t('seller.campaigns.wizard.error', 'Failed to publish campaign'));
-        } finally {
+            toast.error(t('seller.campaigns.wizard.error', 'Failed to create campaign. Please try again.'));
             setIsSubmitting(false);
         }
     };

@@ -9,6 +9,7 @@ import uploadRoutes from './upload.routes';
 import buyerRoutes from './buyer.routes';
 import adminRoutes from './admin';
 import spapiRoutes from './spapi.routes';
+import billingRoutes from './billing.routes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/uploads', uploadRoutes);
 router.use('/buyer', buyerRoutes);
 router.use('/admin', adminRoutes);
 router.use('/spapi', spapiRoutes);
+router.use('/billing', billingRoutes);
 
 export default router;
