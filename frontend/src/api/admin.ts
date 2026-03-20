@@ -145,11 +145,14 @@ interface CampaignDetailResponse {
 
 interface PayoutRow {
     id: string;
-    BuyerProfile?: { User?: { full_name: string; email: string } };
+    BuyerProfile?: { User?: { full_name: string; email: string }; wise_recipient_id?: string | null; bank_display_label?: string | null };
     Campaign?: { product_title: string; region: string };
     amazon_order_id: string;
     expected_payout_amount: number;
     payout_status: string;
+    payout_method?: string | null;
+    payout_processed_at?: string | null;
+    review_approved_at?: string | null;
 }
 
 interface TransactionRow {
@@ -300,6 +303,9 @@ export const adminApi = {
             method: 'POST',
             body: JSON.stringify({ claim_ids, status }),
         }),
+
+    retryPayout: (id: string): Promise<{ message: string }> =>
+        fetchWithAuth(`/admin/payouts/${id}/retry`, { method: 'POST' }),
 
     // Transactions
     getTransactions: (page = 1, limit = 10, type?: string, status?: string, search?: string, startDate?: string, endDate?: string): Promise<AdminPaginatedResponse<TransactionRow>> => {

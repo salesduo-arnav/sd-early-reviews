@@ -18,6 +18,7 @@ export enum ReviewStatus {
 export enum PayoutStatus {
     NOT_ELIGIBLE = 'NOT_ELIGIBLE',
     PENDING = 'PENDING',
+    PROCESSING = 'PROCESSING',
     PROCESSED = 'PROCESSED',
     FAILED = 'FAILED'
 }
@@ -48,11 +49,15 @@ interface OrderClaimAttributes {
     review_verification_method?: string;
     review_verification_details?: Record<string, unknown>;
     review_auto_verified_at?: Date;
+    review_approved_at?: Date;
+    payout_processed_at?: Date;
+    wise_transfer_id?: string;
+    payout_method?: string;
     created_at?: Date;
     deleted_at?: Date;
 }
 
-type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_title' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'verification_method' | 'verification_details' | 'auto_verified_at' | 'review_verification_method' | 'review_verification_details' | 'review_auto_verified_at' | 'deleted_at'>;
+type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_title' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'verification_method' | 'verification_details' | 'auto_verified_at' | 'review_verification_method' | 'review_verification_details' | 'review_auto_verified_at' | 'review_approved_at' | 'payout_processed_at' | 'wise_transfer_id' | 'payout_method' | 'deleted_at'>;
 
 export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAttributes> implements OrderClaimAttributes {
     public id!: string;
@@ -80,6 +85,10 @@ export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAt
     public review_verification_method!: string;
     public review_verification_details!: Record<string, unknown>;
     public review_auto_verified_at!: Date;
+    public review_approved_at!: Date;
+    public payout_processed_at!: Date;
+    public wise_transfer_id!: string;
+    public payout_method!: string;
     public created_at!: Date;
     public deleted_at!: Date;
 }
@@ -190,6 +199,22 @@ OrderClaim.init(
         },
         review_auto_verified_at: {
             type: DataTypes.DATE,
+            allowNull: true,
+        },
+        review_approved_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        payout_processed_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        wise_transfer_id: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        payout_method: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
         created_at: {

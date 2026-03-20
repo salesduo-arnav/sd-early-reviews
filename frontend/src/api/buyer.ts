@@ -118,26 +118,49 @@ export interface BuyerProfile {
     total_earnings: number;
     claims_completed: number;
     approval_rate: number | null;
-    bank_details: {
-        account_holder: string | null;
-        routing_number: string | null;
-        account_last4: string | null;
-    };
+    wise_connected: boolean;
+    payout_currency: string | null;
+    payout_country: string | null;
+    bank_display_label: string | null;
     email_notifications_enabled: boolean;
     is_blacklisted: boolean;
     blacklist_reason: string | null;
 }
 
-export interface BankDetailsPayload {
-    account_holder: string;
-    routing_number: string;
-    account_number: string;
+export interface WiseFieldGroup {
+    key: string;
+    type: string;
+    refreshRequirementsOnChange: boolean;
+    required: boolean;
+    displayFormat: string | null;
+    example: string;
+    minLength: number | null;
+    maxLength: number | null;
+    validationRegexp: string | null;
+    valuesAllowed: Array<{ key: string; name: string }> | null;
 }
 
-export interface BankDetailsResponse {
-    account_holder: string;
-    routing_number: string;
-    account_last4: string;
+export interface WiseAccountRequirement {
+    type: string;
+    title: string;
+    fields: Array<{
+        name: string;
+        group: WiseFieldGroup[];
+    }>;
+}
+
+export interface ConnectBankPayload {
+    currency: string;
+    country: string;
+    type: string;
+    details: Record<string, string>;
+}
+
+export interface ConnectBankResponse {
+    wise_connected: boolean;
+    payout_currency: string | null;
+    payout_country: string | null;
+    bank_display_label: string | null;
 }
 
 // ─── API ────────────────────────────────────────────────────────────────────
@@ -214,15 +237,26 @@ export const buyerApi = {
         return fetchWithAuth('/buyer/profile');
     },
 
-    updateBankDetails: async (details: BankDetailsPayload): Promise<BankDetailsResponse> => {
-        return fetchWithAuth('/buyer/bank-details', {
-            method: 'PUT',
-            body: JSON.stringify(details),
+    getBankRequirements: async (currency: string): Promise<WiseAccountRequirement[]> => {
+        return fetchWithAuth(`/buyer/bank-requirements?currency=${encodeURIComponent(currency)}`);
+    },
+
+    refreshBankRequirements: async (currency: string, formValues: Record<string, unknown>): Promise<WiseAccountRequirement[]> => {
+        return fetchWithAuth(`/buyer/bank-requirements?currency=${encodeURIComponent(currency)}`, {
+            method: 'POST',
+            body: JSON.stringify(formValues),
         });
     },
 
-    removeBankDetails: async (): Promise<{ success: boolean }> => {
-        return fetchWithAuth('/buyer/bank-details', { method: 'DELETE' });
+    connectBankAccount: async (payload: ConnectBankPayload): Promise<ConnectBankResponse> => {
+        return fetchWithAuth('/buyer/bank-account', {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    disconnectBankAccount: async (): Promise<{ success: boolean }> => {
+        return fetchWithAuth('/buyer/bank-account', { method: 'DELETE' });
     },
 
     updateNotificationPreferences: async (enabled: boolean): Promise<{ email_notifications_enabled: boolean }> => {

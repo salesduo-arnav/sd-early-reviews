@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { buyerApi } from '@/api/buyer';
-import type { BuyerProfile, BankDetailsPayload } from '@/api/buyer';
+import type { BuyerProfile } from '@/api/buyer';
 import ProfileStatsSection from '@/components/buyer/account/ProfileStatsSection';
-import BankDetailsSection from '@/components/buyer/account/BankDetailsSection';
+import BankAccountSection from '@/components/buyer/account/BankAccountSection';
 import NotificationPreferencesSection from '@/components/buyer/account/NotificationPreferencesSection';
 
 export default function AccountPage() {
@@ -31,26 +31,6 @@ export default function AccountPage() {
     useEffect(() => {
         fetchProfile();
     }, [fetchProfile]);
-
-    const handleBankUpdate = async (payload: BankDetailsPayload) => {
-        try {
-            await buyerApi.updateBankDetails(payload);
-            toast.success(t('buyer.account.bank.saved_success', 'Bank details saved'));
-            await fetchProfile();
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : t('buyer.account.bank.save_error', 'Failed to update bank details'));
-        }
-    };
-
-    const handleBankRemove = async () => {
-        try {
-            await buyerApi.removeBankDetails();
-            toast.success(t('buyer.account.bank.removed_success', 'Bank details removed'));
-            await fetchProfile();
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : t('buyer.account.bank.remove_error', 'Failed to remove bank details'));
-        }
-    };
 
     const handleNotificationToggle = async (enabled: boolean) => {
         // Optimistic update
@@ -84,7 +64,7 @@ export default function AccountPage() {
             {/* Profile Health Stats */}
             <ProfileStatsSection profile={profile} loading={loading} />
 
-            {/* 2-column layout: Left (Amazon + Notifications) | Right (Bank Details) */}
+            {/* 2-column layout: Left (Amazon + Notifications) | Right (Bank Account) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Left column */}
                 <div className="space-y-6">
@@ -133,12 +113,15 @@ export default function AccountPage() {
                     />
                 </div>
 
-                {/* Right column — Bank Details */}
-                <BankDetailsSection
-                    bankDetails={profile?.bank_details}
+                {/* Right column — Bank Account */}
+                <BankAccountSection
+                    wiseConnected={profile?.wise_connected ?? false}
+                    payoutCurrency={profile?.payout_currency ?? null}
+                    payoutCountry={profile?.payout_country ?? null}
+                    bankDisplayLabel={profile?.bank_display_label ?? null}
                     loading={loading}
-                    onUpdate={handleBankUpdate}
-                    onRemove={handleBankRemove}
+                    onConnected={fetchProfile}
+                    onDisconnected={fetchProfile}
                 />
             </div>
         </div>

@@ -26,6 +26,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), hand
 
 app.use(express.json());
 
+// Wise webhook (after express.json() — Wise sends JSON)
+import { handleWiseWebhook } from './controllers/webhook-wise.controller';
+app.post('/api/webhooks/wise', handleWiseWebhook);
+
 // Log HTTP requests
 app.use(morgan('tiny', { stream }));
 

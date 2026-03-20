@@ -237,6 +237,8 @@ export const verifyReview = async (req: Request, res: Response) => {
 
         if (action === 'APPROVE') {
             updateData.payout_status = PayoutStatus.PENDING;
+            updateData.review_approved_at = new Date();
+            updateData.review_verification_method = 'MANUAL';
         } else {
             updateData.rejection_reason = reason;
         }
