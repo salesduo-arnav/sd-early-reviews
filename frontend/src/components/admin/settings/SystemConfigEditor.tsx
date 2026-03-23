@@ -8,13 +8,155 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Save, Plus, Trash2, Loader2, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, Plus, Trash2, Loader2, Settings, CheckCircle2, XCircle } from 'lucide-react';
 import { adminApi } from '@/api/admin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-const isBooleanValue = (value: string) =>
-    ['true', 'false'].includes(value.toLowerCase());
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const isBooleanValue = (value: string) => ['true', 'false'].includes(value.toLowerCase());
+
+const CRON_PRESETS = [
+    { label: 'Every minute',    value: '* * * * *' },
+    { label: 'Every 5 minutes', value: '*/5 * * * *' },
+    { label: 'Every 15 minutes',value: '*/15 * * * *' },
+    { label: 'Every 30 minutes',value: '*/30 * * * *' },
+    { label: 'Every hour',      value: '0 * * * *' },
+    { label: 'Every 6 hours',   value: '0 */6 * * *' },
+    { label: 'Every 12 hours',  value: '0 */12 * * *' },
+    { label: 'Every day at midnight', value: '0 0 * * *' },
+    { label: 'Custom',          value: '__custom__' },
+];
+
+/** Basic 5-field cron validator (good enough for common expressions). */
+function isValidCron(expr: string): boolean {
+    const parts = expr.trim().split(/\s+/);
+    if (parts.length !== 5) return false;
+    const field = /^(\*|(\*\/[1-9][0-9]*)|([0-9]+(,[0-9]+)*(-[0-9]+)?))$/;
+    return parts.every(p => field.test(p));
+}
+
+const SUPPORTED_CURRENCIES: { code: string; label: string }[] = [
+    { code: 'USD', label: 'USD - US Dollar' },
+    { code: 'GBP', label: 'GBP - British Pound' },
+    { code: 'EUR', label: 'EUR - Euro' },
+    { code: 'INR', label: 'INR - Indian Rupee' },
+    { code: 'JPY', label: 'JPY - Japanese Yen' },
+    { code: 'AUD', label: 'AUD - Australian Dollar' },
+    { code: 'CAD', label: 'CAD - Canadian Dollar' },
+    { code: 'BRL', label: 'BRL - Brazilian Real' },
+    { code: 'MXN', label: 'MXN - Mexican Peso' },
+    { code: 'SGD', label: 'SGD - Singapore Dollar' },
+    { code: 'AED', label: 'AED - UAE Dirham' },
+    { code: 'SAR', label: 'SAR - Saudi Riyal' },
+    { code: 'PLN', label: 'PLN - Polish Zloty' },
+    { code: 'SEK', label: 'SEK - Swedish Krona' },
+];
+
+// ─── Cron Input ──────────────────────────────────────────────────────────────
+
+function CronInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const matchedPreset = CRON_PRESETS.find(p => p.value === value && p.value !== '__custom__');
+    const [preset, setPreset] = useState<string>(matchedPreset ? value : '__custom__');
+    const [custom, setCustom] = useState(value);
+    const valid = isValidCron(value);
+
+    const handlePresetChange = (p: string) => {
+        setPreset(p);
+        if (p !== '__custom__') {
+            setCustom(p);
+            onChange(p);
+        }
+    };
+
+    const handleCustomChange = (v: string) => {
+        setCustom(v);
+        onChange(v);
+    };
+
+    return (
+        <div className="space-y-2">
+            <Select value={preset} onValueChange={handlePresetChange}>
+                <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Choose a preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {CRON_PRESETS.map(p => (
+                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            {preset === '__custom__' && (
+                <div className="relative">
+                    <Input
+                        value={custom}
+                        onChange={e => handleCustomChange(e.target.value)}
+                        placeholder="e.g. 0 */6 * * *"
+                        className={`h-9 pr-8 font-mono text-sm ${!valid && custom ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        {custom && (valid
+                            ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            : <XCircle className="w-4 h-4 text-destructive" />
+                        )}
+                    </div>
+                </div>
+            )}
+            {!valid && value && (
+                <p className="text-xs text-destructive">Invalid cron expression. Must have 5 space-separated fields.</p>
+            )}
+        </div>
+    );
+}
+
+// ─── Currency Amount Editor ──────────────────────────────────────────────────
+
+function CurrencyAmountEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const parsed: Record<string, number> = (() => {
+        try { return JSON.parse(value); } catch { return {}; }
+    })();
+
+    const [amounts, setAmounts] = useState<Record<string, string>>(
+        Object.fromEntries(SUPPORTED_CURRENCIES.map(c => [c.code, parsed[c.code] !== undefined ? String(parsed[c.code]) : '']))
+    );
+
+    const handleChange = (code: string, raw: string) => {
+        const next = { ...amounts, [code]: raw };
+        setAmounts(next);
+        const json = Object.fromEntries(
+            Object.entries(next)
+                .filter(([, v]) => v !== '' && !isNaN(Number(v)))
+                .map(([k, v]) => [k, Number(v)])
+        );
+        onChange(JSON.stringify(json));
+    };
+
+    return (
+        <div className="space-y-1.5 rounded-md border p-3 bg-muted/30">
+            <p className="text-xs text-muted-foreground mb-2">Leave blank to auto-send any amount for that currency.</p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                {SUPPORTED_CURRENCIES.map(({ code, label }) => (
+                    <div key={code} className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-medium w-9 shrink-0 text-foreground">{code}</span>
+                        <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="no limit"
+                            value={amounts[code]}
+                            onChange={e => handleChange(code, e.target.value)}
+                            className="h-7 text-sm"
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 interface ConfigEntry {
     key: string;
@@ -113,6 +255,8 @@ export function SystemConfigEditor() {
                                 const isEdited = editedValues[config.key] !== undefined;
                                 const currentValue = isEdited ? editedValues[config.key] : config.value;
                                 const isBoolean = isBooleanValue(config.value);
+                                const isCron = config.key === 'auto_payout_cron_schedule';
+                                const isCurrencyMap = config.key === 'auto_payout_max_amount';
 
                                 return (
                                     <div key={config.key} className="flex items-start gap-4 p-4 rounded-lg border bg-white hover:border-border/80 transition-colors">
@@ -121,6 +265,7 @@ export function SystemConfigEditor() {
                                                 <Badge variant="outline" className="font-mono text-xs px-2 py-0.5">{config.key}</Badge>
                                                 {config.description && <span className="text-xs text-muted-foreground">{config.description}</span>}
                                             </div>
+
                                             {isBoolean ? (
                                                 <div className="flex items-center gap-3 py-1">
                                                     <Switch
@@ -128,7 +273,6 @@ export function SystemConfigEditor() {
                                                         onCheckedChange={(checked) => {
                                                             const newVal = String(checked);
                                                             setEditedValues(prev => ({ ...prev, [config.key]: newVal }));
-                                                            // Auto-save boolean toggles
                                                             setSavingKey(config.key);
                                                             adminApi.updateConfig(config.key, newVal)
                                                                 .then(() => { toast.success(`Config "${config.key}" updated`); fetchConfigs(); })
@@ -142,6 +286,16 @@ export function SystemConfigEditor() {
                                                     </span>
                                                     {savingKey === config.key && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
                                                 </div>
+                                            ) : isCron ? (
+                                                <CronInput
+                                                    value={currentValue}
+                                                    onChange={v => setEditedValues(prev => ({ ...prev, [config.key]: v }))}
+                                                />
+                                            ) : isCurrencyMap ? (
+                                                <CurrencyAmountEditor
+                                                    value={currentValue}
+                                                    onChange={v => setEditedValues(prev => ({ ...prev, [config.key]: v }))}
+                                                />
                                             ) : (
                                                 <Input
                                                     value={currentValue}
@@ -149,6 +303,7 @@ export function SystemConfigEditor() {
                                                     className="h-9"
                                                 />
                                             )}
+
                                             <p className="text-xs text-muted-foreground">
                                                 Updated {format(new Date(config.updated_at), 'MMM d, yyyy \'at\' HH:mm')}
                                             </p>
@@ -159,7 +314,7 @@ export function SystemConfigEditor() {
                                                     size="sm"
                                                     className="h-8"
                                                     onClick={() => handleSave(config.key)}
-                                                    disabled={!isEdited || savingKey === config.key}
+                                                    disabled={!isEdited || savingKey === config.key || (isCron && !isValidCron(currentValue))}
                                                 >
                                                     {savingKey === config.key
                                                         ? <Loader2 className="w-3 h-3 mr-1 animate-spin" />

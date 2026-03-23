@@ -69,13 +69,15 @@ const startServer = async () => {
             { key: 'auto_review_verification_enabled', value: 'true', description: 'Enable automatic review verification via profile scraping' },
             { key: 'platform_fee_percent', value: '10', description: 'Platform fee percentage charged on campaign reimbursement costs' },
             { key: 'reimbursement_delay_days', value: '14', description: 'Number of days after review approval before auto-payout' },
+            { key: 'auto_payout_cron_schedule', value: '0 * * * *', description: 'Cron schedule for auto-payout job (cron expression, e.g. "0 * * * *" = every hour)' },
+            { key: 'auto_payout_max_amount', value: '{"USD":100,"GBP":80,"EUR":90,"INR":8000,"JPY":15000,"AUD":150,"CAD":135,"BRL":500,"MXN":2000,"SGD":135,"AED":365,"SAR":375,"PLN":400,"SEK":1050}', description: 'Per-currency max payout amount for auto-payout (JSON map of currency code to amount). Claims above the limit for their currency require manual admin approval.' },
         ];
         for (const cfg of defaultConfigs) {
             await SystemConfig.findOrCreate({ where: { key: cfg.key }, defaults: cfg });
         }
 
         // Initialize cron jobs
-        initCronJobs();
+        await initCronJobs();
 
         server = app.listen(PORT, () => {
             Logger.info(`✅ Server running on port ${PORT}`);

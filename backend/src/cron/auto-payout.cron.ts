@@ -1,7 +1,9 @@
 import { Op } from 'sequelize';
 import { OrderClaim, PayoutStatus, ReviewStatus } from '../models/OrderClaim';
+import { Campaign } from '../models/Campaign';
 import { SystemConfig } from '../models/SystemConfig';
 import { processPayoutForClaim } from '../services/payout.service';
+import { regionToCurrency } from '../services/wise.service';
 import { logger } from '../utils/logger';
 
 /**
@@ -17,20 +19,32 @@ export async function runAutoPayouts(): Promise<void> {
     logger.info('[AutoPayout] Starting auto-payout run...');
 
     try {
-        // Read delay config
-        const delayConfig = await SystemConfig.findByPk('reimbursement_delay_days');
-        const delayDays = delayConfig ? parseInt(delayConfig.value, 10) : 14;
+        // Read configs
+        const [delayConfig, maxAmountConfig] = await Promise.all([
+            SystemConfig.findByPk('reimbursement_delay_days'),
+            SystemConfig.findByPk('auto_payout_max_amount'),
+        ]);
 
+        const delayDays = delayConfig ? parseInt(delayConfig.value, 10) : 14;
         if (isNaN(delayDays) || delayDays < 0) {
             logger.error('[AutoPayout] Invalid reimbursement_delay_days config, skipping run');
             return;
+        }
+
+        let maxAmounts: Record<string, number> | null = null;
+        if (maxAmountConfig) {
+            try {
+                maxAmounts = JSON.parse(maxAmountConfig.value);
+            } catch {
+                logger.error('[AutoPayout] Invalid auto_payout_max_amount config (expected JSON), skipping amount filter');
+            }
         }
 
         // Calculate cutoff date
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - delayDays);
 
-        // Find eligible claims
+        // Fetch eligible claims including campaign region so we can apply per-currency amount limits
         const eligibleClaims = await OrderClaim.findAll({
             where: {
                 review_status: ReviewStatus.APPROVED,
@@ -40,21 +54,37 @@ export async function runAutoPayouts(): Promise<void> {
                     [Op.lte]: cutoffDate,
                 },
             },
-            attributes: ['id'],
+            attributes: ['id', 'expected_payout_amount'],
+            include: [{ model: Campaign, attributes: ['region'] }],
         });
 
-        if (eligibleClaims.length === 0) {
-            logger.info('[AutoPayout] No eligible claims found');
+        // Filter out claims that exceed the per-currency limit — those require manual admin payout
+        let heldBack = 0;
+        const claimsToProcess = maxAmounts
+            ? eligibleClaims.filter((claim) => {
+                  const region = (claim as any).Campaign?.region ?? 'com';
+                  const currency = regionToCurrency(region);
+                  const limit = maxAmounts![currency];
+                  if (limit !== undefined && parseFloat(claim.expected_payout_amount as any) > limit) {
+                      heldBack++;
+                      return false;
+                  }
+                  return true;
+              })
+            : eligibleClaims;
+
+        if (claimsToProcess.length === 0) {
+            logger.info(`[AutoPayout] No eligible claims found${heldBack > 0 ? ` (${heldBack} held back — exceed per-currency limit)` : ''}`);
             return;
         }
 
-        logger.info(`[AutoPayout] Found ${eligibleClaims.length} eligible claims`);
+        logger.info(`[AutoPayout] Found ${claimsToProcess.length} claims to process${heldBack > 0 ? `, ${heldBack} held back for manual admin payout` : ''}`);
 
         let processed = 0;
         let failed = 0;
         let skipped = 0;
 
-        for (const claim of eligibleClaims) {
+        for (const claim of claimsToProcess) {
             const result = await processPayoutForClaim(claim.id, 'AUTO');
             if (result.success) {
                 processed++;
@@ -65,7 +95,7 @@ export async function runAutoPayouts(): Promise<void> {
             }
         }
 
-        logger.info(`[AutoPayout] Run complete: ${processed} processed, ${failed} failed, ${skipped} skipped (no bank account)`);
+        logger.info(`[AutoPayout] Run complete: ${processed} processed, ${failed} failed, ${skipped} skipped (no bank account), ${heldBack} held for manual review`);
     } catch (error) {
         logger.error(`[AutoPayout] Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
