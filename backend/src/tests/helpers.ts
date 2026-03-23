@@ -3,6 +3,7 @@ import { Express } from 'express';
 import { User, UserRole } from '../models/User';
 import { SellerProfile } from '../models/SellerProfile';
 import { BuyerProfile } from '../models/BuyerProfile';
+import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus, OrderStatus, PayoutStatus } from '../models/OrderClaim';
 
 let sellerCounter = 0;
@@ -73,7 +74,11 @@ export async function createCampaignViaAPI(app: Express, token: string, override
         .post('/api/campaigns')
         .set('Authorization', `Bearer ${token}`)
         .send({ ...defaultCampaignData, product_title: `Test Product ${campaignCounter}`, ...overrides });
-    return res.body;
+    const campaign = res.body.campaign;
+    // Campaigns start as PENDING_PAYMENT (Stripe checkout required). Force to ACTIVE so test
+    // fixtures don't need to simulate the payment flow.
+    await Campaign.update({ status: CampaignStatus.ACTIVE }, { where: { id: campaign.id } });
+    return campaign;
 }
 
 export async function createOrderClaimDirectly(

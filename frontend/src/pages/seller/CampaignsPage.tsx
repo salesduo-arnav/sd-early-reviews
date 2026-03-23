@@ -33,6 +33,7 @@ export default function CampaignsPage() {
             searchParams.delete('campaign');
             setSearchParams(searchParams, { replace: true });
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally mount-only; including searchParams would re-trigger after it deletes the param
     }, []);
 
     const loadCampaigns = useCallback(async (page: number) => {

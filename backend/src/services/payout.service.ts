@@ -1,4 +1,4 @@
-import { OrderClaim, PayoutStatus, ReviewStatus } from '../models/OrderClaim';
+import { OrderClaim, PayoutStatus } from '../models/OrderClaim';
 import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';

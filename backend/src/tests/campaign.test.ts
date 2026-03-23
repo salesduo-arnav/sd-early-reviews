@@ -102,9 +102,9 @@ describe('Campaign API', () => {
                 .send(defaultCampaignData);
 
             expect(res.status).toBe(201);
-            expect(res.body).toHaveProperty('id');
-            expect(res.body.asin).toBe(defaultCampaignData.asin);
-            expect(res.body.status).toBe('ACTIVE');
+            expect(res.body.campaign).toHaveProperty('id');
+            expect(res.body.campaign.asin).toBe(defaultCampaignData.asin);
+            expect(res.body.campaign.status).toBe('PENDING_PAYMENT');
         });
 
         it('should store optional fields correctly', async () => {
@@ -122,10 +122,10 @@ describe('Campaign API', () => {
                 });
 
             expect(res.status).toBe(201);
-            expect(res.body.product_description).toBe('A great product');
-            expect(res.body.guidelines).toBe('Be honest');
-            expect(parseFloat(res.body.product_rating)).toBe(4.5);
-            expect(res.body.product_rating_count).toBe(120);
+            expect(res.body.campaign.product_description).toBe('A great product');
+            expect(res.body.campaign.guidelines).toBe('Be honest');
+            expect(parseFloat(res.body.campaign.product_rating)).toBe(4.5);
+            expect(res.body.campaign.product_rating_count).toBe(120);
         });
 
         it('should return 401 without auth token', async () => {

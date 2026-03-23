@@ -62,10 +62,11 @@ export async function runAutoPayouts(): Promise<void> {
         let heldBack = 0;
         const claimsToProcess = maxAmounts
             ? eligibleClaims.filter((claim) => {
-                  const region = (claim as any).Campaign?.region ?? 'com';
+                  const campaignData = claim.get('Campaign') as { region: string } | undefined;
+                  const region = campaignData?.region ?? 'com';
                   const currency = regionToCurrency(region);
                   const limit = maxAmounts![currency];
-                  if (limit !== undefined && parseFloat(claim.expected_payout_amount as any) > limit) {
+                  if (limit !== undefined && Number(claim.expected_payout_amount) > limit) {
                       heldBack++;
                       return false;
                   }

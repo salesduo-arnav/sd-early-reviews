@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { logger } from '../utils/logger';
 
 // ─── Configuration ──────────────────────────────────────────────────────────
@@ -264,7 +265,6 @@ export async function sendPayout(
         logger.info(`Wise quote created`, { quoteId: quote.id, rate: quote.rate, fee: quote.fee, claimId });
 
         // 2. Create transfer (use unique UUID per attempt to avoid idempotency conflicts on retry)
-        const crypto = require('crypto');
         const txnId = crypto.randomUUID();
         const transfer = await createTransfer(quote.id, recipientId, txnId);
         logger.info(`Wise transfer created`, { transferId: transfer.id, claimId });

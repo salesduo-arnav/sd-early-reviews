@@ -100,6 +100,7 @@ export default function BankAccountSection({
             })
             .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load bank account requirements'))
             .finally(() => setLoadingRequirements(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedCountryObj is derived from selectedCountry; listing both would be redundant
     }, [selectedCountry]);
 
     const handleTypeChange = (index: number) => {
