@@ -1,6 +1,6 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent } from '@/components/ui/card';
+import { BillingSummaryCards } from '@/components/seller/billing/BillingSummaryCards';
+import { BillingHistoryTable } from '@/components/seller/billing/BillingHistoryTable';
 
 export default function BillingPage() {
     const { t } = useTranslation();
@@ -8,14 +8,22 @@ export default function BillingPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">{t('seller.nav.billing', 'Billing')}</h1>
-                <p className="text-muted-foreground mt-2">{t('seller.billing_page_desc', 'Manage your payment methods and view past transactions.')}</p>
+                <h1 className="text-3xl font-bold tracking-tight">
+                    {t('seller.nav.billing', 'Billing')}
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                    {t('seller.billing_page_desc', 'View your payment history and download invoices.')}
+                </p>
             </div>
-            <Card className="shadow-sm border-border flex items-center justify-center min-h-[400px]">
-                <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">{t('seller.coming_soon', 'This section is under construction.')}</p>
-                </CardContent>
-            </Card>
+
+            <BillingSummaryCards />
+
+            <div>
+                <h2 className="text-xl font-semibold mb-4">
+                    {t('seller.billing.history', 'Transaction History')}
+                </h2>
+                <BillingHistoryTable />
+            </div>
         </div>
     );
 }

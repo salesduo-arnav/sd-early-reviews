@@ -6,10 +6,10 @@ interface BuyerProfileAttributes {
     user_id: string;
     amazon_profile_url: string;
     region: string;
-    stripe_connect_account_id?: string | null;
-    bank_account_name?: string | null;
-    bank_routing_number?: string | null;
-    bank_account_last4?: string | null;
+    wise_recipient_id?: string | null;
+    payout_currency?: string | null;
+    payout_country?: string | null;
+    bank_display_label?: string | null;
     on_time_submission_rate: number;
     is_blacklisted: boolean;
     blacklist_reason?: string | null;
@@ -20,17 +20,17 @@ interface BuyerProfileAttributes {
     deleted_at?: Date;
 }
 
-type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'blacklist_reason' | 'blacklisted_at' | 'blacklisted_by' | 'total_earnings' | 'email_notifications_enabled' | 'stripe_connect_account_id' | 'bank_account_name' | 'bank_routing_number' | 'bank_account_last4' | 'deleted_at'>;
+type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'blacklist_reason' | 'blacklisted_at' | 'blacklisted_by' | 'total_earnings' | 'email_notifications_enabled' | 'wise_recipient_id' | 'payout_currency' | 'payout_country' | 'bank_display_label' | 'deleted_at'>;
 
 export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCreationAttributes> implements BuyerProfileAttributes {
     public id!: string;
     public user_id!: string;
     public amazon_profile_url!: string;
     public region!: string;
-    public stripe_connect_account_id!: string | null;
-    public bank_account_name!: string | null;
-    public bank_routing_number!: string | null;
-    public bank_account_last4!: string | null;
+    public wise_recipient_id!: string | null;
+    public payout_currency!: string | null;
+    public payout_country!: string | null;
+    public bank_display_label!: string | null;
     public on_time_submission_rate!: number;
     public is_blacklisted!: boolean;
     public blacklist_reason!: string | null;
@@ -62,19 +62,19 @@ BuyerProfile.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        stripe_connect_account_id: {
+        wise_recipient_id: {
             type: DataTypes.STRING,
             allowNull: true,
         },
-        bank_account_name: {
-            type: DataTypes.STRING,
+        payout_currency: {
+            type: DataTypes.STRING(3),
             allowNull: true,
         },
-        bank_routing_number: {
-            type: DataTypes.STRING,
+        payout_country: {
+            type: DataTypes.STRING(2),
             allowNull: true,
         },
-        bank_account_last4: {
+        bank_display_label: {
             type: DataTypes.STRING,
             allowNull: true,
         },

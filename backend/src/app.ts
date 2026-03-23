@@ -19,7 +19,16 @@ app.use(cors({
     },
     credentials: true,
 }));
+
+// Stripe webhook needs raw body for signature verification — must be before express.json()
+import { handleStripeWebhook } from './controllers/webhook.controller';
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
 app.use(express.json());
+
+// Wise webhook (after express.json() — Wise sends JSON)
+import { handleWiseWebhook } from './controllers/webhook-wise.controller';
+app.post('/api/webhooks/wise', handleWiseWebhook);
 
 // Log HTTP requests
 app.use(morgan('tiny', { stream }));

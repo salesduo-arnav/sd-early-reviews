@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi } from '@/api/admin';
@@ -20,6 +20,7 @@ import { formatPrice } from '@/lib/regions';
 const payoutBadge = (status: string) => {
     switch (status) {
         case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
+        case 'PROCESSING': return <Badge variant="secondary" className="animate-pulse">Processing</Badge>;
         case 'PROCESSED': return <Badge variant="default" className="capitalize">Processed</Badge>;
         case 'FAILED': return <Badge variant="destructive">Failed</Badge>;
         default: return <Badge variant="outline">{status}</Badge>;
@@ -27,11 +28,12 @@ const payoutBadge = (status: string) => {
 };
 
 interface PayoutRowUser { full_name: string; email: string; }
-interface PayoutRowBuyer { User?: PayoutRowUser; }
+interface PayoutRowBuyer { User?: PayoutRowUser; wise_recipient_id?: string | null; bank_display_label?: string | null; }
 interface PayoutRowCampaign { product_title: string; region: string; }
 interface PayoutRow {
     id: string; BuyerProfile?: PayoutRowBuyer; Campaign?: PayoutRowCampaign;
     amazon_order_id: string; expected_payout_amount: number; payout_status: string;
+    payout_method?: string | null; payout_processed_at?: string | null;
 }
 
 export function PayoutsTable() {
@@ -64,6 +66,16 @@ export function PayoutsTable() {
             toast.success(`Payout marked as ${status.toLowerCase()}`);
             fetchData();
         } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+        finally { setActionLoading(null); }
+    }, [fetchData]);
+
+    const handleRetry = useCallback(async (claimId: string) => {
+        setActionLoading(claimId);
+        try {
+            await adminApi.retryPayout(claimId);
+            toast.success('Payout retried successfully');
+            fetchData();
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'Retry failed'); }
         finally { setActionLoading(null); }
     }, [fetchData]);
 
@@ -148,6 +160,13 @@ export function PayoutsTable() {
             cell: ({ row }) => <span className="max-w-[160px] truncate text-muted-foreground block">{row.original.Campaign?.product_title}</span>,
         },
         {
+            accessorKey: 'bank',
+            header: () => <DataTableStaticHeader title="Bank" />,
+            cell: ({ row }) => row.original.BuyerProfile?.wise_recipient_id
+                ? <span className="text-xs text-muted-foreground">{row.original.BuyerProfile?.bank_display_label || 'Connected'}</span>
+                : <Badge variant="destructive" className="text-xs">Not connected</Badge>,
+        },
+        {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Amount" />,
             cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>,
@@ -155,50 +174,74 @@ export function PayoutsTable() {
         {
             accessorKey: 'payout_status',
             header: () => <DataTableStaticHeader title="Status" />,
-            cell: ({ row }) => payoutBadge(row.original.payout_status),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-1.5">
+                    {payoutBadge(row.original.payout_status)}
+                    {row.original.payout_status === 'PROCESSED' && row.original.payout_method && (
+                        <Badge variant="outline" className="text-[10px] capitalize">{row.original.payout_method.toLowerCase()}</Badge>
+                    )}
+                </div>
+            ),
         },
         {
             id: 'actions',
             header: () => <DataTableStaticHeader title="Actions" srOnly />,
-            cell: ({ row }) => row.original.payout_status === 'PENDING' ? (
-                <div className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(row.original.id, 'PROCESSED')}
-                                disabled={actionLoading === row.original.id}
-                                className="cursor-pointer"
-                            >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark Processed
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'com' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
-                                className="cursor-pointer"
-                            >
-                                <DollarSign className="h-4 w-4 mr-2" />
-                                Override Amount
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(row.original.id, 'FAILED')}
-                                disabled={actionLoading === row.original.id}
-                                className="text-destructive focus:text-destructive cursor-pointer"
-                            >
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Mark Failed
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            ) : null,
+            cell: ({ row }) => {
+                const status = row.original.payout_status;
+                if (status !== 'PENDING' && status !== 'FAILED') return null;
+                return (
+                    <div className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                {status === 'FAILED' ? (
+                                    <DropdownMenuItem
+                                        onClick={() => handleRetry(row.original.id)}
+                                        disabled={actionLoading === row.original.id}
+                                        className="cursor-pointer"
+                                    >
+                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                        Retry Payout
+                                    </DropdownMenuItem>
+                                ) : (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={() => handleUpdateStatus(row.original.id, 'PROCESSED')}
+                                            disabled={actionLoading === row.original.id}
+                                            className="cursor-pointer"
+                                        >
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Mark Processed
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'com' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
+                                            className="cursor-pointer"
+                                        >
+                                            <DollarSign className="h-4 w-4 mr-2" />
+                                            Override Amount
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onClick={() => handleUpdateStatus(row.original.id, 'FAILED')}
+                                            disabled={actionLoading === row.original.id}
+                                            className="text-destructive focus:text-destructive cursor-pointer"
+                                        >
+                                            <XCircle className="h-4 w-4 mr-2" />
+                                            Mark Failed
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                );
+            },
         },
-    ], [actionLoading, selectedIds, allPendingSelected, handleUpdateStatus, pendingIds]);
+    ], [actionLoading, selectedIds, allPendingSelected, handleUpdateStatus, handleRetry, pendingIds]);
 
     return (
         <div className="space-y-4">

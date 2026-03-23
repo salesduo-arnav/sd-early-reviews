@@ -141,11 +141,13 @@ export async function attemptAutoReviewVerification(
 
         // 8. Auto-approve if confidence meets threshold
         if (confidence.total >= 85) {
+            const approvedAt = new Date();
             await claim.update({
                 review_status: ReviewStatus.APPROVED,
                 payout_status: PayoutStatus.PENDING,
                 review_verification_method: 'AUTO_PROFILE_SCRAPE',
-                review_auto_verified_at: new Date(),
+                review_auto_verified_at: approvedAt,
+                review_approved_at: approvedAt,
             });
 
             // Notify buyer

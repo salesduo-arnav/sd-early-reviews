@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SystemConfig } from '../../models/SystemConfig';
 import { logger } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { reloadAutoPayoutCron } from '../../cron';
 
 export const getConfigs = async (req: Request, res: Response) => {
     try {
@@ -27,6 +28,26 @@ export const updateConfig = async (req: Request, res: Response) => {
         const config = await SystemConfig.findByPk(key);
         if (!config) return res.status(404).json({ message: 'Config key not found' });
 
+        // Validate cron expression before saving
+        if (key === 'auto_payout_cron_schedule') {
+            const cron = await import('node-cron');
+            if (!cron.validate(String(value))) {
+                return res.status(400).json({ message: 'Invalid cron expression' });
+            }
+        }
+
+        // Validate per-currency JSON map before saving
+        if (key === 'auto_payout_max_amount') {
+            try {
+                const parsed = JSON.parse(String(value));
+                if (typeof parsed !== 'object' || Array.isArray(parsed) || Object.values(parsed).some(v => typeof v !== 'number')) {
+                    return res.status(400).json({ message: 'auto_payout_max_amount must be a JSON object mapping currency codes to numbers (e.g. {"USD":100,"GBP":80})' });
+                }
+            } catch {
+                return res.status(400).json({ message: 'auto_payout_max_amount must be valid JSON' });
+            }
+        }
+
         const oldValue = config.value;
         await config.update({ value: String(value) });
 
@@ -38,6 +59,12 @@ export const updateConfig = async (req: Request, res: Response) => {
             JSON.stringify({ old_value: oldValue, new_value: value }),
             req.ip
         );
+
+        // Reload auto-payout cron live if its schedule was changed
+        if (key === 'auto_payout_cron_schedule') {
+            const newSchedule = await reloadAutoPayoutCron();
+            return res.status(200).json({ message: 'Config updated and cron reloaded', config, cron_schedule: newSchedule });
+        }
 
         return res.status(200).json({ message: 'Config updated successfully', config });
     } catch (error) {

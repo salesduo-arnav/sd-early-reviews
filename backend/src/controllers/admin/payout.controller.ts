@@ -9,6 +9,7 @@ import { logAdminAction } from '../../utils/auditLog';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { notificationService } from '../../services/notification.service';
 import { NotificationCategory } from '../../models/Notification';
+import { processPayoutForClaim } from '../../services/payout.service';
 
 export const getPayouts = async (req: Request, res: Response) => {
     try {
@@ -47,7 +48,7 @@ export const getPayouts = async (req: Request, res: Response) => {
                 },
                 {
                     model: BuyerProfile,
-                    attributes: ['id'],
+                    attributes: ['id', 'wise_recipient_id', 'bank_display_label'],
                     include: [{ model: User, attributes: ['email', 'full_name'] }],
                 },
             ],
@@ -75,48 +76,52 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid status. Must be PROCESSED or FAILED' });
         }
 
-        const claim = await OrderClaim.findByPk(id, {
-            include: [
-                { model: Campaign, attributes: ['product_title'] },
-                { model: BuyerProfile, attributes: ['user_id'] },
-            ],
-        });
+        const claim = await OrderClaim.findByPk(id);
         if (!claim) return res.status(404).json({ message: 'Claim not found' });
+        if (claim.payout_status !== PayoutStatus.PENDING) {
+            return res.status(400).json({ message: 'Claim is not in PENDING payout status' });
+        }
 
-        const updateData: Partial<OrderClaim> = { payout_status: status as PayoutStatus };
+        // If admin wants to override amount, do it before processing
         if (override_amount !== undefined && override_amount !== null) {
-            updateData.expected_payout_amount = override_amount;
+            await claim.update({ expected_payout_amount: override_amount });
         }
 
-        await claim.update(updateData);
+        if (status === 'PROCESSED') {
+            // Trigger real Wise payout
+            const result = await processPayoutForClaim(id, 'MANUAL', adminId, req.ip);
+            if (result.success) {
+                return res.status(200).json({ message: 'Payout processed successfully via Wise' });
+            } else {
+                return res.status(400).json({ message: `Payout failed: ${result.reason}` });
+            }
+        } else {
+            // Mark as FAILED without sending money
+            await claim.update({
+                payout_status: PayoutStatus.FAILED,
+                payout_method: 'MANUAL',
+            });
 
-        const action = override_amount !== undefined ? 'PAYOUT_OVERRIDDEN' :
-            status === 'PROCESSED' ? 'PAYOUT_PROCESSED' : 'PAYOUT_FAILED';
+            await logAdminAction(adminId, 'PAYOUT_FAILED', id, 'ORDER_CLAIM', JSON.stringify({ status }), req.ip);
 
-        await logAdminAction(
-            adminId,
-            action,
-            id,
-            'ORDER_CLAIM',
-            JSON.stringify({ status, override_amount }),
-            req.ip
-        );
+            // Notify buyer
+            const claimWithAssoc = await OrderClaim.findByPk(id, {
+                include: [
+                    { model: Campaign, attributes: ['product_title'] },
+                    { model: BuyerProfile, attributes: ['user_id'] },
+                ],
+            });
+            type ClaimAssoc = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
+            const data = claimWithAssoc as ClaimAssoc;
+            if (data?.BuyerProfile?.user_id) {
+                const productTitle = data.Campaign?.product_title || 'your product';
+                notificationService.send(data.BuyerProfile.user_id, NotificationCategory.PAYOUT_FAILED, {
+                    message: `Your payout for "${productTitle}" has failed. Please contact support for assistance.`,
+                }).catch(err => logger.error('Failed to send payout notification', { err }));
+            }
 
-        // Notify buyer
-        type ClaimWithAssociations = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
-        const claimWithAssoc = claim as ClaimWithAssociations;
-        const buyerUserId = claimWithAssoc.BuyerProfile?.user_id;
-        const productTitle = claimWithAssoc.Campaign?.product_title || 'your product';
-        if (buyerUserId) {
-            const category = status === 'PROCESSED' ? NotificationCategory.PAYOUT_PROCESSED : NotificationCategory.PAYOUT_FAILED;
-            const message = status === 'PROCESSED'
-                ? `Your payout for "${productTitle}" has been processed successfully.`
-                : `Your payout for "${productTitle}" has failed. Please contact support for assistance.`;
-            notificationService.send(buyerUserId, category, { message })
-                .catch(err => logger.error('Failed to send payout notification', { err }));
+            return res.status(200).json({ message: `Payout status updated to FAILED` });
         }
-
-        return res.status(200).json({ message: `Payout status updated to ${status}`, claim });
     } catch (error) {
         logger.error(`Error updating payout status: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error' });
@@ -136,46 +141,88 @@ export const batchUpdatePayouts = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid status. Must be PROCESSED or FAILED' });
         }
 
-        const [updatedCount] = await OrderClaim.update(
-            { payout_status: status },
-            { where: { id: { [Op.in]: claim_ids }, payout_status: PayoutStatus.PENDING } }
-        );
+        let succeeded = 0;
+        let failed = 0;
+        let skipped = 0;
 
-        // Fetch only claims that were actually updated (PENDING -> new status)
-        const claims = await OrderClaim.findAll({
-            where: { id: { [Op.in]: claim_ids }, payout_status: status },
-            include: [
-                { model: Campaign, attributes: ['product_title'] },
-                { model: BuyerProfile, attributes: ['user_id'] },
-            ],
-        });
-
-        for (const claim of claims) {
-            await logAdminAction(
-                adminId,
-                status === 'PROCESSED' ? 'PAYOUT_PROCESSED' : 'PAYOUT_FAILED',
-                claim.id,
-                'ORDER_CLAIM',
-                JSON.stringify({ batch: true, status }),
-                req.ip
+        if (status === 'PROCESSED') {
+            // Process each payout individually via Wise
+            for (const claimId of claim_ids) {
+                const result = await processPayoutForClaim(claimId, 'MANUAL', adminId, req.ip);
+                if (result.success) {
+                    succeeded++;
+                } else if (result.reason?.includes('not in PENDING') || result.reason?.includes('Already processing')) {
+                    skipped++;
+                } else {
+                    failed++;
+                }
+            }
+        } else {
+            // Batch mark as FAILED
+            const [updatedCount] = await OrderClaim.update(
+                { payout_status: PayoutStatus.FAILED, payout_method: 'MANUAL' },
+                { where: { id: { [Op.in]: claim_ids }, payout_status: PayoutStatus.PENDING } },
             );
+            succeeded = updatedCount;
 
-            // Notify buyer
-            const buyerUserId = (claim as OrderClaim & { BuyerProfile?: { user_id: string } }).BuyerProfile?.user_id;
-            const productTitle = (claim as OrderClaim & { Campaign?: { product_title: string } }).Campaign?.product_title || 'your product';
-            if (buyerUserId) {
-                const category = status === 'PROCESSED' ? NotificationCategory.PAYOUT_PROCESSED : NotificationCategory.PAYOUT_FAILED;
-                const message = status === 'PROCESSED'
-                    ? `Your payout for "${productTitle}" has been processed successfully.`
-                    : `Your payout for "${productTitle}" has failed. Please contact support for assistance.`;
-                notificationService.send(buyerUserId, category, { message })
-                    .catch(err => logger.error('Failed to send batch payout notification', { err }));
+            // Send notifications for failed payouts
+            const claims = await OrderClaim.findAll({
+                where: { id: { [Op.in]: claim_ids }, payout_status: PayoutStatus.FAILED },
+                include: [
+                    { model: Campaign, attributes: ['product_title'] },
+                    { model: BuyerProfile, attributes: ['user_id'] },
+                ],
+            });
+
+            for (const claim of claims) {
+                await logAdminAction(adminId, 'PAYOUT_FAILED', claim.id, 'ORDER_CLAIM', JSON.stringify({ batch: true, status }), req.ip);
+                type ClaimAssoc = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
+                const data = claim as ClaimAssoc;
+                if (data.BuyerProfile?.user_id) {
+                    const productTitle = data.Campaign?.product_title || 'your product';
+                    notificationService.send(data.BuyerProfile.user_id, NotificationCategory.PAYOUT_FAILED, {
+                        message: `Your payout for "${productTitle}" has failed. Please contact support for assistance.`,
+                    }).catch(err => logger.error('Failed to send batch payout notification', { err }));
+                }
             }
         }
 
-        return res.status(200).json({ message: `${updatedCount} payouts updated to ${status}` });
+        return res.status(200).json({
+            message: `Batch payout update: ${succeeded} succeeded, ${failed} failed, ${skipped} skipped`,
+            succeeded,
+            failed,
+            skipped,
+        });
     } catch (error) {
         logger.error(`Error batch updating payouts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const retryPayout = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const adminId = req.user?.userId;
+
+        if (!adminId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const claim = await OrderClaim.findByPk(id);
+        if (!claim) return res.status(404).json({ message: 'Claim not found' });
+        if (claim.payout_status !== PayoutStatus.FAILED) {
+            return res.status(400).json({ message: 'Only FAILED payouts can be retried' });
+        }
+
+        // Reset to PENDING so processPayoutForClaim can pick it up
+        await claim.update({ payout_status: PayoutStatus.PENDING });
+
+        const result = await processPayoutForClaim(id, 'MANUAL', adminId, req.ip);
+        if (result.success) {
+            return res.status(200).json({ message: 'Payout retried successfully' });
+        } else {
+            return res.status(400).json({ message: `Retry failed: ${result.reason}` });
+        }
+    } catch (error) {
+        logger.error(`Error retrying payout: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

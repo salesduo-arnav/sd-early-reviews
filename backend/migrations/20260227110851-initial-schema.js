@@ -6,10 +6,10 @@ module.exports = {
     // 1. Create ENUMs native types first (PostgreSQL specific)
     await queryInterface.sequelize.query(`
       CREATE TYPE "enum_users_role" AS ENUM ('SELLER', 'BUYER', 'ADMIN');
-      CREATE TYPE "enum_campaigns_status" AS ENUM ('ACTIVE', 'PAUSED', 'COMPLETED');
+      CREATE TYPE "enum_campaigns_status" AS ENUM ('PENDING_PAYMENT', 'ACTIVE', 'PAUSED', 'COMPLETED');
       CREATE TYPE "enum_order_claims_order_status" AS ENUM ('PENDING_VERIFICATION', 'APPROVED', 'REJECTED');
       CREATE TYPE "enum_order_claims_review_status" AS ENUM ('AWAITING_UPLOAD', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'TIMEOUT');
-      CREATE TYPE "enum_order_claims_payout_status" AS ENUM ('NOT_ELIGIBLE', 'PENDING', 'PROCESSED', 'FAILED');
+      CREATE TYPE "enum_order_claims_payout_status" AS ENUM ('NOT_ELIGIBLE', 'PENDING', 'PROCESSING', 'PROCESSED', 'FAILED');
       CREATE TYPE "enum_transactions_type" AS ENUM ('SELLER_CHARGE', 'BUYER_PAYOUT', 'REFUND');
       CREATE TYPE "enum_transactions_status" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
       CREATE TYPE "enum_notifications_category" AS ENUM (
@@ -92,19 +92,19 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      stripe_connect_account_id: {
+      wise_recipient_id: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      bank_account_name: {
-        type: Sequelize.STRING,
+      payout_currency: {
+        type: Sequelize.STRING(3),
         allowNull: true,
       },
-      bank_routing_number: {
-        type: Sequelize.STRING,
+      payout_country: {
+        type: Sequelize.STRING(2),
         allowNull: true,
       },
-      bank_account_last4: {
+      bank_display_label: {
         type: Sequelize.STRING,
         allowNull: true,
       },
@@ -419,6 +419,22 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true,
       },
+      review_approved_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      payout_processed_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+      wise_transfer_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      payout_method: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn('now'),
@@ -473,7 +489,11 @@ module.exports = {
       },
       stripe_transaction_id: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
+      },
+      wise_transfer_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
       },
       receipt_url: {
         type: Sequelize.STRING,
@@ -643,6 +663,12 @@ module.exports = {
         key: 'auto_review_verification_enabled',
         value: 'true',
         description: 'Enable automatic review verification via Amazon profile scraping. Falls back to manual if auto-verification fails.',
+        updated_at: new Date(),
+      },
+      {
+        key: 'reimbursement_delay_days',
+        value: '14',
+        description: 'Number of days after review approval before auto-payout',
         updated_at: new Date(),
       },
     ]);

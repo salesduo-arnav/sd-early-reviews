@@ -330,7 +330,7 @@
         "coming_soon": "This section is under construction.",
         "campaigns_page_desc": "Manage all your active and past product campaigns.",
         "reviews_page_desc": "Monitor and verify incoming reviews from buyers.",
-        "billing_page_desc": "Manage your payment methods and view past transactions.",
+        "billing_page_desc": "View your payment history and download invoices.",
         "nav": {
             "dashboard": "Dashboard",
             "campaigns": "Campaigns",
@@ -454,6 +454,10 @@
                     "pay": "Pay & Publish Campaign"
                 }
             },
+            "payment_success_title": "Payment successful!",
+            "payment_success_desc": "Your campaign is now live and visible to our reviewer pool.",
+            "payment_cancelled_title": "Payment cancelled",
+            "payment_cancelled_desc": "No charges were made. You can create a new campaign whenever you're ready.",
             "reviews": {
                 "all_reviews": "All Reviews",
                 "total_reviews": "Total Reviews",
@@ -473,12 +477,29 @@
                 "no_text_provided": "No review text provided by the buyer.",
                 "rejection_reason": "Rejection Reason"
             }
+        },
+        "billing": {
+            "history": "Transaction History",
+            "total_spent": "Total Spent",
+            "lifetime_charges": "Lifetime campaign charges",
+            "transactions": "Transactions",
+            "total_charges": "Total charges made",
+            "pending": "Pending",
+            "awaiting_processing": "Awaiting processing",
+            "search_placeholder": "Search by transaction ID...",
+            "download_invoice": "Download Invoice",
+            "invoice_unavailable": "Invoice not available for this transaction."
         }
     },
     "common": {
         "cancel": "Cancel",
+        "back": "Back",
         "status": "Status",
+        "all_status": "All Status",
         "all_statuses": "All Statuses",
+        "success": "Success",
+        "pending": "Pending",
+        "failed": "Failed",
         "rating": "Rating",
         "all_ratings": "All Ratings",
         "stars_short": "Stars",

@@ -435,11 +435,10 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             total_earnings: parseFloat(String(profile.total_earnings)),
             claims_completed: claimsCompleted,
             approval_rate: approvalRate,
-            bank_details: {
-                account_holder: profile.bank_account_name || null,
-                routing_number: profile.bank_routing_number || null,
-                account_last4: profile.bank_account_last4 || null,
-            },
+            wise_connected: !!profile.wise_recipient_id,
+            payout_currency: profile.payout_currency || null,
+            payout_country: profile.payout_country || null,
+            bank_display_label: profile.bank_display_label || null,
             email_notifications_enabled: profile.email_notifications_enabled,
             is_blacklisted: profile.is_blacklisted,
             blacklist_reason: profile.blacklist_reason || null,
@@ -451,56 +450,91 @@ export const getAccountProfile = async (req: Request, res: Response) => {
 };
 
 /**
- * PUT /api/buyer/bank-details
- * Add or update bank account details. Only the last 4 digits of account_number are stored.
+ * GET /api/buyer/bank-requirements
+ * Fetch dynamic bank account field requirements for a given currency via Wise API.
  */
-export const updateBankDetails = async (req: Request, res: Response) => {
+export const getBankRequirements = async (req: Request, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
-        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
-
-        const { account_holder, routing_number, account_number } = req.body;
-
-        // Validate account_holder
-        if (!account_holder || typeof account_holder !== 'string' || account_holder.trim().length < 2 || account_holder.trim().length > 100) {
-            return res.status(400).json({ message: 'account_holder must be between 2 and 100 characters' });
+        const { currency } = req.query;
+        if (!currency || typeof currency !== 'string' || currency.length !== 3) {
+            return res.status(400).json({ message: 'currency query parameter is required (3-letter ISO code)' });
         }
 
-        // Validate routing_number (exactly 9 digits)
-        if (!routing_number || !/^\d{9}$/.test(routing_number)) {
-            return res.status(400).json({ message: 'routing_number must be exactly 9 digits' });
-        }
+        const { getAccountRequirements } = await import('../services/wise.service');
+        const requirements = await getAccountRequirements(currency.toUpperCase());
 
-        // Validate account_number (8-17 digits)
-        if (!account_number || !/^\d{8,17}$/.test(account_number)) {
-            return res.status(400).json({ message: 'account_number must be between 8 and 17 digits' });
-        }
-
-        await profile.update({
-            bank_account_name: account_holder.trim(),
-            bank_routing_number: routing_number,
-            bank_account_last4: account_number.slice(-4),
-        });
-
-        return res.status(200).json({
-            account_holder: profile.bank_account_name,
-            routing_number: profile.bank_routing_number,
-            account_last4: profile.bank_account_last4,
-        });
+        return res.status(200).json(requirements);
     } catch (error) {
-        logger.error(`Error updating bank details: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return res.status(500).json({ message: 'Internal server error while updating bank details' });
+        logger.error(`Error fetching bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Failed to fetch bank account requirements' });
     }
 };
 
 /**
- * DELETE /api/buyer/bank-details
- * Remove saved bank account details.
+ * POST /api/buyer/bank-requirements
+ * Refresh requirements after a field with refreshRequirementsOnChange changes.
  */
-export const removeBankDetails = async (req: Request, res: Response) => {
+export const refreshBankRequirements = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const { currency } = req.query;
+        if (!currency || typeof currency !== 'string' || currency.length !== 3) {
+            return res.status(400).json({ message: 'currency query parameter is required (3-letter ISO code)' });
+        }
+
+        const formValues = req.body;
+        if (!formValues || typeof formValues !== 'object') {
+            return res.status(400).json({ message: 'Request body must contain current form values' });
+        }
+
+        // Wise POST /v1/account-requirements expects: { type, details: { legalType, abartn, address: { country, ... } } }
+        // Our form values are flat: { type: "aba", legalType: "PRIVATE", "address.country": "US", abartn: "..." }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const details: Record<string, any> = {};
+        let accountType = '';
+        for (const [key, value] of Object.entries(formValues as Record<string, string>)) {
+            if (!value) continue;
+            if (key === 'type') { accountType = value; continue; }
+
+            // Nest dot-notation keys
+            const parts = key.split('.');
+            if (parts.length === 1) {
+                details[key] = value;
+            } else {
+                let current = details;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]] || typeof current[parts[i]] !== 'object') {
+                        current[parts[i]] = {};
+                    }
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+            }
+        }
+
+        const { refreshAccountRequirements } = await import('../services/wise.service');
+        const requirements = await refreshAccountRequirements(
+            currency.toUpperCase(),
+            { type: accountType || undefined, details },
+        );
+
+        return res.status(200).json(requirements);
+    } catch (error) {
+        logger.error(`Error refreshing bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Failed to refresh bank account requirements' });
+    }
+};
+
+/**
+ * PUT /api/buyer/bank-account
+ * Connect a bank account via Wise. Creates a Wise recipient from the buyer's bank details.
+ */
+export const connectBankAccount = async (req: Request, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -508,16 +542,119 @@ export const removeBankDetails = async (req: Request, res: Response) => {
         const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
         if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
 
+        const user = await User.findByPk(userId, { attributes: ['full_name'] });
+
+        const { currency, country, type, details } = req.body;
+
+        if (!currency || typeof currency !== 'string') {
+            return res.status(400).json({ message: 'currency is required' });
+        }
+        if (!country || typeof country !== 'string') {
+            return res.status(400).json({ message: 'country is required' });
+        }
+        if (!type || typeof type !== 'string') {
+            return res.status(400).json({ message: 'type is required (account type from Wise requirements)' });
+        }
+        if (!details || typeof details !== 'object') {
+            return res.status(400).json({ message: 'details object is required with bank account fields' });
+        }
+
+        // If already connected, delete the old Wise recipient first
+        if (profile.wise_recipient_id) {
+            try {
+                const { deleteRecipient } = await import('../services/wise.service');
+                await deleteRecipient(profile.wise_recipient_id);
+            } catch {
+                // Non-fatal: old recipient may already be deleted on Wise's side
+            }
+        }
+
+        // Convert flat dot-notation keys (e.g. "address.country") into nested objects
+        // Wise API expects { address: { country: "IN" } } not { "address.country": "IN" }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nestedDetails: Record<string, any> = {};
+        for (const [key, value] of Object.entries(details as Record<string, string>)) {
+            const parts = key.split('.');
+            if (parts.length === 1) {
+                nestedDetails[key] = value;
+            } else {
+                let current = nestedDetails;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]] || typeof current[parts[i]] !== 'object') {
+                        current[parts[i]] = {};
+                    }
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+            }
+        }
+
+        const { createRecipient } = await import('../services/wise.service');
+        const recipient = await createRecipient({
+            accountHolderName: user?.full_name || 'Account Holder',
+            currency: currency.toUpperCase(),
+            type,
+            details: nestedDetails,
+            ownedByCustomer: false,
+        });
+
+        // Build a display label from the details (masked)
+        const detailValues = Object.values(details).filter(v => typeof v === 'string') as string[];
+        const lastValue = detailValues[detailValues.length - 1] || '';
+        const masked = lastValue.length > 4 ? `****${lastValue.slice(-4)}` : lastValue;
+        const displayLabel = `${country.toUpperCase()} ${currency.toUpperCase()} ${masked}`.trim();
+
         await profile.update({
-            bank_account_name: null,
-            bank_routing_number: null,
-            bank_account_last4: null,
+            wise_recipient_id: String(recipient.id),
+            payout_currency: currency.toUpperCase(),
+            payout_country: country.toUpperCase(),
+            bank_display_label: displayLabel,
+        });
+
+        return res.status(200).json({
+            wise_connected: true,
+            payout_currency: profile.payout_currency,
+            payout_country: profile.payout_country,
+            bank_display_label: profile.bank_display_label,
+        });
+    } catch (error) {
+        logger.error(`Error connecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: error instanceof Error ? error.message : 'Failed to connect bank account' });
+    }
+};
+
+/**
+ * DELETE /api/buyer/bank-account
+ * Disconnect the connected bank account (deletes Wise recipient).
+ */
+export const disconnectBankAccount = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
+
+        if (profile.wise_recipient_id) {
+            try {
+                const { deleteRecipient } = await import('../services/wise.service');
+                await deleteRecipient(profile.wise_recipient_id);
+            } catch {
+                // Non-fatal
+            }
+        }
+
+        await profile.update({
+            wise_recipient_id: null,
+            payout_currency: null,
+            payout_country: null,
+            bank_display_label: null,
         });
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        logger.error(`Error removing bank details: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return res.status(500).json({ message: 'Internal server error while removing bank details' });
+        logger.error(`Error disconnecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return res.status(500).json({ message: 'Internal server error while disconnecting bank account' });
     }
 };
 

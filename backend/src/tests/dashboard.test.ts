@@ -208,9 +208,7 @@ describe('Seller Dashboard API', () => {
 
         it('should paginate correctly', async () => {
             const seller = await createSellerAndLogin(app);
-            for (let i = 0; i < 8; i++) {
-                await createCampaignViaAPI(app, seller.token);
-            }
+            await Promise.all(Array.from({ length: 8 }, () => createCampaignViaAPI(app, seller.token)));
 
             const res = await request(app)
                 .get('/api/dashboard/seller/campaign-progress?page=1&limit=5')

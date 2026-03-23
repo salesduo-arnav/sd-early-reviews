@@ -6,8 +6,10 @@ import {
     submitReviewProof,
     cancelClaim,
     getAccountProfile,
-    updateBankDetails,
-    removeBankDetails,
+    getBankRequirements,
+    refreshBankRequirements,
+    connectBankAccount,
+    disconnectBankAccount,
     updateNotificationPreferences,
 } from '../controllers/buyer.controller';
 
@@ -25,8 +27,10 @@ router.delete('/claims/:id', cancelClaim);
 
 // Profile & Earnings
 router.get('/profile', getAccountProfile);
-router.put('/bank-details', updateBankDetails);
-router.delete('/bank-details', removeBankDetails);
+router.get('/bank-requirements', getBankRequirements);
+router.post('/bank-requirements', refreshBankRequirements);
+router.put('/bank-account', connectBankAccount);
+router.delete('/bank-account', disconnectBankAccount);
 router.patch('/notifications', updateNotificationPreferences);
 
 export default router;

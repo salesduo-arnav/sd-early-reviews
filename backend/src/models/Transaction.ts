@@ -20,7 +20,8 @@ interface TransactionAttributes {
     platform_fee: number;
     net_amount: number;
     type: TransactionType;
-    stripe_transaction_id: string;
+    stripe_transaction_id?: string | null;
+    wise_transfer_id?: string | null;
     receipt_url?: string;
     invoice_url?: string;
     status: TransactionStatus;
@@ -28,7 +29,7 @@ interface TransactionAttributes {
     deleted_at?: Date;
 }
 
-type TransactionCreationAttributes = Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'deleted_at'>;
+type TransactionCreationAttributes = Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'stripe_transaction_id' | 'wise_transfer_id' | 'deleted_at'>;
 
 export class Transaction extends Model<TransactionAttributes, TransactionCreationAttributes> implements TransactionAttributes {
     public id!: string;
@@ -37,7 +38,8 @@ export class Transaction extends Model<TransactionAttributes, TransactionCreatio
     public platform_fee!: number;
     public net_amount!: number;
     public type!: TransactionType;
-    public stripe_transaction_id!: string;
+    public stripe_transaction_id!: string | null;
+    public wise_transfer_id!: string | null;
     public receipt_url!: string;
     public invoice_url!: string;
     public status!: TransactionStatus;
@@ -74,7 +76,11 @@ Transaction.init(
         },
         stripe_transaction_id: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
+        },
+        wise_transfer_id: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
         receipt_url: {
             type: DataTypes.STRING,
