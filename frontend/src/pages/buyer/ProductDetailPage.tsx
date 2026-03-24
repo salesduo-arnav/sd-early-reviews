@@ -89,7 +89,7 @@ export default function ProductDetailPage() {
     }, [fetchProduct]);
 
     const handleClaimSuccess = () => {
-        fetchProduct();
+        navigate('/buyer/claims');
     };
 
     if (isLoading || !product) {
