@@ -1,33 +1,23 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { User, Building2, Eye } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type SellerRow } from '@/api/admin';
 import { format } from 'date-fns';
 import { SellerDetailModal } from './SellerDetailModal';
-
-interface SellerRowUser { full_name: string; email: string; created_at: string; }
-interface SellerRow { id: string; User?: SellerRowUser; company_name?: string; }
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 export function SellersTable() {
-    const [data, setData] = useState<SellerRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [detailModal, setDetailModal] = useState<{ open: boolean; sellerId: string }>({ open: false, sellerId: '' });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getSellers(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getSellers(page, size, search),
+        [],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery } = useAdminTable<SellerRow>({ fetchFn });
 
     const columns = useMemo<ColumnDef<SellerRow, unknown>[]>(() => [
         {
@@ -95,7 +85,7 @@ export function SellersTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by name, email, or company..."
                     isLoading={loading}
                 />

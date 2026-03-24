@@ -1,15 +1,10 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';
-import { SellerProfile } from '../models/SellerProfile';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { startOfDay, endOfDay } from 'date-fns';
-
-const resolveSellerProfile = async (userId: string) => {
-    const profile = await SellerProfile.findOne({ where: { user_id: userId } });
-    return profile ?? null;
-};
+import { resolveSellerProfile } from '../utils/profileResolvers';
 
 export const getBillingSummary = async (req: Request, res: Response) => {
     try {
@@ -37,7 +32,7 @@ export const getBillingSummary = async (req: Request, res: Response) => {
             pendingAmount: parseFloat((pendingAmount || 0).toString()),
         });
     } catch (error) {
-        logger.error(`Error fetching billing summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching billing summary: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -100,7 +95,7 @@ export const getBillingHistory = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(formattedRows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching billing history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching billing history: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -147,7 +142,7 @@ export const downloadInvoice = async (req: Request, res: Response) => {
         };
         await pump();
     } catch (error) {
-        logger.error(`Error downloading invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error downloading invoice: ${formatError(error)}`);
         if (!res.headersSent) {
             return res.status(500).json({ message: 'Internal server error' });
         }

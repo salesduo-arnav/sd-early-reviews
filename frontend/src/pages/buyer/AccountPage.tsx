@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export default function AccountPage() {
             const data = await buyerApi.getAccountProfile();
             setProfile(data);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to load profile');
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -45,7 +46,7 @@ export default function AccountPage() {
         } catch (err) {
             // Rollback
             setProfile((prev) => prev ? { ...prev, email_notifications_enabled: previous ?? true } : prev);
-            toast.error(err instanceof Error ? err.message : t('buyer.account.notifications.toggle_error', 'Failed to update preference'));
+            toast.error(getErrorMessage(err));
         }
     };
 

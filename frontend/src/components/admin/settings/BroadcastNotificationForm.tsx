@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Send, Bell, Loader2 } from 'lucide-react';
 import { adminApi } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 export function BroadcastNotificationForm() {
     const [target, setTarget] = useState('ALL');
@@ -30,7 +31,7 @@ export function BroadcastNotificationForm() {
             setTitle('');
             setMessage('');
             setActionLink('');
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setSending(false); }
     };
 

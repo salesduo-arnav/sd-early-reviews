@@ -5,20 +5,13 @@ import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { SellerProfile } from '../models/SellerProfile';
 import { User } from '../models/User';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { startOfDay, endOfDay } from 'date-fns';
 import { attemptAutoReviewVerification } from '../services/verification';
-
-// Helpers
-
-// Resolve BuyerProfile.id from JWT userId
-const resolveBuyerProfileId = async (userId: string): Promise<string | null> => {
-    const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
-    return profile ? profile.id : null;
-};
+import { resolveBuyerProfileId } from '../utils/profileResolvers';
 
 // Derive a user-friendly pipeline status from the three internal status fields
 function derivePipelineStatus(orderStatus: string, reviewStatus: string, payoutStatus: string): string {
@@ -173,7 +166,7 @@ export const getMyClaims = async (req: Request, res: Response) => {
         const claims = rows.map(formatClaimResponse);
         return res.status(200).json(buildPaginatedResponse(claims, count, pagination));
     } catch (error) {
-        logger.error(`Error fetching buyer claims: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching buyer claims: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching claims' });
     }
 };
@@ -207,7 +200,7 @@ export const getClaimDetail = async (req: Request, res: Response) => {
 
         return res.status(200).json(formatClaimResponse(claim));
     } catch (error) {
-        logger.error(`Error fetching claim detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching claim detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching claim details' });
     }
 };
@@ -330,7 +323,7 @@ export const submitReviewProof = async (req: Request, res: Response) => {
             claim: formatClaimResponse(claim),
         });
     } catch (error) {
-        logger.error(`Error submitting review proof: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error submitting review proof: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while submitting review' });
     }
 };
@@ -386,12 +379,12 @@ export const cancelClaim = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: 'Claim cancelled successfully' });
     } catch (error) {
-        logger.error(`Error cancelling claim: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error cancelling claim: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while cancelling claim' });
     }
 };
 
-// ─── Profile & Earnings ──────────────────────────────────────────────────────
+// Profile & Earnings
 
 /**
  * GET /api/buyer/profile
@@ -444,7 +437,7 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             blacklist_reason: profile.blacklist_reason || null,
         });
     } catch (error) {
-        logger.error(`Error fetching account profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching account profile: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching profile' });
     }
 };
@@ -468,7 +461,7 @@ export const getBankRequirements = async (req: Request, res: Response) => {
 
         return res.status(200).json(requirements);
     } catch (error) {
-        logger.error(`Error fetching bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching bank requirements: ${formatError(error)}`);
         return res.status(500).json({ message: 'Failed to fetch bank account requirements' });
     }
 };
@@ -525,7 +518,7 @@ export const refreshBankRequirements = async (req: Request, res: Response) => {
 
         return res.status(200).json(requirements);
     } catch (error) {
-        logger.error(`Error refreshing bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error refreshing bank requirements: ${formatError(error)}`);
         return res.status(500).json({ message: 'Failed to refresh bank account requirements' });
     }
 };
@@ -618,7 +611,7 @@ export const connectBankAccount = async (req: Request, res: Response) => {
             bank_display_label: profile.bank_display_label,
         });
     } catch (error) {
-        logger.error(`Error connecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error connecting bank account: ${formatError(error)}`);
         return res.status(500).json({ message: error instanceof Error ? error.message : 'Failed to connect bank account' });
     }
 };
@@ -653,7 +646,7 @@ export const disconnectBankAccount = async (req: Request, res: Response) => {
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        logger.error(`Error disconnecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error disconnecting bank account: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while disconnecting bank account' });
     }
 };
@@ -680,7 +673,7 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
 
         return res.status(200).json({ email_notifications_enabled: profile.email_notifications_enabled });
     } catch (error) {
-        logger.error(`Error updating notification preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error updating notification preferences: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while updating notification preferences' });
     }
 };

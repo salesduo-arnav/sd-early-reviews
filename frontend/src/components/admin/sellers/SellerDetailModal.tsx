@@ -5,18 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Building2, DollarSign, Package, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
-import { adminApi } from '@/api/admin';
+import { adminApi, type SellerDetailResponse } from '@/api/admin';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
-
-interface SellerUser { full_name: string; email: string; created_at: string; }
-interface SellerData { User?: SellerUser; company_name?: string; }
-interface SellerCampaignItem {
-    id: string; product_title: string; product_image_url: string; asin: string;
-    region: string; product_price: string; target_reviews: number; status: string;
-}
-interface PaginationMeta { page: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean; }
-interface PaginatedCampaigns { data: SellerCampaignItem[]; pagination: PaginationMeta; }
 
 interface SellerDetailModalProps {
     open: boolean;
@@ -35,8 +28,8 @@ const campaignStatusBadge = (status: string) => {
 
 export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetailModalProps) {
     const [loading, setLoading] = useState(true);
-    const [seller, setSeller] = useState<SellerData | null>(null);
-    const [campaigns, setCampaigns] = useState<PaginatedCampaigns | null>(null);
+    const [seller, setSeller] = useState<SellerDetailResponse['seller'] | null>(null);
+    const [campaigns, setCampaigns] = useState<SellerDetailResponse['campaigns'] | null>(null);
     const [totalSpent, setTotalSpent] = useState(0);
     const [campaignsPage, setCampaignsPage] = useState(1);
 
@@ -47,7 +40,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
             setSeller(result.seller);
             setCampaigns(result.campaigns);
             setTotalSpent(result.totalSpent);
-        } catch (err) { console.error('Failed to fetch data:', err); }
+        } catch (err) { toast.error(getErrorMessage(err)); }
         finally { setLoading(false); }
     }, [sellerId]);
 
@@ -106,7 +99,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
                             <div className="rounded-lg border p-3 text-center">
                                 <BarChart3 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                                 <p className="text-base font-semibold">
-                                    {campaigns?.data?.filter((c: SellerCampaignItem) => c.status === 'ACTIVE').length ?? 0}
+                                    {campaigns?.data?.filter((c) => c.status === 'ACTIVE').length ?? 0}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground">Active</p>
                             </div>
@@ -124,7 +117,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
                             <h4 className="text-sm font-semibold mb-3">Campaigns</h4>
                             {campaigns?.data?.length > 0 ? (
                                 <div className="space-y-2">
-                                    {campaigns.data.map((campaign: SellerCampaignItem) => (
+                                    {campaigns.data.map((campaign) => (
                                         <div key={campaign.id} className="rounded-lg border p-3 space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-7 w-7 rounded border bg-muted/50 overflow-hidden flex-shrink-0">

@@ -8,6 +8,7 @@ import { Loader2, Search, AlertTriangle } from 'lucide-react';
 import { CampaignWizardData } from '../wizard/CampaignWizardModal';
 import { campaignsApi } from '@/api/campaigns';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 interface Step1ProductProps {
     data: CampaignWizardData;
@@ -87,7 +88,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
             });
             toast.success(t('seller.campaigns.wizard.fetch_success', 'Product details fetched successfully!'));
         } catch (error) {
-            const message = error instanceof Error ? error.message : '';
+            const message = getErrorMessage(error);
             // Show the backend's descriptive message if available
             setFetchError(message || 'Failed to fetch product details. Please check the ASIN and selected region.');
             toast.error(message || t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));

@@ -8,6 +8,7 @@ import { CampaignList } from '@/components/seller/campaigns/CampaignList';
 import { CampaignWizardModal } from '@/components/seller/campaigns/wizard/CampaignWizardModal';
 import { AppPagination } from '@/components/common/AppPagination';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 const PAGE_SIZE = 12;
 
@@ -44,9 +45,8 @@ export default function CampaignsPage() {
             setCampaigns(result.data);
             setPagination(result.pagination);
         } catch (err) {
-            console.error('Failed to load campaigns', err);
-            setError(t('seller.campaigns.fetch_error', 'Failed to load campaigns.') as string);
-            toast.error(t('seller.campaigns.fetch_error', 'Failed to load campaigns.'));
+            setError(getErrorMessage(err));
+            toast.error(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

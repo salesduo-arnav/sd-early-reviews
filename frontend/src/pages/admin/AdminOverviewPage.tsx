@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, ShieldCheck, Star, BarChart3, Users, CreditCard, Loader2, LayoutDashboard } from 'lucide-react';
 import { adminApi, AdminMetrics, ChartDataPoint } from '@/api/admin';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
 
@@ -29,7 +31,7 @@ export default function AdminOverviewPage() {
                 setClaimsData(c);
                 setUsersData(u);
             } catch (error) {
-                console.error('Failed to load dashboard data', error);
+                toast.error(getErrorMessage(error));
             } finally {
                 setLoading(false);
             }

@@ -31,9 +31,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/use-debounce"
 
-// ============================================================================
 // EXPORTED HELPER COMPONENTS - Use these to build your columns easily
-// ============================================================================
 
 /**
  * Sortable column header component
@@ -99,9 +97,7 @@ export function DataTableStaticHeader({ title, className, srOnly = false }: Data
     return <span className={cn("text-xs font-semibold uppercase tracking-wide hover:text-muted-foreground", className)}>{title}</span>
 }
 
-// ============================================================================
 // MAIN DATA TABLE COMPONENT
-// ============================================================================
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]

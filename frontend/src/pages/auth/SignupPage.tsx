@@ -16,6 +16,7 @@ import { Info } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { GoogleButton } from '@/components/auth/GoogleButton';
 
 type Role = 'seller' | 'buyer';
@@ -103,7 +104,7 @@ export default function SignupPage() {
                 setIsOtpModalOpen(true);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -123,7 +124,7 @@ export default function SignupPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Google signup failed');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -138,7 +139,7 @@ export default function SignupPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 

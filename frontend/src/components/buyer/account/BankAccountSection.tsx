@@ -17,6 +17,7 @@ import { buyerApi } from '@/api/buyer';
 import type { WiseAccountRequirement, ConnectBankPayload } from '@/api/buyer';
 import { WiseFormRenderer } from '@/components/ui/wise-form-renderer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 const COUNTRY_OPTIONS = [
     { code: 'IN', currency: 'INR', label: 'India (INR)' },
@@ -98,7 +99,7 @@ export default function BankAccountSection({
                     toast.error('No bank account options available for this country');
                 }
             })
-            .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load bank account requirements'))
+            .catch((err) => toast.error(getErrorMessage(err)))
             .finally(() => setLoadingRequirements(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedCountryObj is derived from selectedCountry; listing both would be redundant
     }, [selectedCountry]);
@@ -138,7 +139,6 @@ export default function BankAccountSection({
             }
         } catch {
             // Silent fail — fields just won't update
-            console.warn('Failed to refresh bank requirements, fields may be outdated');
         }
     }, [selectedCountryObj, activeRequirement, formValues, selectedTypeIndex]);
 
@@ -171,7 +171,7 @@ export default function BankAccountSection({
             setFormValues({});
             onConnected();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to connect bank account');
+            toast.error(getErrorMessage(err));
         } finally {
             setSubmitting(false);
         }
@@ -184,7 +184,7 @@ export default function BankAccountSection({
             toast.success(t('buyer.account.bank.disconnected_success', 'Bank account disconnected'));
             onDisconnected();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to disconnect bank account');
+            toast.error(getErrorMessage(err));
         } finally {
             setRemoving(false);
         }
@@ -202,7 +202,7 @@ export default function BankAccountSection({
 
     return (
         <>
-            {/* ── Connected / Empty state card ─────────────────────────────── */}
+            {/* Connected / Empty state card */}
             <Card className="shadow-sm border-border">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -275,7 +275,7 @@ export default function BankAccountSection({
                 </CardContent>
             </Card>
 
-            {/* ── Add / Edit dialog ────────────────────────────────────────── */}
+            {/* Add / Edit dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
                     <DialogHeader>

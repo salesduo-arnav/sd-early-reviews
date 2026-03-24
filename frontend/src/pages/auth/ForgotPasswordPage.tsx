@@ -13,6 +13,7 @@ import { ArrowLeft } from 'lucide-react';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 const emailSchema = z.object({
     email: z.string().email(),
@@ -79,7 +80,7 @@ export default function ForgotPasswordPage() {
                 setStep('otp');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -98,7 +99,7 @@ export default function ForgotPasswordPage() {
             });
             navigate('/login');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 

@@ -10,9 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-// ============================================================================
 // Types
-// ============================================================================
 
 type TimeFormat = "12h" | "24h";
 
@@ -48,17 +46,13 @@ interface TimePickerInlineProps {
     minuteInterval?: 1 | 5 | 10 | 15 | 30;
 }
 
-// ============================================================================
 // Constants
-// ============================================================================
 
 const ITEM_HEIGHT = 32;
 const ITEM_HEIGHT_COMPACT = 28;
 const SCROLL_OFFSET_ITEMS = 2;
 
-// ============================================================================
 // Shared Hook
-// ============================================================================
 
 function useTimePicker(
     value: string | undefined,
@@ -169,9 +163,7 @@ function useTimePicker(
     };
 }
 
-// ============================================================================
 // Shared Dropdown Content
-// ============================================================================
 
 interface TimeDropdownContentProps {
     hours: string[];
@@ -325,9 +317,7 @@ function TimeDropdownContent({
     );
 }
 
-// ============================================================================
 // TimePicker — Standard popover variant
-// ============================================================================
 
 export function TimePicker({
     value,
@@ -383,9 +373,7 @@ export function TimePicker({
     );
 }
 
-// ============================================================================
 // TimePickerInline — Compact inline variant
-// ============================================================================
 
 export function TimePickerInline({
     value,
@@ -440,8 +428,6 @@ export function TimePickerInline({
     );
 }
 
-// ============================================================================
 // Exports
-// ============================================================================
 
 export type { TimePickerProps, TimePickerInlineProps };

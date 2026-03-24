@@ -1,5 +1,5 @@
 import { AdminAuditLog } from '../models/AdminAuditLog';
-import { logger } from './logger';
+import { logger, formatError } from './logger';
 
 export async function logAdminAction(
     adminId: string,
@@ -19,6 +19,6 @@ export async function logAdminAction(
             ip_address: ipAddress,
         });
     } catch (error) {
-        logger.error(`Failed to log admin action: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Failed to log admin action: ${formatError(error)}`);
     }
 }

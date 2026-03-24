@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Transaction } from '../../models/Transaction';
 import { User } from '../../models/User';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { startOfDay, endOfDay } from 'date-fns';
 
@@ -43,7 +43,7 @@ export const getTransactions = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching transactions: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

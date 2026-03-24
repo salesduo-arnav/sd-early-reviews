@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardNavbar } from '@/components/layout/DashboardNavbar';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AlertTriangle, Landmark } from 'lucide-react';
 import { buyerApi } from '@/api/buyer';
 
@@ -73,7 +74,9 @@ export function BuyerLayout() {
                 </div>
             )}
             <main className={`w-full px-4 md:px-8 pt-24 pb-12 ${hasBanner ? 'mt-14' : ''}`}>
-                <Outlet />
+                <ErrorBoundary>
+                    <Outlet />
+                </ErrorBoundary>
             </main>
         </div>
     );

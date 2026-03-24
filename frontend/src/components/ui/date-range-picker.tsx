@@ -14,9 +14,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-// ============================================================================
 // Types
-// ============================================================================
 
 interface DateRangePickerProps {
     /** Controlled date range value */
@@ -33,9 +31,7 @@ interface DateRangePickerProps {
     numberOfMonths?: 1 | 2;
 }
 
-// ============================================================================
 // Component
-// ============================================================================
 
 export function DatePickerWithRange({
     value,
@@ -107,8 +103,6 @@ export function DatePickerWithRange({
     );
 }
 
-// ============================================================================
 // Exports
-// ============================================================================
 
 export type { DateRangePickerProps };

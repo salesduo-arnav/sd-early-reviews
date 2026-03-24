@@ -1,7 +1,7 @@
 import { fetchWithAuth } from './httpClient';
 import type { PaginatedResponse } from './types';
 
-// --- Types ---
+// Types
 
 export type { PaginatedResponse };
 
@@ -20,7 +20,7 @@ export interface ChartDataPoint {
     [key: string]: string | number;
 }
 
-interface AdminPagination {
+export interface AdminPagination {
     page: number;
     total: number;
     totalPages: number;
@@ -28,12 +28,12 @@ interface AdminPagination {
     hasPrev: boolean;
 }
 
-interface AdminPaginatedResponse<T> {
+export interface AdminPaginatedResponse<T> {
     data: T[];
     pagination: AdminPagination;
 }
 
-interface OrderRow {
+export interface OrderRow {
     id: string;
     BuyerProfile?: { User?: { full_name: string; email: string } };
     Campaign?: { product_image_url: string; product_title: string; asin: string; region: string };
@@ -43,7 +43,7 @@ interface OrderRow {
     order_proof_url: string;
 }
 
-interface ReviewRow {
+export interface ReviewRow {
     id: string;
     BuyerProfile?: { User?: { full_name: string; email: string } };
     Campaign?: { product_image_url: string; product_title: string; asin: string };
@@ -52,7 +52,7 @@ interface ReviewRow {
     review_proof_url: string;
 }
 
-interface BuyerRow {
+export interface BuyerRow {
     id: string;
     User?: { full_name: string; email: string; created_at: string };
     region: string;
@@ -61,7 +61,7 @@ interface BuyerRow {
     is_blacklisted: boolean;
 }
 
-interface BuyerDetailResponse {
+export interface BuyerDetailResponse {
     buyer: {
         User?: { full_name: string; email: string; created_at: string; is_verified: boolean };
         region: string;
@@ -80,13 +80,13 @@ interface BuyerDetailResponse {
     }>;
 }
 
-interface SellerRow {
+export interface SellerRow {
     id: string;
     User?: { full_name: string; email: string; created_at: string };
     company_name?: string;
 }
 
-interface SellerDetailResponse {
+export interface SellerDetailResponse {
     seller: {
         User?: { full_name: string; email: string; created_at: string };
         company_name?: string;
@@ -104,7 +104,7 @@ interface SellerDetailResponse {
     totalSpent: number;
 }
 
-interface CampaignRow {
+export interface CampaignRow {
     id: string;
     product_title: string;
     product_image_url: string;
@@ -119,7 +119,7 @@ interface CampaignRow {
     created_at: string;
 }
 
-interface CampaignDetailResponse {
+export interface CampaignDetailResponse {
     campaign: {
         product_title: string;
         product_image_url: string;
@@ -143,7 +143,7 @@ interface CampaignDetailResponse {
     }>;
 }
 
-interface PayoutRow {
+export interface PayoutRow {
     id: string;
     BuyerProfile?: { User?: { full_name: string; email: string }; wise_recipient_id?: string | null; bank_display_label?: string | null };
     Campaign?: { product_title: string; region: string };
@@ -155,7 +155,7 @@ interface PayoutRow {
     review_approved_at?: string | null;
 }
 
-interface TransactionRow {
+export interface TransactionRow {
     id: string;
     User?: { full_name: string; email: string };
     type: string;
@@ -167,14 +167,14 @@ interface TransactionRow {
     created_at: string;
 }
 
-interface ConfigEntry {
+export interface ConfigEntry {
     key: string;
     value: string;
     description: string | null;
     updated_at: string;
 }
 
-interface AuditLogRow {
+export interface AuditLogRow {
     id: string;
     User?: { full_name: string; email: string };
     action: string;
@@ -185,7 +185,7 @@ interface AuditLogRow {
     details?: string;
 }
 
-// --- API ---
+// API
 
 export const adminApi = {
     // Dashboard

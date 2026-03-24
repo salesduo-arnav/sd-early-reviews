@@ -1,11 +1,12 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type TransactionRow } from '@/api/admin';
 import { format } from 'date-fns';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 const typeBadge = (type: string) => {
     switch (type) {
@@ -25,32 +26,17 @@ const statusBadge = (status: string) => {
     }
 };
 
-interface TransactionUser { full_name: string; email: string; }
-interface TransactionRow {
-    id: string; User?: TransactionUser; type: string; gross_amount: string;
-    platform_fee: string; net_amount: string; stripe_transaction_id: string;
-    status: string; created_at: string;
-}
-
 export function TransactionsTable() {
-    const [data, setData] = useState<TransactionRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('ALL');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getTransactions(pagination.pageIndex + 1, pagination.pageSize, typeFilter, statusFilter, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, typeFilter, statusFilter]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getTransactions(page, size, typeFilter, statusFilter, search),
+        [typeFilter, statusFilter],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery } = useAdminTable<TransactionRow>({ fetchFn });
 
     const columns = useMemo<ColumnDef<TransactionRow, unknown>[]>(() => [
         {
@@ -150,7 +136,7 @@ export function TransactionsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by Stripe ID..."
                     isLoading={loading}
                 />

@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { Transaction, TransactionStatus } from '../models/Transaction';
 import { Campaign, CampaignStatus } from '../models/Campaign';
 import { constructWebhookEvent, getInvoicePdfUrl, stripe } from '../services/stripe.service';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 
 export const handleStripeWebhook = async (req: Request, res: Response) => {
     const sig = req.headers['stripe-signature'] as string;
@@ -16,7 +16,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
     try {
         event = constructWebhookEvent(req.body, sig);
     } catch (error) {
-        logger.error(`Webhook signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Webhook signature verification failed: ${formatError(error)}`);
         return res.status(400).json({ message: 'Webhook signature verification failed' });
     }
 
@@ -114,7 +114,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
 
         return res.json({ received: true });
     } catch (error) {
-        logger.error(`Error processing webhook event ${event.type}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error processing webhook event ${event.type}: ${formatError(error)}`);
         return res.status(500).json({ message: 'Webhook handler error' });
     }
 };

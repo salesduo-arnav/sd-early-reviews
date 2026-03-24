@@ -5,30 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Globe, Clock, DollarSign, CheckCircle, ChevronLeft, ChevronRight, Package } from 'lucide-react';
-import { adminApi } from '@/api/admin';
+import { adminApi, type BuyerDetailResponse } from '@/api/admin';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
-
-interface BuyerUser { full_name: string; email: string; created_at: string; is_verified: boolean; }
-interface BuyerData {
-    User?: BuyerUser;
-    region: string;
-    is_blacklisted: boolean;
-    blacklist_reason?: string;
-    on_time_submission_rate: number;
-    total_earnings: string;
-}
-interface ClaimCampaign { product_image_url: string; product_title: string; asin: string; region: string; }
-interface ClaimItem {
-    id: string;
-    Campaign?: ClaimCampaign;
-    expected_payout_amount: string;
-    order_status: string;
-    review_status: string;
-    payout_status: string;
-}
-interface PaginationMeta { page: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean; }
-interface PaginatedClaims { data: ClaimItem[]; pagination: PaginationMeta; }
 
 interface BuyerDetailModalProps {
     open: boolean;
@@ -48,8 +29,8 @@ const claimStatusBadge = (orderStatus: string, reviewStatus: string, payoutStatu
 
 export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailModalProps) {
     const [loading, setLoading] = useState(true);
-    const [buyer, setBuyer] = useState<BuyerData | null>(null);
-    const [claims, setClaims] = useState<PaginatedClaims | null>(null);
+    const [buyer, setBuyer] = useState<BuyerDetailResponse['buyer'] | null>(null);
+    const [claims, setClaims] = useState<BuyerDetailResponse['claims'] | null>(null);
     const [claimsPage, setClaimsPage] = useState(1);
 
     const fetchDetail = useCallback(async (page: number) => {
@@ -58,7 +39,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
             const result = await adminApi.getBuyerDetail(buyerId, page, 5);
             setBuyer(result.buyer);
             setClaims(result.claims);
-        } catch (err) { console.error('Failed to fetch data:', err); }
+        } catch (err) { toast.error(getErrorMessage(err)); }
         finally { setLoading(false); }
     }, [buyerId]);
 
@@ -147,7 +128,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                             <h4 className="text-sm font-semibold mb-3">Claims History</h4>
                             {claims?.data?.length > 0 ? (
                                 <div className="space-y-2">
-                                    {claims.data.map((claim: ClaimItem) => (
+                                    {claims.data.map((claim) => (
                                         <div key={claim.id} className="rounded-lg border p-3 space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-7 w-7 rounded border bg-muted/50 overflow-hidden flex-shrink-0">

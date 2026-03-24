@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Plus, Trash2, Loader2, Settings, CheckCircle2, XCircle } from 'lucide-react';
-import { adminApi } from '@/api/admin';
+import { adminApi, type ConfigEntry } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// Helpers
 
 const isBooleanValue = (value: string) => ['true', 'false'].includes(value.toLowerCase());
 
@@ -55,7 +56,7 @@ const SUPPORTED_CURRENCIES: { code: string; label: string }[] = [
     { code: 'SEK', label: 'SEK - Swedish Krona' },
 ];
 
-// ─── Cron Input ──────────────────────────────────────────────────────────────
+// Cron Input
 
 function CronInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const matchedPreset = CRON_PRESETS.find(p => p.value === value && p.value !== '__custom__');
@@ -111,7 +112,7 @@ function CronInput({ value, onChange }: { value: string; onChange: (v: string) =
     );
 }
 
-// ─── Currency Amount Editor ──────────────────────────────────────────────────
+// Currency Amount Editor
 
 function CurrencyAmountEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const parsed: Record<string, number> = (() => {
@@ -156,14 +157,7 @@ function CurrencyAmountEditor({ value, onChange }: { value: string; onChange: (v
     );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-
-interface ConfigEntry {
-    key: string;
-    value: string;
-    description: string | null;
-    updated_at: string;
-}
+// Main Component
 
 export function SystemConfigEditor() {
     const [configs, setConfigs] = useState<ConfigEntry[]>([]);
@@ -183,7 +177,7 @@ export function SystemConfigEditor() {
             const data = await adminApi.getConfigs();
             setConfigs(data);
             setEditedValues({});
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
+        } catch (err) { toast.error(getErrorMessage(err)); } finally { setLoading(false); }
     };
 
     useEffect(() => { fetchConfigs(); }, []);
@@ -196,7 +190,7 @@ export function SystemConfigEditor() {
             await adminApi.updateConfig(key, value);
             toast.success(`Config "${key}" updated`);
             fetchConfigs();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setSavingKey(null); }
     };
 
@@ -211,7 +205,7 @@ export function SystemConfigEditor() {
             setNewDescription('');
             setNewIsBoolean(false);
             fetchConfigs();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
     };
 
     const handleDelete = async () => {
@@ -220,7 +214,7 @@ export function SystemConfigEditor() {
             toast.success('Config deleted');
             setDeleteDialog({ open: false, key: '' });
             fetchConfigs();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
     };
 
     if (loading) {
@@ -276,7 +270,7 @@ export function SystemConfigEditor() {
                                                             setSavingKey(config.key);
                                                             adminApi.updateConfig(config.key, newVal)
                                                                 .then(() => { toast.success(`Config "${config.key}" updated`); fetchConfigs(); })
-                                                                .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'An error occurred'))
+                                                                .catch((e: unknown) => toast.error(getErrorMessage(e)))
                                                                 .finally(() => setSavingKey(null));
                                                         }}
                                                         disabled={savingKey === config.key}

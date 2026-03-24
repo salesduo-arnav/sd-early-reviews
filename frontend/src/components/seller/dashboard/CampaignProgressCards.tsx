@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboardApi, CampaignProgress } from '@/api/seller';
 import { Badge } from '@/components/ui/badge';
 import { AppPagination, PaginationMeta } from '@/components/common/AppPagination';
+import { getErrorMessage } from '@/lib/errors';
 
 const PAGE_SIZE = 12;
 
@@ -23,8 +24,7 @@ export function CampaignProgressCards() {
                 setCampaigns(result.data);
                 setPagination(result.pagination);
             } catch (err: unknown) {
-                console.error('Failed to fetch campaign progress', err);
-                setError('Failed to load campaign progress.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }

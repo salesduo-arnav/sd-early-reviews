@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,11 +10,13 @@ import { MoreHorizontal, CirclePause, CirclePlay, Package, Eye } from 'lucide-re
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type CampaignRow } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
 import { CampaignDetailModal } from './CampaignDetailModal';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 const statusBadge = (status: string) => {
     switch (status) {
@@ -25,45 +27,28 @@ const statusBadge = (status: string) => {
     }
 };
 
-interface CampaignRowUser { full_name: string; email: string; }
-interface CampaignRowSeller { company_name: string; User?: CampaignRowUser; }
-interface CampaignRow {
-    id: string; product_title: string; product_image_url: string; asin: string;
-    SellerProfile?: CampaignRowSeller; region: string; status: string;
-    completed_reviews?: number; target_reviews: number; product_price: string;
-    reimbursement_percent: number; created_at: string;
-}
-
 export function AdminCampaignsTable() {
-    const [data, setData] = useState<CampaignRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [detailModal, setDetailModal] = useState<{ open: boolean; campaignId: string }>({ open: false, campaignId: '' });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getCampaigns(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, statusFilter);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getCampaigns(page, size, search, statusFilter),
+        [statusFilter],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery, refetch } = useAdminTable<CampaignRow>({ fetchFn });
 
     const handleToggleStatus = useCallback(async (campaignId: string) => {
         setActionLoading(campaignId);
         try {
             await adminApi.toggleCampaignStatus(campaignId);
             toast.success('Campaign status updated');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
-    }, [fetchData]);
+    }, [refetch]);
 
     const columns = useMemo<ColumnDef<CampaignRow, unknown>[]>(() => [
         {
@@ -196,7 +181,7 @@ export function AdminCampaignsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by title, ASIN, seller, or company..."
                     isLoading={loading}
                 />

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,9 +13,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type PayoutRow } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { formatPrice } from '@/lib/regions';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 const payoutBadge = (status: string) => {
     switch (status) {
@@ -27,57 +29,40 @@ const payoutBadge = (status: string) => {
     }
 };
 
-interface PayoutRowUser { full_name: string; email: string; }
-interface PayoutRowBuyer { User?: PayoutRowUser; wise_recipient_id?: string | null; bank_display_label?: string | null; }
-interface PayoutRowCampaign { product_title: string; region: string; }
-interface PayoutRow {
-    id: string; BuyerProfile?: PayoutRowBuyer; Campaign?: PayoutRowCampaign;
-    amazon_order_id: string; expected_payout_amount: number; payout_status: string;
-    payout_method?: string | null; payout_processed_at?: string | null;
-}
-
 export function PayoutsTable() {
-    const [data, setData] = useState<PayoutRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [overrideDialog, setOverrideDialog] = useState<{ open: boolean; claimId: string; currentAmount: number; region: string }>({ open: false, claimId: '', currentAmount: 0, region: 'com' });
     const [overrideAmount, setOverrideAmount] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getPayouts(pagination.pageIndex + 1, pagination.pageSize, statusFilter, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getPayouts(page, size, statusFilter, search),
+        [statusFilter],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery, refetch } = useAdminTable<PayoutRow>({ fetchFn });
 
     const handleUpdateStatus = useCallback(async (claimId: string, status: 'PROCESSED' | 'FAILED') => {
         setActionLoading(claimId);
         try {
             await adminApi.updatePayoutStatus(claimId, status);
             toast.success(`Payout marked as ${status.toLowerCase()}`);
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
-    }, [fetchData]);
+    }, [refetch]);
 
     const handleRetry = useCallback(async (claimId: string) => {
         setActionLoading(claimId);
         try {
             await adminApi.retryPayout(claimId);
             toast.success('Payout retried successfully');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'Retry failed'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
-    }, [fetchData]);
+    }, [refetch]);
 
     const handleOverride = async () => {
         const amount = parseFloat(overrideAmount);
@@ -88,8 +73,8 @@ export function PayoutsTable() {
             toast.success('Payout overridden and processed');
             setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' });
             setOverrideAmount('');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
     };
 
@@ -99,8 +84,8 @@ export function PayoutsTable() {
             await adminApi.batchUpdatePayouts(selectedIds, 'PROCESSED');
             toast.success(`${selectedIds.length} payouts processed`);
             setSelectedIds([]);
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
     };
 
     const toggleSelect = (id: string) => {
@@ -274,7 +259,7 @@ export function PayoutsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by order ID, product, ASIN, or buyer..."
                     isLoading={loading}
                 />

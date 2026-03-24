@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { buyerApi } from '@/api/buyer';
 import type { BuyerClaim } from '@/api/buyer';
 import type { PaginationMeta } from '@/components/common/AppPagination';
@@ -72,7 +74,7 @@ export default function MyClaimsPage() {
             setClaims(res.data);
             setPagination(res.pagination);
         } catch (err) {
-            console.error('Failed to fetch claims', err);
+            toast.error(getErrorMessage(err));
             setClaims([]);
         } finally {
             setLoading(false);

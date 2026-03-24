@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dashboardApi, SellerReview } from '@/api/seller';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableColumnHeader, DataTableStaticHeader } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +54,7 @@ export function ReviewsTable() {
             setReviews(res.data);
             setPageCount(res.pagination.totalPages);
         } catch (err: unknown) {
-            console.error('Failed to fetch reviews', err);
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }

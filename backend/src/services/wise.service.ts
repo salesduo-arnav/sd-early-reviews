@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
 
-// ─── Configuration ──────────────────────────────────────────────────────────
+// Configuration
 
 const WISE_API_TOKEN = process.env.WISE_API_TOKEN as string;
 const WISE_PROFILE_ID = process.env.WISE_PROFILE_ID as string;
@@ -11,7 +11,7 @@ const BASE_URL = WISE_MODE === 'live'
     ? 'https://api.wise.com'
     : 'https://api.wise-sandbox.com';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// Helpers
 
 async function wiseRequest<T>(
     path: string,
@@ -40,7 +40,7 @@ async function wiseRequest<T>(
     return data as T;
 }
 
-// ─── Region → Currency mapping ──────────────────────────────────────────────
+// Region → Currency mapping
 
 const REGION_CURRENCY_MAP: Record<string, string> = {
     'com': 'USD',
@@ -67,7 +67,7 @@ export function regionToCurrency(region: string): string {
     return REGION_CURRENCY_MAP[region] || 'USD';
 }
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Types
 
 export interface WiseAccountRequirementField {
     name: string;
@@ -125,7 +125,7 @@ interface WiseFundResponse {
     errorCode: string | null;
 }
 
-// ─── Account Requirements (dynamic bank fields) ────────────────────────────
+// Account Requirements (dynamic bank fields)
 
 export async function getAccountRequirements(
     targetCurrency: string,
@@ -151,7 +151,7 @@ export async function refreshAccountRequirements(
     );
 }
 
-// ─── Recipient Management ───────────────────────────────────────────────────
+// Recipient Management
 
 export async function createRecipient(data: {
     accountHolderName: string;
@@ -185,7 +185,7 @@ export async function getRecipient(recipientId: string): Promise<WiseRecipient> 
     return wiseRequest<WiseRecipient>(`/v1/accounts/${recipientId}`);
 }
 
-// ─── Quote ──────────────────────────────────────────────────────────────────
+// Quote
 
 export async function createQuote(
     sourceCurrency: string,
@@ -204,7 +204,7 @@ export async function createQuote(
     });
 }
 
-// ─── Transfer ───────────────────────────────────────────────────────────────
+// Transfer
 
 export async function createTransfer(
     quoteId: string,
@@ -240,7 +240,7 @@ export async function getTransferStatus(transferId: number): Promise<WiseTransfe
     return wiseRequest<WiseTransfer>(`/v1/transfers/${transferId}`);
 }
 
-// ─── High-level payout function ─────────────────────────────────────────────
+// High-level payout function
 
 export interface PayoutResult {
     success: boolean;
@@ -288,7 +288,7 @@ export async function sendPayout(
     }
 }
 
-// ─── Webhook signature verification ─────────────────────────────────────────
+// Webhook signature verification
 
 export function verifyWebhookSecret(req: { headers: Record<string, string | string[] | undefined> }): boolean {
     const expected = process.env.WISE_WEBHOOK_SECRET;

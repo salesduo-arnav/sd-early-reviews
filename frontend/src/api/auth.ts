@@ -1,5 +1,32 @@
 import { fetchPublic, fetchWithAuth } from './httpClient';
 
+export interface SignupPayload {
+    email: string;
+    password: string;
+    full_name: string;
+    role: 'BUYER' | 'SELLER';
+    amazon_profile_url?: string;
+    region?: string;
+    company_name?: string;
+}
+
+export interface LoginPayload {
+    email: string;
+    password: string;
+}
+
+export interface ResetPasswordPayload {
+    otp: string;
+    otpToken: string;
+    newPassword: string;
+}
+
+export interface OnboardingPayload {
+    amazon_profile_url?: string;
+    region?: string;
+    company_name?: string;
+}
+
 export interface AuthResponse {
     message: string;
     tokens?: {
@@ -17,7 +44,7 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-    signup: async (data: Record<string, unknown>): Promise<AuthResponse> => {
+    signup: async (data: SignupPayload): Promise<AuthResponse> => {
         return fetchPublic('/auth/signup', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -31,7 +58,7 @@ export const authApi = {
         });
     },
 
-    login: async (data: Record<string, unknown>): Promise<AuthResponse> => {
+    login: async (data: LoginPayload): Promise<AuthResponse> => {
         return fetchPublic('/auth/login', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -59,7 +86,7 @@ export const authApi = {
         });
     },
 
-    resetPassword: async (data: Record<string, unknown>): Promise<AuthResponse> => {
+    resetPassword: async (data: ResetPasswordPayload): Promise<AuthResponse> => {
         return fetchPublic('/auth/reset-password', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -73,7 +100,7 @@ export const authApi = {
         });
     },
 
-    onboarding: async (data: Record<string, unknown>): Promise<AuthResponse> => {
+    onboarding: async (data: OnboardingPayload): Promise<AuthResponse> => {
         return fetchWithAuth('/auth/onboarding', {
             method: 'POST',
             body: JSON.stringify(data),

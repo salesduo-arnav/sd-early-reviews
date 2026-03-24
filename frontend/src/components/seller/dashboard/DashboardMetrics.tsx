@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, TrendingUp, DollarSign } from 'lucide-react';
 import { dashboardApi, DashboardMetrics as IDashboardMetrics } from '@/api/seller';
+import { getErrorMessage } from '@/lib/errors';
 
 export function DashboardMetrics() {
     const { t } = useTranslation();
@@ -16,8 +17,7 @@ export function DashboardMetrics() {
                 const data = await dashboardApi.getSellerMetrics();
                 setMetrics(data);
             } catch (err: unknown) {
-                console.error('Failed to fetch metrics', err);
-                setError('Failed to load metrics data.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -7,8 +7,9 @@ import { Eye, User } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { adminApi } from '@/api/admin';
+import { adminApi, type AuditLogRow } from '@/api/admin';
 import { format } from 'date-fns';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 const actionBadge = (action: string) => {
     if (action.includes('APPROVED') || action.includes('PROCESSED') || action.includes('UNBLACKLISTED') || action.includes('RESUMED'))
@@ -28,34 +29,21 @@ const formatDetails = (details: string | null) => {
     }
 };
 
-interface AuditLogUser { full_name: string; email: string; }
-interface AuditLogRow {
-    id: string; User?: AuditLogUser; action: string; target_type: string;
-    target_id: string; created_at: string; ip_address?: string; details?: string;
-}
-
 export function AuditLogsTable() {
-    const [data, setData] = useState<AuditLogRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [detailModal, setDetailModal] = useState<{ open: boolean; log: AuditLogRow | null }>({ open: false, log: null });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) => {
             const startStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
             const endStr = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
-            const result = await adminApi.getAuditLogs(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, startStr, endStr);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, startDate, endDate]);
+            return adminApi.getAuditLogs(page, size, search, startStr, endStr);
+        },
+        [startDate, endDate],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery } = useAdminTable<AuditLogRow>({ fetchFn, defaultPageSize: 20 });
 
     const columns = useMemo<ColumnDef<AuditLogRow, unknown>[]>(() => [
         {
@@ -155,7 +143,7 @@ export function AuditLogsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by action or admin..."
                     isLoading={loading}
                 />

@@ -9,6 +9,7 @@ import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { billingApi, BillingTransaction } from '@/api/billing';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 const STATUS_BADGE: Record<string, React.ReactNode> = {
     SUCCESS: <Badge variant="default" className="bg-green-600 hover:bg-green-700">Success</Badge>,
@@ -128,7 +129,7 @@ export function BillingHistoryTable() {
             setData(result.data);
             setPageCount(result.pagination.totalPages);
         } catch (err) {
-            console.error('Failed to fetch billing history:', err);
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }

@@ -38,6 +38,7 @@ import { formatPrice, getAmazonProductUrl } from '@/lib/regions';
 import { buyerApi } from '@/api/buyer';
 import type { BuyerClaim } from '@/api/buyer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 
 interface ClaimDetailModalProps {
@@ -69,7 +70,7 @@ export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted,
             onOpenChange(false);
             onClaimCancelled();
         } catch (err) {
-            const message = err instanceof Error ? err.message : t('buyer.claims.cancel_failed', 'Failed to cancel claim');
+            const message = getErrorMessage(err);
             toast.error(message);
         } finally {
             setIsCancelling(false);

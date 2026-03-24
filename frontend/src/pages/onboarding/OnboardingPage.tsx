@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/auth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,7 +65,7 @@ const OnboardingPage: React.FC = () => {
                 setSellerStep(2);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : t('onboarding.fail', 'Failed to complete onboarding. Please try again.'));
+            toast.error(getErrorMessage(error));
         } finally {
             setIsLoading(false);
         }

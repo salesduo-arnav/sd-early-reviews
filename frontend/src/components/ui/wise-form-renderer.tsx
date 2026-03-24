@@ -17,14 +17,14 @@ import type { WiseFieldGroup } from '@/api/buyer';
  * Empty-key options are filtered to prevent Radix errors.
  */
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Types
 
 export interface WiseFieldDef {
     name: string;
     group: WiseFieldGroup[];
 }
 
-// ─── Props ──────────────────────────────────────────────────────────────────
+// Props
 
 interface WiseFormRendererProps {
     fields: WiseFieldDef[];
@@ -36,7 +36,7 @@ interface WiseFormRendererProps {
     onRefreshNeeded?: () => void;
 }
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// Component
 
 export function WiseFormRenderer({ fields, values, onChange, hiddenKeys, onRefreshNeeded }: WiseFormRendererProps) {
     return (
@@ -70,7 +70,7 @@ function WiseFieldRow({
     );
 }
 
-// ─── Individual field renderer ──────────────────────────────────────────────
+// Individual field renderer
 
 function WiseField({
     fieldName,
@@ -101,25 +101,25 @@ function WiseField({
     // Hidden keys (e.g. 'type')
     if (hiddenKeys?.has(def.key)) return null;
 
-    // ── Radio with null valuesAllowed → boolean toggle (default false) ───
+    // Radio with null valuesAllowed → boolean toggle (default false)
     if (def.type === 'radio' && !def.valuesAllowed) {
         return <ToggleField label={fieldName} required={def.required} checked={value === 'true'} onToggle={(v) => handleChange(def.key, v ? 'true' : 'false')} />;
     }
 
-    // ── Radio with true/false options → toggle ──────────────────────────
+    // Radio with true/false options → toggle
     if (def.type === 'radio' && def.valuesAllowed && def.valuesAllowed.length === 2 && def.valuesAllowed.every(v => v.key === 'true' || v.key === 'false')) {
         const label = def.valuesAllowed.find(v => v.key === 'true')?.name || fieldName;
         return <ToggleField label={label} required={def.required} checked={value === 'true'} onToggle={(v) => handleChange(def.key, v ? 'true' : 'false')} />;
     }
 
-    // ── Select / radio with options → dropdown ──────────────────────────
+    // Select / radio with options → dropdown
     if ((def.type === 'select' || def.type === 'radio') && def.valuesAllowed) {
         const options = def.valuesAllowed.filter(v => v.key !== '');
         if (options.length === 0) return null;
         return <AutoSelectDropdown fieldName={fieldName} defKey={def.key} required={def.required} options={options} value={value} onChange={handleChange} />;
     }
 
-    // ── Date ────────────────────────────────────────────────────────────
+    // Date
     if (def.type === 'date') {
         return (
             <div className="space-y-2">
@@ -129,7 +129,7 @@ function WiseField({
         );
     }
 
-    // ── Text (default) ──────────────────────────────────────────────────
+    // Text (default)
     return (
         <div className="space-y-2">
             <Label>{fieldName}{def.required && ' *'}</Label>
@@ -146,7 +146,7 @@ function WiseField({
     );
 }
 
-// ─── Toggle sub-component ───────────────────────────────────────────────────
+// Toggle sub-component
 
 function ToggleField({ label, required, checked, onToggle }: { label: string; required: boolean; checked: boolean; onToggle: (v: boolean) => void }) {
     return (
@@ -167,7 +167,7 @@ function ToggleField({ label, required, checked, onToggle }: { label: string; re
     );
 }
 
-// ─── Auto-select dropdown (hides single-option fields) ─────────────────────
+// Auto-select dropdown (hides single-option fields)
 
 function AutoSelectDropdown({
     fieldName,

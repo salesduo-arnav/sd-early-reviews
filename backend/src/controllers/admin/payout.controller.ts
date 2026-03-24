@@ -4,8 +4,9 @@ import { OrderClaim, PayoutStatus, ReviewStatus } from '../../models/OrderClaim'
 import { Campaign } from '../../models/Campaign';
 import { BuyerProfile } from '../../models/BuyerProfile';
 import { User } from '../../models/User';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { ADMIN_ACTIONS } from '../../utils/constants';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { notificationService } from '../../services/notification.service';
 import { NotificationCategory } from '../../models/Notification';
@@ -60,7 +61,7 @@ export const getPayouts = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching payouts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching payouts: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -84,7 +85,9 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
 
         // If admin wants to override amount, do it before processing
         if (override_amount !== undefined && override_amount !== null) {
+            const oldAmount = claim.expected_payout_amount;
             await claim.update({ expected_payout_amount: override_amount });
+            await logAdminAction(adminId, 'PAYOUT_AMOUNT_OVERRIDE', id, 'ORDER_CLAIM', JSON.stringify({ old_amount: oldAmount, new_amount: override_amount }), req.ip);
         }
 
         if (status === 'PROCESSED') {
@@ -102,7 +105,7 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
                 payout_method: 'MANUAL',
             });
 
-            await logAdminAction(adminId, 'PAYOUT_FAILED', id, 'ORDER_CLAIM', JSON.stringify({ status }), req.ip);
+            await logAdminAction(adminId, ADMIN_ACTIONS.PAYOUT_FAILED, id, 'ORDER_CLAIM', JSON.stringify({ status }), req.ip);
 
             // Notify buyer
             const claimWithAssoc = await OrderClaim.findByPk(id, {
@@ -123,7 +126,7 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
             return res.status(200).json({ message: `Payout status updated to FAILED` });
         }
     } catch (error) {
-        logger.error(`Error updating payout status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error updating payout status: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -175,7 +178,7 @@ export const batchUpdatePayouts = async (req: Request, res: Response) => {
             });
 
             for (const claim of claims) {
-                await logAdminAction(adminId, 'PAYOUT_FAILED', claim.id, 'ORDER_CLAIM', JSON.stringify({ batch: true, status }), req.ip);
+                await logAdminAction(adminId, ADMIN_ACTIONS.PAYOUT_FAILED, claim.id, 'ORDER_CLAIM', JSON.stringify({ batch: true, status }), req.ip);
                 type ClaimAssoc = OrderClaim & { BuyerProfile?: { user_id: string }; Campaign?: { product_title: string } };
                 const data = claim as ClaimAssoc;
                 if (data.BuyerProfile?.user_id) {
@@ -194,7 +197,7 @@ export const batchUpdatePayouts = async (req: Request, res: Response) => {
             skipped,
         });
     } catch (error) {
-        logger.error(`Error batch updating payouts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error batch updating payouts: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -215,6 +218,8 @@ export const retryPayout = async (req: Request, res: Response) => {
         // Reset to PENDING so processPayoutForClaim can pick it up
         await claim.update({ payout_status: PayoutStatus.PENDING });
 
+        await logAdminAction(adminId, ADMIN_ACTIONS.PAYOUT_RETRIED, id, 'ORDER_CLAIM', JSON.stringify({ previous_status: 'FAILED' }), req.ip);
+
         const result = await processPayoutForClaim(id, 'MANUAL', adminId, req.ip);
         if (result.success) {
             return res.status(200).json({ message: 'Payout retried successfully' });
@@ -222,7 +227,7 @@ export const retryPayout = async (req: Request, res: Response) => {
             return res.status(400).json({ message: `Retry failed: ${result.reason}` });
         }
     } catch (error) {
-        logger.error(`Error retrying payout: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error retrying payout: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

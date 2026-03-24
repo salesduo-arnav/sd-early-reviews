@@ -6,6 +6,7 @@ import { sendPayout, regionToCurrency } from './wise.service';
 import { notificationService } from './notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { logAdminAction } from '../utils/auditLog';
+import { ADMIN_ACTIONS } from '../utils/constants';
 import { logger } from '../utils/logger';
 
 export interface PayoutProcessResult {
@@ -28,7 +29,7 @@ export async function processPayoutForClaim(
     adminId?: string,
     ipAddress?: string,
 ): Promise<PayoutProcessResult> {
-    // ── Step 1: Atomically claim the row ─────────────────────────────────
+    // Step 1: Atomically claim the row
     const [affectedCount] = await OrderClaim.update(
         { payout_status: PayoutStatus.PROCESSING },
         { where: { id: claimId, payout_status: PayoutStatus.PENDING } },
@@ -38,7 +39,7 @@ export async function processPayoutForClaim(
         return { success: false, claimId, reason: 'Already processing or not in PENDING status' };
     }
 
-    // ── Step 2: Load claim with associations ─────────────────────────────
+    // Step 2: Load claim with associations
     // Wrap everything in try/catch so PROCESSING never gets stuck
     try {
     const claim = await OrderClaim.findByPk(claimId, {
@@ -62,14 +63,14 @@ export async function processPayoutForClaim(
     const buyerProfile = claimData.BuyerProfile;
     const campaign = claimData.Campaign;
 
-    // ── Step 3: Verify buyer has bank account connected ──────────────────
+    // Step 3: Verify buyer has bank account connected
     if (!buyerProfile?.wise_recipient_id) {
         // Set back to PENDING so cron can retry later when buyer connects bank
         await claim.update({ payout_status: PayoutStatus.PENDING });
         return { success: false, claimId, reason: 'Buyer has no bank account connected' };
     }
 
-    // ── Step 4: Call Wise to send payout ─────────────────────────────────
+    // Step 4: Call Wise to send payout
     const sourceCurrency = regionToCurrency(campaign?.region || 'com');
     const amount = parseFloat(String(claim.expected_payout_amount));
 
@@ -80,7 +81,7 @@ export async function processPayoutForClaim(
         claimId,
     );
 
-    // ── Step 5: Update claim based on result ─────────────────────────────
+    // Step 5: Update claim based on result
     if (result.success) {
         await claim.update({
             payout_status: PayoutStatus.PROCESSED,
@@ -118,7 +119,7 @@ export async function processPayoutForClaim(
         if (method === 'MANUAL' && adminId) {
             await logAdminAction(
                 adminId,
-                'PAYOUT_PROCESSED',
+                ADMIN_ACTIONS.PAYOUT_PROCESSED,
                 claimId,
                 'ORDER_CLAIM',
                 JSON.stringify({ method, amount, wise_transfer_id: result.wiseTransferId }),
@@ -157,7 +158,7 @@ export async function processPayoutForClaim(
         if (method === 'MANUAL' && adminId) {
             await logAdminAction(
                 adminId,
-                'PAYOUT_FAILED',
+                ADMIN_ACTIONS.PAYOUT_FAILED,
                 claimId,
                 'ORDER_CLAIM',
                 JSON.stringify({ method, amount, error: result.error }),

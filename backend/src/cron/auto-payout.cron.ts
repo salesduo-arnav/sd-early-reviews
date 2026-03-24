@@ -4,7 +4,8 @@ import { Campaign } from '../models/Campaign';
 import { SystemConfig } from '../models/SystemConfig';
 import { processPayoutForClaim } from '../services/payout.service';
 import { regionToCurrency } from '../services/wise.service';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
+import { CONFIG_KEYS } from '../utils/constants';
 
 /**
  * Auto-payout cron handler.
@@ -21,8 +22,8 @@ export async function runAutoPayouts(): Promise<void> {
     try {
         // Read configs
         const [delayConfig, maxAmountConfig] = await Promise.all([
-            SystemConfig.findByPk('reimbursement_delay_days'),
-            SystemConfig.findByPk('auto_payout_max_amount'),
+            SystemConfig.findByPk(CONFIG_KEYS.REIMBURSEMENT_DELAY_DAYS),
+            SystemConfig.findByPk(CONFIG_KEYS.AUTO_PAYOUT_MAX_AMOUNT),
         ]);
 
         const delayDays = delayConfig ? parseInt(delayConfig.value, 10) : 14;
@@ -98,6 +99,6 @@ export async function runAutoPayouts(): Promise<void> {
 
         logger.info(`[AutoPayout] Run complete: ${processed} processed, ${failed} failed, ${skipped} skipped (no bank account), ${heldBack} held for manual review`);
     } catch (error) {
-        logger.error(`[AutoPayout] Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`[AutoPayout] Unexpected error: ${formatError(error)}`);
     }
 }

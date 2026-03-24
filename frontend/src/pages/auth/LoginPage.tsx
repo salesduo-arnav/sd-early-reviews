@@ -14,6 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { GoogleButton } from '@/components/auth/GoogleButton';
 
 export default function LoginPage() {
@@ -67,7 +68,7 @@ export default function LoginPage() {
 
     const onPasswordSubmit = async (data: PasswordFormValues) => {
         try {
-            const res = await authApi.login(data);
+            const res = await authApi.login({ email: data.email!, password: data.password! });
             if (res.user && res.tokens) {
                 loginStore(res.user, res.tokens);
                 if (res.user.role === 'ADMIN') navigate('/admin');
@@ -75,7 +76,7 @@ export default function LoginPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -94,7 +95,7 @@ export default function LoginPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Google login failed');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -107,7 +108,7 @@ export default function LoginPage() {
                 setOtpSent(true);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -121,7 +122,7 @@ export default function LoginPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 

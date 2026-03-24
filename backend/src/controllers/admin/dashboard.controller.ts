@@ -4,7 +4,7 @@ import { Campaign, CampaignStatus } from '../../models/Campaign';
 import { OrderClaim, OrderStatus, ReviewStatus, PayoutStatus } from '../../models/OrderClaim';
 import { Transaction, TransactionStatus } from '../../models/Transaction';
 import { User, UserRole } from '../../models/User';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from 'date-fns';
 
 const DEFAULT_CHART_DAYS = 30;
@@ -54,7 +54,7 @@ export const getMetrics = async (req: Request, res: Response) => {
             pendingPayouts,
         });
     } catch (error) {
-        logger.error(`Error fetching admin metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching admin metrics: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -83,7 +83,7 @@ export const getRevenueChart = async (req: Request, res: Response) => {
         const data = Object.keys(revenueMap).sort().map(date => ({ date, revenue: revenueMap[date] }));
         return res.status(200).json(data);
     } catch (error) {
-        logger.error(`Error fetching revenue chart: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching revenue chart: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -107,7 +107,7 @@ export const getClaimsChart = async (req: Request, res: Response) => {
         const data = Object.keys(claimsMap).sort().map(date => ({ date, claims: claimsMap[date] }));
         return res.status(200).json(data);
     } catch (error) {
-        logger.error(`Error fetching claims chart: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching claims chart: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -138,7 +138,7 @@ export const getUsersChart = async (req: Request, res: Response) => {
         }));
         return res.status(200).json(data);
     } catch (error) {
-        logger.error(`Error fetching users chart: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching users chart: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

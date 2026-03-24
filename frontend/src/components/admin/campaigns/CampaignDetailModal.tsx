@@ -5,25 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Package, User, ChevronLeft, ChevronRight, Globe, Target, DollarSign, Percent } from 'lucide-react';
-import { adminApi } from '@/api/admin';
+import { adminApi, type CampaignDetailResponse } from '@/api/admin';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
-
-interface CampaignUser { full_name: string; email: string; }
-interface CampaignSeller { company_name: string; User?: CampaignUser; }
-interface CampaignData {
-    product_title: string; product_image_url: string; status: string; asin: string;
-    created_at: string; SellerProfile?: CampaignSeller; region: string;
-    product_price: string; reimbursement_percent: number; target_reviews: number; guidelines?: string;
-}
-interface ClaimBuyerUser { full_name: string; email: string; }
-interface ClaimBuyer { User?: ClaimBuyerUser; }
-interface CampaignClaimItem {
-    id: string; BuyerProfile?: ClaimBuyer; expected_payout_amount: string;
-    order_status: string; review_status: string; payout_status: string;
-}
-interface PaginationMeta { page: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean; }
-interface PaginatedClaims { data: CampaignClaimItem[]; pagination: PaginationMeta; }
 
 interface CampaignDetailModalProps {
     open: boolean;
@@ -52,8 +38,8 @@ const claimStatusBadge = (orderStatus: string, reviewStatus: string, payoutStatu
 
 export function CampaignDetailModal({ open, onOpenChange, campaignId }: CampaignDetailModalProps) {
     const [loading, setLoading] = useState(true);
-    const [campaign, setCampaign] = useState<CampaignData | null>(null);
-    const [claims, setClaims] = useState<PaginatedClaims | null>(null);
+    const [campaign, setCampaign] = useState<CampaignDetailResponse['campaign'] | null>(null);
+    const [claims, setClaims] = useState<CampaignDetailResponse['claims'] | null>(null);
     const [claimsPage, setClaimsPage] = useState(1);
 
     const fetchDetail = useCallback(async (page: number) => {
@@ -62,7 +48,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
             const result = await adminApi.getCampaignDetail(campaignId, page, 5);
             setCampaign(result.campaign);
             setClaims(result.claims);
-        } catch (err) { console.error('Failed to fetch data:', err); }
+        } catch (err) { toast.error(getErrorMessage(err)); }
         finally { setLoading(false); }
     }, [campaignId]);
 
@@ -160,7 +146,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
                             <h4 className="text-sm font-semibold mb-3">Claims</h4>
                             {claims?.data?.length > 0 ? (
                                 <div className="space-y-2">
-                                    {claims.data.map((claim: CampaignClaimItem) => (
+                                    {claims.data.map((claim) => (
                                         <div key={claim.id} className="rounded-lg border p-3 space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-6 w-6 rounded-full border bg-muted/50 flex items-center justify-center flex-shrink-0">

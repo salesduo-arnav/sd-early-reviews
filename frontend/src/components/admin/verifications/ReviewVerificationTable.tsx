@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,49 +10,35 @@ import { Textarea } from '@/components/ui/textarea';
 import { MoreHorizontal, Check, X, ExternalLink, Star, User, Package } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type ReviewRow } from '@/api/admin';
 import { toast } from 'sonner';
-
-interface ReviewRowUser { full_name: string; email: string; }
-interface ReviewRowBuyer { User?: ReviewRowUser; }
-interface ReviewRowCampaign { product_image_url: string; product_title: string; asin: string; }
-interface ReviewRow {
-    id: string; BuyerProfile?: ReviewRowBuyer; Campaign?: ReviewRowCampaign;
-    review_rating: number; review_text: string; review_proof_url: string;
-}
+import { getErrorMessage } from '@/lib/errors';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
 export function ReviewVerificationTable() {
-    const [data, setData] = useState<ReviewRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [totalPending, setTotalPending] = useState(0);
     const [rejectModal, setRejectModal] = useState<{ open: boolean; claimId: string }>({ open: false, claimId: '' });
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getPendingReviews(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-            setTotalPending(result.pagination.total);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getPendingReviews(page, size, search),
+        [],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, totalCount, searchQuery, setSearchQuery, refetch } = useAdminTable<ReviewRow>({ fetchFn });
+
+    const totalPending = totalCount ?? 0;
 
     const handleApprove = useCallback(async (claimId: string) => {
         setActionLoading(claimId);
         try {
             await adminApi.verifyReview(claimId, 'APPROVE');
             toast.success('Review approved');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
-    }, [fetchData]);
+    }, [refetch]);
 
     const handleReject = async () => {
         if (!rejectReason.trim()) { toast.error('Rejection reason is required'); return; }
@@ -62,8 +48,8 @@ export function ReviewVerificationTable() {
             toast.success('Review rejected');
             setRejectModal({ open: false, claimId: '' });
             setRejectReason('');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
     };
 
@@ -186,7 +172,7 @@ export function ReviewVerificationTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by order ID, product, ASIN, buyer, or review text..."
                     isLoading={loading}
                 />

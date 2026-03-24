@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { fetchWithAuth, buildQueryString } from './httpClient';
 import type { PaginatedResponse } from './types';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Types
 
 export interface MarketplaceProduct {
     id: string;
@@ -163,7 +163,7 @@ export interface ConnectBankResponse {
     bank_display_label: string | null;
 }
 
-// ─── API ────────────────────────────────────────────────────────────────────
+// API
 
 export const buyerApi = {
     getMarketplaceProducts: async (

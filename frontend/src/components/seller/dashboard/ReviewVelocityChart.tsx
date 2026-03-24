@@ -5,6 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { dashboardApi, ReviewVelocity } from '@/api/seller';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { subDays, format } from 'date-fns';
+import { getErrorMessage } from '@/lib/errors';
 
 export function ReviewVelocityChart() {
     const { t } = useTranslation();
@@ -31,8 +32,7 @@ export function ReviewVelocityChart() {
 
                 setData(formattedData);
             } catch (err: unknown) {
-                console.error('Failed to fetch review velocity', err);
-                setError('Failed to load review velocity data.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }

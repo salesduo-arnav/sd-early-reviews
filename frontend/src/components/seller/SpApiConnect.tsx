@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { LinkIcon, ShieldCheck, ShieldX, Loader2, ExternalLink } from 'lucide-react';
 
 interface SpApiConnectProps {
@@ -89,7 +90,7 @@ const SpApiConnect: React.FC<SpApiConnectProps> = ({ compact = false, onStatusCh
                 }
             }, 500);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : t('spapi.connect_error', 'Failed to start Amazon authorization'));
+            toast.error(getErrorMessage(error));
             setActionLoading(false);
         }
     };
@@ -101,7 +102,7 @@ const SpApiConnect: React.FC<SpApiConnectProps> = ({ compact = false, onStatusCh
             toast.success(t('spapi.revoked', 'Amazon SP-API authorization revoked'));
             await fetchStatus();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : t('spapi.revoke_error', 'Failed to revoke authorization'));
+            toast.error(getErrorMessage(error));
         } finally {
             setActionLoading(false);
         }
