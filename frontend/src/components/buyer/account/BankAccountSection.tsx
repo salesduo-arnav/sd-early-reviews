@@ -172,6 +172,7 @@ export default function BankAccountSection({
             setRequirements([]);
             setFormValues({});
             onConnected();
+            window.dispatchEvent(new Event('bank-account-changed'));
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {
@@ -185,6 +186,7 @@ export default function BankAccountSection({
             await buyerApi.disconnectBankAccount();
             toast.success(t('buyer.account.bank.disconnected_success', 'Bank account disconnected'));
             onDisconnected();
+            window.dispatchEvent(new Event('bank-account-changed'));
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {

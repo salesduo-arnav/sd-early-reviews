@@ -13,13 +13,21 @@ export function BuyerLayout() {
     const [needsBankAccount, setNeedsBankAccount] = useState(false);
 
     useEffect(() => {
-        buyerApi.getAccountProfile().then((profile) => {
-            setIsBlacklisted(profile.is_blacklisted);
-            setBlacklistReason(profile.blacklist_reason);
-            setNeedsBankAccount(!profile.wise_connected && !profile.is_blacklisted);
-        }).catch(() => {
-            // Silently fail — profile page will show its own error
-        });
+        const fetchProfile = () => {
+            buyerApi.getAccountProfile().then((profile) => {
+                setIsBlacklisted(profile.is_blacklisted);
+                setBlacklistReason(profile.blacklist_reason);
+                setNeedsBankAccount(!profile.wise_connected && !profile.is_blacklisted);
+            }).catch(() => {
+                // Silently fail — profile page will show its own error
+            });
+        };
+
+        fetchProfile();
+
+        // Re-fetch when bank account status changes (fired by BankAccountSection)
+        window.addEventListener('bank-account-changed', fetchProfile);
+        return () => window.removeEventListener('bank-account-changed', fetchProfile);
     }, []);
 
     const navLinks = [
