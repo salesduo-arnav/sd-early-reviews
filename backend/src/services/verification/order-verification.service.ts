@@ -98,15 +98,30 @@ export async function attemptAutoVerification(
             verification_details: verificationResult.rawResponse || { result: verificationResult.reason },
         });
 
+        // 9. Check that the order was placed after the campaign was created
+        if (verificationResult.verified && verificationResult.purchaseDate && campaign.created_at) {
+            const purchaseDate = new Date(verificationResult.purchaseDate);
+            const campaignCreatedAt = new Date(campaign.created_at);
+            if (purchaseDate < campaignCreatedAt) {
+                logger.info('Auto-verification failed: order was placed before campaign creation', {
+                    claimId: claim.id,
+                    orderId: claim.amazon_order_id,
+                    purchaseDate: verificationResult.purchaseDate,
+                    campaignCreatedAt: campaign.created_at,
+                });
+                return { autoVerified: false, method: 'MANUAL' };
+            }
+        }
+
         if (verificationResult.verified) {
-            // 9. Auto-approve the claim
+            // 10. Auto-approve the claim
             await claim.update({
                 order_status: OrderStatus.APPROVED,
                 verification_method: VERIFICATION_METHOD.AUTO_SP_API,
                 auto_verified_at: new Date(),
             });
 
-            // 10. Notify buyer
+            // 11. Notify buyer
             const buyerProfile = await BuyerProfile.findByPk(claim.buyer_id);
             if (buyerProfile) {
                 notificationService.send(buyerProfile.user_id, NotificationCategory.ORDER_APPROVED, {
