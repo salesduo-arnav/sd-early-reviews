@@ -29,6 +29,7 @@ export const getTransactions = async (req: Request, res: Response) => {
             const searchTerm = `%${search}%`;
             whereClause[Op.or] = [
                 { stripe_transaction_id: { [Op.iLike]: searchTerm } },
+                { wise_transfer_id: { [Op.iLike]: searchTerm } },
             ];
         }
 

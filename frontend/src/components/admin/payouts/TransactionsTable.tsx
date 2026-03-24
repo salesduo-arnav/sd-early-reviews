@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User } from 'lucide-react';
+import { User, ExternalLink } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi, type TransactionRow } from '@/api/admin';
@@ -75,18 +75,47 @@ export function TransactionsTable() {
             cell: ({ row }) => <span className="font-semibold text-foreground">${parseFloat(row.original.net_amount).toFixed(2)}</span>,
         },
         {
-            accessorKey: 'stripe_transaction_id',
-            header: () => <DataTableStaticHeader title="Stripe ID" />,
-            cell: ({ row }) => (
-                <span className="font-mono text-xs text-muted-foreground">
-                    {row.original.stripe_transaction_id}
-                </span>
-            ),
+            id: 'reference',
+            header: () => <DataTableStaticHeader title="Reference" />,
+            cell: ({ row }) => {
+                const { stripe_transaction_id, wise_transfer_id, type } = row.original;
+                const id = type === 'BUYER_PAYOUT' || type === 'REFUND' ? wise_transfer_id : stripe_transaction_id;
+                const label = type === 'BUYER_PAYOUT' || type === 'REFUND' ? 'Wise' : 'Stripe';
+                if (!id) return <span className="text-xs text-muted-foreground">—</span>;
+                return (
+                    <div>
+                        <span className="text-[10px] text-muted-foreground">{label}</span>
+                        <p className="font-mono text-xs text-muted-foreground truncate max-w-[140px]">{id}</p>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: 'status',
             header: () => <DataTableStaticHeader title="Status" />,
             cell: ({ row }) => statusBadge(row.original.status),
+        },
+        {
+            id: 'links',
+            header: () => <DataTableStaticHeader title="Links" />,
+            cell: ({ row }) => {
+                const { receipt_url, invoice_url } = row.original;
+                if (!receipt_url && !invoice_url) return <span className="text-xs text-muted-foreground">—</span>;
+                return (
+                    <div className="flex items-center gap-2">
+                        {receipt_url && (
+                            <a href={receipt_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                Receipt <ExternalLink className="h-3 w-3" />
+                            </a>
+                        )}
+                        {invoice_url && (
+                            <a href={invoice_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                Invoice <ExternalLink className="h-3 w-3" />
+                            </a>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             accessorKey: 'created_at',
@@ -137,7 +166,7 @@ export function TransactionsTable() {
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    placeholder="Search by Stripe ID..."
+                    placeholder="Search by Stripe or Wise ID..."
                     isLoading={loading}
                 />
             </div>

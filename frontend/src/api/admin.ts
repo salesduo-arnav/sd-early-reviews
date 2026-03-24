@@ -162,7 +162,10 @@ export interface TransactionRow {
     gross_amount: string;
     platform_fee: string;
     net_amount: string;
-    stripe_transaction_id: string;
+    stripe_transaction_id: string | null;
+    wise_transfer_id: string | null;
+    receipt_url: string | null;
+    invoice_url: string | null;
     status: string;
     created_at: string;
 }

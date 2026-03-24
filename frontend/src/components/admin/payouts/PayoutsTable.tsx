@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw, Loader2 } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi, type PayoutRow } from '@/api/admin';
@@ -22,7 +22,7 @@ import { useAdminTable } from '@/hooks/use-admin-table';
 const payoutBadge = (status: string) => {
     switch (status) {
         case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
-        case 'PROCESSING': return <Badge variant="secondary" className="animate-pulse">Processing</Badge>;
+        case 'PROCESSING': return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processing</Badge>;
         case 'PROCESSED': return <Badge variant="default" className="capitalize">Processed</Badge>;
         case 'FAILED': return <Badge variant="destructive">Failed</Badge>;
         default: return <Badge variant="outline">{status}</Badge>;
@@ -31,7 +31,7 @@ const payoutBadge = (status: string) => {
 
 export function PayoutsTable() {
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [overrideDialog, setOverrideDialog] = useState<{ open: boolean; claimId: string; currentAmount: number; region: string }>({ open: false, claimId: '', currentAmount: 0, region: 'com' });
     const [overrideAmount, setOverrideAmount] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -44,48 +44,59 @@ export function PayoutsTable() {
 
     const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery, refetch } = useAdminTable<PayoutRow>({ fetchFn });
 
+    const addProcessingIds = useCallback((ids: string[]) => {
+        setProcessingIds(prev => { const next = new Set(prev); ids.forEach(id => next.add(id)); return next; });
+    }, []);
+    const removeProcessingIds = useCallback((ids: string[]) => {
+        setProcessingIds(prev => { const next = new Set(prev); ids.forEach(id => next.delete(id)); return next; });
+    }, []);
+
     const handleUpdateStatus = useCallback(async (claimId: string, status: 'PROCESSED' | 'FAILED') => {
-        setActionLoading(claimId);
+        addProcessingIds([claimId]);
         try {
             await adminApi.updatePayoutStatus(claimId, status);
             toast.success(`Payout marked as ${status.toLowerCase()}`);
             refetch();
         } catch (e: unknown) { toast.error(getErrorMessage(e)); }
-        finally { setActionLoading(null); }
-    }, [refetch]);
+        finally { removeProcessingIds([claimId]); }
+    }, [refetch, addProcessingIds, removeProcessingIds]);
 
     const handleRetry = useCallback(async (claimId: string) => {
-        setActionLoading(claimId);
+        addProcessingIds([claimId]);
         try {
             await adminApi.retryPayout(claimId);
             toast.success('Payout retried successfully');
             refetch();
         } catch (e: unknown) { toast.error(getErrorMessage(e)); }
-        finally { setActionLoading(null); }
-    }, [refetch]);
+        finally { removeProcessingIds([claimId]); }
+    }, [refetch, addProcessingIds, removeProcessingIds]);
 
     const handleOverride = async () => {
         const amount = parseFloat(overrideAmount);
         if (isNaN(amount) || amount < 0) { toast.error('Invalid amount'); return; }
-        setActionLoading(overrideDialog.claimId);
+        const claimId = overrideDialog.claimId;
+        addProcessingIds([claimId]);
         try {
-            await adminApi.updatePayoutStatus(overrideDialog.claimId, 'PROCESSED', amount);
+            await adminApi.updatePayoutStatus(claimId, 'PROCESSED', amount);
             toast.success('Payout overridden and processed');
             setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' });
             setOverrideAmount('');
             refetch();
         } catch (e: unknown) { toast.error(getErrorMessage(e)); }
-        finally { setActionLoading(null); }
+        finally { removeProcessingIds([claimId]); }
     };
 
     const handleBatchProcess = async () => {
         if (selectedIds.length === 0) { toast.error('No payouts selected'); return; }
+        const ids = [...selectedIds];
+        addProcessingIds(ids);
         try {
-            await adminApi.batchUpdatePayouts(selectedIds, 'PROCESSED');
-            toast.success(`${selectedIds.length} payouts processed`);
+            await adminApi.batchUpdatePayouts(ids, 'PROCESSED');
+            toast.success(`${ids.length} payouts processed`);
             setSelectedIds([]);
             refetch();
         } catch (e: unknown) { toast.error(getErrorMessage(e)); }
+        finally { removeProcessingIds(ids); }
     };
 
     const toggleSelect = (id: string) => {
@@ -108,7 +119,7 @@ export function PayoutsTable() {
                     }}
                 />
             ),
-            cell: ({ row }) => row.original.payout_status === 'PENDING' ? (
+            cell: ({ row }) => row.original.payout_status === 'PENDING' && !processingIds.has(row.original.id) ? (
                 <Checkbox
                     checked={selectedIds.includes(row.original.id)}
                     onCheckedChange={() => toggleSelect(row.original.id)}
@@ -159,21 +170,25 @@ export function PayoutsTable() {
         {
             accessorKey: 'payout_status',
             header: () => <DataTableStaticHeader title="Status" />,
-            cell: ({ row }) => (
-                <div className="flex items-center gap-1.5">
-                    {payoutBadge(row.original.payout_status)}
-                    {row.original.payout_status === 'PROCESSED' && row.original.payout_method && (
-                        <Badge variant="outline" className="text-[10px] capitalize">{row.original.payout_method.toLowerCase()}</Badge>
-                    )}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const displayStatus = processingIds.has(row.original.id) ? 'PROCESSING' : row.original.payout_status;
+                return (
+                    <div className="flex items-center gap-1.5">
+                        {payoutBadge(displayStatus)}
+                        {row.original.payout_status === 'PROCESSED' && row.original.payout_method && (
+                            <Badge variant="outline" className="text-[10px] capitalize">{row.original.payout_method.toLowerCase()}</Badge>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             id: 'actions',
             header: () => <DataTableStaticHeader title="Actions" srOnly />,
             cell: ({ row }) => {
                 const status = row.original.payout_status;
-                if (status !== 'PENDING' && status !== 'FAILED') return null;
+                const isProcessing = processingIds.has(row.original.id);
+                if (isProcessing || (status !== 'PENDING' && status !== 'FAILED')) return null;
                 return (
                     <div className="text-right">
                         <DropdownMenu>
@@ -186,7 +201,6 @@ export function PayoutsTable() {
                                 {status === 'FAILED' ? (
                                     <DropdownMenuItem
                                         onClick={() => handleRetry(row.original.id)}
-                                        disabled={actionLoading === row.original.id}
                                         className="cursor-pointer"
                                     >
                                         <RotateCcw className="h-4 w-4 mr-2" />
@@ -196,7 +210,6 @@ export function PayoutsTable() {
                                     <>
                                         <DropdownMenuItem
                                             onClick={() => handleUpdateStatus(row.original.id, 'PROCESSED')}
-                                            disabled={actionLoading === row.original.id}
                                             className="cursor-pointer"
                                         >
                                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -212,7 +225,6 @@ export function PayoutsTable() {
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             onClick={() => handleUpdateStatus(row.original.id, 'FAILED')}
-                                            disabled={actionLoading === row.original.id}
                                             className="text-destructive focus:text-destructive cursor-pointer"
                                         >
                                             <XCircle className="h-4 w-4 mr-2" />
@@ -226,7 +238,7 @@ export function PayoutsTable() {
                 );
             },
         },
-    ], [actionLoading, selectedIds, allPendingSelected, handleUpdateStatus, handleRetry, pendingIds]);
+    ], [processingIds, selectedIds, allPendingSelected, handleUpdateStatus, handleRetry, pendingIds]);
 
     return (
         <div className="space-y-4">
@@ -279,7 +291,7 @@ export function PayoutsTable() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' })}>Cancel</Button>
-                        <Button onClick={handleOverride} disabled={!!actionLoading}>Override & Process</Button>
+                        <Button onClick={handleOverride} disabled={processingIds.has(overrideDialog.claimId)}>Override & Process</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
