@@ -21,10 +21,16 @@ export async function runAutoPayouts(): Promise<void> {
 
     try {
         // Read configs
-        const [delayConfig, maxAmountConfig] = await Promise.all([
+        const [enabledConfig, delayConfig, maxAmountConfig] = await Promise.all([
+            SystemConfig.findByPk(CONFIG_KEYS.AUTO_PAYOUT_ENABLED),
             SystemConfig.findByPk(CONFIG_KEYS.REIMBURSEMENT_DELAY_DAYS),
             SystemConfig.findByPk(CONFIG_KEYS.AUTO_PAYOUT_MAX_AMOUNT),
         ]);
+
+        if (enabledConfig?.value === 'false') {
+            logger.info('[AutoPayout] Auto payouts are disabled, skipping run');
+            return;
+        }
 
         const delayDays = delayConfig ? parseInt(delayConfig.value, 10) : 14;
         if (isNaN(delayDays) || delayDays < 0) {

@@ -21,6 +21,11 @@ export const SYSTEM_CONFIGS = {
         defaultValue: '14',
         description: 'Number of days after review approval before auto-payout',
     },
+    AUTO_PAYOUT_ENABLED: {
+        key: 'auto_payout_enabled',
+        defaultValue: 'true',
+        description: 'Enable or disable automatic payouts. When disabled, all payouts require manual admin processing.',
+    },
     AUTO_PAYOUT_CRON_SCHEDULE: {
         key: 'auto_payout_cron_schedule',
         defaultValue: '0 * * * *',
