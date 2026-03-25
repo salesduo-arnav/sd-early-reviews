@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw, Loader2 } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw, Loader2, Eye } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi, type PayoutRow } from '@/api/admin';
@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { formatPrice } from '@/lib/regions';
 import { useAdminTable } from '@/hooks/use-admin-table';
+import { ClaimDetailModal } from '@/components/admin/claims/ClaimDetailModal';
 
 const payoutBadge = (status: string) => {
     switch (status) {
@@ -35,6 +36,7 @@ export function PayoutsTable() {
     const [overrideDialog, setOverrideDialog] = useState<{ open: boolean; claimId: string; currentAmount: number; region: string }>({ open: false, claimId: '', currentAmount: 0, region: 'com' });
     const [overrideAmount, setOverrideAmount] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [detailModal, setDetailModal] = useState<{ open: boolean; claimId: string }>({ open: false, claimId: '' });
 
     const fetchFn = useCallback(
         (page: number, size: number, search: string | undefined) =>
@@ -183,6 +185,20 @@ export function PayoutsTable() {
             },
         },
         {
+            id: 'details',
+            header: () => <DataTableStaticHeader title="Details" srOnly />,
+            cell: ({ row }) => (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-muted"
+                    onClick={() => setDetailModal({ open: true, claimId: row.original.id })}
+                >
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                </Button>
+            ),
+        },
+        {
             id: 'actions',
             header: () => <DataTableStaticHeader title="Actions" srOnly />,
             cell: ({ row }) => {
@@ -276,6 +292,13 @@ export function PayoutsTable() {
                     isLoading={loading}
                 />
             </div>
+
+            <ClaimDetailModal
+                open={detailModal.open}
+                onOpenChange={(open) => { if (!open) setDetailModal({ open: false, claimId: '' }); }}
+                claimId={detailModal.claimId}
+                onAction={refetch}
+            />
 
             <Dialog open={overrideDialog.open} onOpenChange={(open) => { if (!open) setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' }); }}>
                 <DialogContent>
