@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SystemConfigEditor } from '@/components/admin/settings/SystemConfigEditor';
 import { AuditLogsTable } from '@/components/admin/settings/AuditLogsTable';
 import { BroadcastNotificationForm } from '@/components/admin/settings/BroadcastNotificationForm';
-import { Settings } from 'lucide-react';
+import { Settings, ScrollText, Bell } from 'lucide-react';
 
 export default function AdminSettingsPage() {
     const [activeTab, setActiveTab] = useState('config');
@@ -22,9 +22,18 @@ export default function AdminSettingsPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                    <TabsTrigger value="config">System Config</TabsTrigger>
-                    <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
-                    <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                    <TabsTrigger value="config" className="gap-1.5">
+                        <Settings className="h-3.5 w-3.5" />
+                        System Config
+                    </TabsTrigger>
+                    <TabsTrigger value="audit-logs" className="gap-1.5">
+                        <ScrollText className="h-3.5 w-3.5" />
+                        Audit Logs
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-1.5">
+                        <Bell className="h-3.5 w-3.5" />
+                        Notifications
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="config" className="mt-6">
                     <SystemConfigEditor />
