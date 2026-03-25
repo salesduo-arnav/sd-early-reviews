@@ -10,6 +10,7 @@ import { billingApi, BillingTransaction } from '@/api/billing';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 const STATUS_BADGE: Record<string, React.ReactNode> = {
     SUCCESS: <Badge variant="default" className="bg-green-600 hover:bg-green-700">Success</Badge>,
@@ -41,7 +42,7 @@ const columns: ColumnDef<BillingTransaction, unknown>[] = [
         header: () => <DataTableStaticHeader title="Amount" />,
         cell: ({ row }) => (
             <span className="font-semibold text-foreground">
-                ${Number(row.original.gross_amount).toFixed(2)}
+                {formatPriceByCurrency(Number(row.original.gross_amount), row.original.currency || 'USD')}
             </span>
         ),
     },
@@ -50,7 +51,7 @@ const columns: ColumnDef<BillingTransaction, unknown>[] = [
         header: () => <DataTableStaticHeader title="Platform Fee" />,
         cell: ({ row }) => (
             <span className="text-muted-foreground">
-                ${Number(row.original.platform_fee).toFixed(2)}
+                {formatPriceByCurrency(Number(row.original.platform_fee), row.original.currency || 'USD')}
             </span>
         ),
     },
@@ -59,7 +60,7 @@ const columns: ColumnDef<BillingTransaction, unknown>[] = [
         header: () => <DataTableStaticHeader title="Net" />,
         cell: ({ row }) => (
             <span className="font-medium text-foreground">
-                ${Number(row.original.net_amount).toFixed(2)}
+                {formatPriceByCurrency(Number(row.original.net_amount), row.original.currency || 'USD')}
             </span>
         ),
     },

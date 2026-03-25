@@ -6,6 +6,7 @@ export interface DashboardMetrics {
     totalReviews: number;
     reviewChangePercent: number;
     totalSpent: number;
+    currency: string;
 }
 
 export interface ReviewVelocity {

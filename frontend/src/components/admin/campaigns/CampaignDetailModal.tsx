@@ -156,7 +156,7 @@ export function CampaignDetailModal({ open, onOpenChange, campaignId }: Campaign
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {claim.BuyerProfile?.User?.email} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), campaign.region || 'com')}
+                                                    {claim.BuyerProfile?.User?.email} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), campaign.region || 'US')}
                                                 </span>
                                                 {claimStatusBadge(claim.order_status, claim.review_status, claim.payout_status)}
                                             </div>

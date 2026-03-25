@@ -9,6 +9,7 @@ import { parsePaginationParams, buildPaginatedResponse } from '../utils/paginati
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { attemptAutoVerification } from '../services/verification';
+import { getMarketplace } from '../config/marketplaces';
 
 /**
  * GET /api/marketplace
@@ -124,9 +125,10 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
                 rating: raw.product_rating,
                 rating_count: raw.product_rating_count,
                 reimbursement_pct: raw.reimbursement_percent,
-                reimbursement_amount: (
-                    (Number(raw.product_price) * Number(raw.reimbursement_percent)) / 100
-                ).toFixed(2),
+                reimbursement_amount: parseFloat(
+                    ((Number(raw.product_price) * Number(raw.reimbursement_percent)) / 100)
+                        .toFixed(getMarketplace(String(raw.region || 'US')).decimalDigits),
+                ),
                 region: raw.region,
                 category: raw.category,
                 target_reviews: raw.target_reviews,

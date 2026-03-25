@@ -112,7 +112,7 @@ export function OrderVerificationTable() {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Payout" />,
             cell: ({ row }) => (
-                <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>
+                <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'US')}</span>
             ),
         },
         {

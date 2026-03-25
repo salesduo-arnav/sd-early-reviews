@@ -84,7 +84,7 @@ function formatClaimResponse(claim: OrderClaim): Record<string, unknown> {
         product_title: c.Campaign?.product_title ?? '',
         product_image_url: c.Campaign?.product_image_url ?? '',
         asin: c.Campaign?.asin ?? '',
-        region: c.Campaign?.region ?? 'com',
+        region: c.Campaign?.region ?? 'US',
         guidelines: c.Campaign?.guidelines ?? null,
     };
 }
@@ -281,6 +281,16 @@ export const submitReviewProof = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'The review submission deadline has passed.' });
         }
 
+        // Check for duplicate review URL
+        if (amazon_review_id) {
+            const existing = await OrderClaim.findOne({
+                where: { amazon_review_id, id: { [Op.ne]: id } },
+            });
+            if (existing) {
+                return res.status(409).json({ message: 'This Amazon review URL has already been submitted for another claim.' });
+            }
+        }
+
         // Update claim with review data
         await claim.update({
             review_proof_url,
@@ -424,6 +434,7 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             id: profile.id,
             email: user?.email ?? '',
             amazon_profile_url: profile.amazon_profile_url,
+            region: profile.region,
             on_time_rate: profile.on_time_submission_rate,
             total_earnings: parseFloat(String(profile.total_earnings)),
             claims_completed: claimsCompleted,

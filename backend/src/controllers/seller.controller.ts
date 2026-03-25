@@ -7,6 +7,7 @@ import { Transaction, TransactionStatus } from '../models/Transaction';
 import { SellerProfile } from '../models/SellerProfile';
 import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
+import { toUSD } from '../services/exchange-rate.service';
 import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek, format } from 'date-fns';
 import { resolveSellerProfileId } from '../utils/profileResolvers';
 
@@ -78,16 +79,25 @@ export const getMetrics = async (req: Request, res: Response) => {
             reviewChangePercent = 100;
         }
 
-        // Total Amount Spent — transactions belong to users (not seller profiles)
-        const totalSpent = await Transaction.sum('gross_amount', {
-            where: { user_id: userId, status: TransactionStatus.SUCCESS }
-        }) || 0;
+        // Total Amount Spent — convert each transaction to USD for a consistent total
+        const spentRows = await Transaction.findAll({
+            attributes: ['gross_amount', 'currency'],
+            where: { user_id: userId, status: TransactionStatus.SUCCESS },
+            raw: true,
+        });
+        let totalSpent = 0;
+        for (const row of spentRows) {
+            const amt = parseFloat(String(row.gross_amount)) || 0;
+            totalSpent += await toUSD(amt, row.currency || 'USD');
+        }
+        totalSpent = Math.round(totalSpent * 100) / 100;
 
         return res.status(200).json({
             activeCampaigns: activeCampaignsCount,
             totalReviews: totalReviewsCompleted,
             reviewChangePercent: parseFloat(reviewChangePercent.toFixed(1)),
-            totalSpent: parseFloat(totalSpent.toString())
+            totalSpent,
+            currency: 'USD',
         });
 
     } catch (error) {

@@ -188,7 +188,7 @@ export function ClaimDetailModal({ open, onOpenChange, claimId, onAction }: Clai
                                     <p className="text-xs text-muted-foreground mt-1">
                                         {claim.Campaign?.region && REGION_DISPLAY_NAMES[claim.Campaign.region]}
                                         {' · '}
-                                        {formatPrice(claim.expected_payout_amount, claim.Campaign?.region || 'com')} payout
+                                        {formatPrice(claim.expected_payout_amount, claim.Campaign?.region || 'US')} payout
                                     </p>
                                 </div>
                             </div>
@@ -365,7 +365,7 @@ export function ClaimDetailModal({ open, onOpenChange, claimId, onAction }: Clai
                                     <div className="rounded-lg border p-3">
                                         <p className="text-[11px] text-muted-foreground">Amount</p>
                                         <p className="text-sm font-semibold mt-0.5">
-                                            {formatPrice(claim.expected_payout_amount, claim.Campaign?.region || 'com')}
+                                            {formatPrice(claim.expected_payout_amount, claim.Campaign?.region || 'US')}
                                         </p>
                                     </div>
                                     <div className="rounded-lg border p-3">

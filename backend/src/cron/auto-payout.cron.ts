@@ -70,7 +70,7 @@ export async function runAutoPayouts(): Promise<void> {
         const claimsToProcess = maxAmounts
             ? eligibleClaims.filter((claim) => {
                   const campaignData = claim.get('Campaign') as { region: string } | undefined;
-                  const region = campaignData?.region ?? 'com';
+                  const region = campaignData?.region ?? 'US';
                   const currency = regionToCurrency(region);
                   const limit = maxAmounts![currency];
                   if (limit !== undefined && Number(claim.expected_payout_amount) > limit) {

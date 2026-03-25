@@ -40,32 +40,9 @@ async function wiseRequest<T>(
     return data as T;
 }
 
-// Region → Currency mapping
+// Region → Currency mapping (delegated to centralized config)
 
-const REGION_CURRENCY_MAP: Record<string, string> = {
-    'com': 'USD',
-    'co.uk': 'GBP',
-    'de': 'EUR',
-    'fr': 'EUR',
-    'it': 'EUR',
-    'es': 'EUR',
-    'nl': 'EUR',
-    'co.jp': 'JPY',
-    'in': 'INR',
-    'com.au': 'AUD',
-    'ca': 'CAD',
-    'com.br': 'BRL',
-    'com.mx': 'MXN',
-    'sg': 'SGD',
-    'ae': 'AED',
-    'sa': 'SAR',
-    'pl': 'PLN',
-    'se': 'SEK',
-};
-
-export function regionToCurrency(region: string): string {
-    return REGION_CURRENCY_MAP[region] || 'USD';
-}
+export { regionToCurrency } from '../config/marketplaces';
 
 // Types
 
@@ -246,6 +223,9 @@ export interface PayoutResult {
     success: boolean;
     transferId?: number;
     wiseTransferId?: string;
+    /** Amount the buyer actually receives in their payout currency */
+    targetAmount?: number;
+    targetCurrency?: string;
     error?: string;
 }
 
@@ -260,8 +240,15 @@ export async function sendPayout(
         const recipient = await getRecipient(recipientId);
         const targetCurrency = recipient.currency;
 
-        // 1. Create quote
-        const quote = await createQuote(sourceCurrency, targetCurrency, amount);
+        // 1. Create quote — always fund from USD balance.
+        //    Convert source amount to USD if it isn't already.
+        let quoteAmount = amount;
+        if (sourceCurrency !== 'USD') {
+            const { toUSD } = await import('./exchange-rate.service');
+            quoteAmount = Math.round((await toUSD(amount, sourceCurrency)) * 100) / 100;
+        }
+
+        const quote = await createQuote('USD', targetCurrency, quoteAmount);
         logger.info(`Wise quote created`, { quoteId: quote.id, rate: quote.rate, fee: quote.fee, claimId });
 
         // 2. Create transfer (use unique UUID per attempt to avoid idempotency conflicts on retry)
@@ -280,6 +267,8 @@ export async function sendPayout(
             success: true,
             transferId: transfer.id,
             wiseTransferId: String(transfer.id),
+            targetAmount: quote.targetAmount,
+            targetCurrency: targetCurrency,
         };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown Wise payout error';

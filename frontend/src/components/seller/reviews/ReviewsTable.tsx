@@ -148,7 +148,7 @@ export function ReviewsTable() {
             header: () => <DataTableStaticHeader title={t('common.payout', 'Payout')} />,
             cell: ({ row }) => {
                 const amount = row.getValue('expected_payout_amount') as number;
-                const region = (row.original as SellerReview).region || 'com';
+                const region = (row.original as SellerReview).region || 'US';
                 return (
                     <div className="text-sm font-semibold text-foreground/90 whitespace-nowrap">
                         {formatPrice(Number(amount ?? 0), region)}

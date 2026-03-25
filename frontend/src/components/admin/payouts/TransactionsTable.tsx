@@ -7,6 +7,7 @@ import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { adminApi, type TransactionRow } from '@/api/admin';
 import { format } from 'date-fns';
 import { useAdminTable } from '@/hooks/use-admin-table';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 const typeBadge = (type: string) => {
     switch (type) {
@@ -62,17 +63,17 @@ export function TransactionsTable() {
         {
             accessorKey: 'gross_amount',
             header: () => <DataTableStaticHeader title="Gross" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">${parseFloat(row.original.gross_amount).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPriceByCurrency(parseFloat(row.original.gross_amount), row.original.currency || 'USD')}</span>,
         },
         {
             accessorKey: 'platform_fee',
             header: () => <DataTableStaticHeader title="Fee" />,
-            cell: ({ row }) => <span className="text-muted-foreground">${parseFloat(row.original.platform_fee).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{formatPriceByCurrency(parseFloat(row.original.platform_fee), row.original.currency || 'USD')}</span>,
         },
         {
             accessorKey: 'net_amount',
             header: () => <DataTableStaticHeader title="Net" />,
-            cell: ({ row }) => <span className="font-semibold text-foreground">${parseFloat(row.original.net_amount).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="font-semibold text-foreground">{formatPriceByCurrency(parseFloat(row.original.net_amount), row.original.currency || 'USD')}</span>,
         },
         {
             id: 'reference',

@@ -114,6 +114,7 @@ export interface BuyerProfile {
     id: string;
     email: string;
     amazon_profile_url: string;
+    region: string;
     on_time_rate: number;
     total_earnings: number;
     claims_completed: number;

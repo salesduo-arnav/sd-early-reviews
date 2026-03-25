@@ -11,6 +11,7 @@ import { CONFIG_KEYS } from '../utils/constants';
 import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import * as stripeService from '../services/stripe.service';
+import { regionToCurrency } from '../config/marketplaces';
 
 const DEFAULT_PLATFORM_FEE_PERCENT = 10;
 
@@ -111,6 +112,7 @@ export const createCampaign = async (req: Request, res: Response) => {
         const customerId = await stripeService.getOrCreateStripeCustomer(sellerProfile, user.email);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+        const currency = regionToCurrency(region);
         const reimbursementCents = Math.round(reimbursementCost * 100);
         const platformFeeCents = Math.round(platformFee * 100);
 
@@ -120,6 +122,7 @@ export const createCampaign = async (req: Request, res: Response) => {
             productTitle: product_title,
             asin,
             region,
+            currency,
             targetReviews: target_reviews,
             reimbursementCents,
             platformFeeCents,
@@ -127,12 +130,13 @@ export const createCampaign = async (req: Request, res: Response) => {
             cancelUrl: `${frontendUrl}/seller/campaigns?payment=cancelled&campaign=${campaign.id}`,
         });
 
-        // Create a PENDING transaction record
+        // Create a PENDING transaction record in the campaign's source currency
         await Transaction.create({
             user_id: userId,
             gross_amount: grossAmount,
             platform_fee: platformFee,
             net_amount: reimbursementCost,
+            currency,
             type: TransactionType.SELLER_CHARGE,
             stripe_transaction_id: campaign.id, // updated to checkout session ID via webhook
             status: TransactionStatus.PENDING,

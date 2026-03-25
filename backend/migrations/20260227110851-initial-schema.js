@@ -483,6 +483,11 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      currency: {
+        type: Sequelize.STRING(3),
+        allowNull: false,
+        defaultValue: 'USD',
+      },
       type: {
         type: 'enum_transactions_type',
         allowNull: false,

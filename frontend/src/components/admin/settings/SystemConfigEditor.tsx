@@ -42,21 +42,13 @@ function isValidCron(expr: string): boolean {
     return parts.every(p => field.test(p));
 }
 
+import { MARKETPLACE_LIST } from '@/lib/regions';
+
+// Derive unique currencies from centralized marketplace config
 const SUPPORTED_CURRENCIES: { code: string; label: string }[] = [
-    { code: 'USD', label: 'USD - US Dollar' },
-    { code: 'GBP', label: 'GBP - British Pound' },
-    { code: 'EUR', label: 'EUR - Euro' },
-    { code: 'INR', label: 'INR - Indian Rupee' },
-    { code: 'JPY', label: 'JPY - Japanese Yen' },
-    { code: 'AUD', label: 'AUD - Australian Dollar' },
-    { code: 'CAD', label: 'CAD - Canadian Dollar' },
-    { code: 'BRL', label: 'BRL - Brazilian Real' },
-    { code: 'MXN', label: 'MXN - Mexican Peso' },
-    { code: 'SGD', label: 'SGD - Singapore Dollar' },
-    { code: 'AED', label: 'AED - UAE Dirham' },
-    { code: 'SAR', label: 'SAR - Saudi Riyal' },
-    { code: 'PLN', label: 'PLN - Polish Zloty' },
-    { code: 'SEK', label: 'SEK - Swedish Krona' },
+    ...new Map(
+        MARKETPLACE_LIST.map(m => [m.currency, { code: m.currency, label: `${m.currency} (${m.currencySymbol.trim()})` }]),
+    ).values(),
 ];
 
 // Config categories

@@ -5,6 +5,24 @@ import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { startOfDay, endOfDay } from 'date-fns';
 import { resolveSellerProfile } from '../utils/profileResolvers';
+import { toUSD } from '../services/exchange-rate.service';
+
+/** Sum gross_amount across transactions, converting each to USD first. */
+async function sumInUSD(
+    where: Record<string, unknown>,
+): Promise<number> {
+    const rows = await Transaction.findAll({
+        attributes: ['gross_amount', 'currency'],
+        where,
+        raw: true,
+    });
+    let total = 0;
+    for (const row of rows) {
+        const amt = parseFloat(String(row.gross_amount)) || 0;
+        total += await toUSD(amt, row.currency || 'USD');
+    }
+    return Math.round(total * 100) / 100;
+}
 
 export const getBillingSummary = async (req: Request, res: Response) => {
     try {
@@ -17,19 +35,16 @@ export const getBillingSummary = async (req: Request, res: Response) => {
         const baseWhere = { user_id: userId, type: TransactionType.SELLER_CHARGE };
 
         const [totalSpent, totalTransactions, pendingAmount] = await Promise.all([
-            Transaction.sum('gross_amount', {
-                where: { ...baseWhere, status: TransactionStatus.SUCCESS },
-            }),
+            sumInUSD({ ...baseWhere, status: TransactionStatus.SUCCESS }),
             Transaction.count({ where: baseWhere }),
-            Transaction.sum('gross_amount', {
-                where: { ...baseWhere, status: TransactionStatus.PENDING },
-            }),
+            sumInUSD({ ...baseWhere, status: TransactionStatus.PENDING }),
         ]);
 
         return res.status(200).json({
-            totalSpent: parseFloat((totalSpent || 0).toString()),
+            totalSpent,
             totalTransactions,
-            pendingAmount: parseFloat((pendingAmount || 0).toString()),
+            pendingAmount,
+            currency: 'USD',
         });
     } catch (error) {
         logger.error(`Error fetching billing summary: ${formatError(error)}`);
@@ -86,6 +101,7 @@ export const getBillingHistory = async (req: Request, res: Response) => {
             gross_amount: parseFloat(t.gross_amount.toString()),
             platform_fee: parseFloat(t.platform_fee.toString()),
             net_amount: parseFloat(t.net_amount.toString()),
+            currency: t.currency || 'USD',
             status: t.status,
             stripe_transaction_id: t.stripe_transaction_id,
             receipt_url: t.receipt_url || null,

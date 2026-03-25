@@ -167,7 +167,7 @@ export function PayoutsTable() {
         {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Amount" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'US')}</span>,
         },
         {
             accessorKey: 'payout_status',
@@ -232,7 +232,7 @@ export function PayoutsTable() {
                                             Mark Processed
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'com' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
+                                            onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'US' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
                                             className="cursor-pointer"
                                         >
                                             <DollarSign className="h-4 w-4 mr-2" />

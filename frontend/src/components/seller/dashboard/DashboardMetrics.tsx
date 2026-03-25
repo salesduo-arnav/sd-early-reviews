@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, TrendingUp, DollarSign } from 'lucide-react';
 import { dashboardApi, DashboardMetrics as IDashboardMetrics } from '@/api/seller';
 import { getErrorMessage } from '@/lib/errors';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 export function DashboardMetrics() {
     const { t } = useTranslation();
@@ -87,7 +88,7 @@ export function DashboardMetrics() {
                     <DollarSign className="w-4 h-4 text-brand-primary" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${metrics.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    <div className="text-2xl font-bold">{formatPriceByCurrency(metrics.totalSpent, metrics.currency || 'USD')}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                         {t('seller.dashboard.lifetime_spend', 'Lifetime platform spend')}
                     </p>

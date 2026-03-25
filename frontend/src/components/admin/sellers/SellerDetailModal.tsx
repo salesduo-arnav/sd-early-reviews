@@ -9,7 +9,7 @@ import { adminApi, type SellerDetailResponse } from '@/api/admin';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
-import { formatPrice, REGION_DISPLAY_NAMES } from '@/lib/regions';
+import { formatPrice, formatPriceByCurrency, REGION_DISPLAY_NAMES } from '@/lib/regions';
 
 interface SellerDetailModalProps {
     open: boolean;
@@ -105,7 +105,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
                             </div>
                             <div className="rounded-lg border p-3 text-center">
                                 <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                                <p className="text-base font-semibold">${totalSpent.toFixed(2)}</p>
+                                <p className="text-base font-semibold">{formatPriceByCurrency(totalSpent, 'USD')}</p>
                                 <p className="text-[11px] text-muted-foreground">Spent</p>
                             </div>
                         </div>
@@ -131,7 +131,7 @@ export function SellerDetailModal({ open, onOpenChange, sellerId }: SellerDetail
                                                 <span className="text-xs text-muted-foreground">
                                                     {campaign.asin}
                                                     {campaign.region && ` · ${REGION_DISPLAY_NAMES[campaign.region] || campaign.region}`}
-                                                    {` · ${formatPrice(parseFloat(campaign.product_price || '0'), campaign.region || 'com')}`}
+                                                    {` · ${formatPrice(parseFloat(campaign.product_price || '0'), campaign.region || 'US')}`}
                                                     {` · ${campaign.target_reviews} reviews`}
                                                 </span>
                                                 {campaignStatusBadge(campaign.status)}

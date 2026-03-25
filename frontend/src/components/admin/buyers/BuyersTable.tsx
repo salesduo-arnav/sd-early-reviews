@@ -77,7 +77,7 @@ export function BuyersTable() {
         {
             accessorKey: 'total_earnings',
             header: () => <DataTableStaticHeader title="Earnings" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.total_earnings || '0'), row.original.region || 'com')}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(parseFloat(row.original.total_earnings || '0'), row.original.region || 'US')}</span>,
         },
         {
             accessorKey: 'is_blacklisted',

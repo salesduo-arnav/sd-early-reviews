@@ -20,27 +20,9 @@ import type { WiseAccountRequirement, ConnectBankPayload } from '@/api/buyer';
 import { WiseFormRenderer } from '@/components/ui/wise-form-renderer';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { getCountryOptions } from '@/lib/regions';
 
-const COUNTRY_OPTIONS = [
-    { code: 'IN', currency: 'INR', label: 'India (INR)' },
-    { code: 'US', currency: 'USD', label: 'United States (USD)' },
-    { code: 'GB', currency: 'GBP', label: 'United Kingdom (GBP)' },
-    { code: 'DE', currency: 'EUR', label: 'Germany (EUR)' },
-    { code: 'FR', currency: 'EUR', label: 'France (EUR)' },
-    { code: 'AE', currency: 'AED', label: 'UAE (AED)' },
-    { code: 'AU', currency: 'AUD', label: 'Australia (AUD)' },
-    { code: 'NZ', currency: 'NZD', label: 'New Zealand (NZD)' },
-    { code: 'CA', currency: 'CAD', label: 'Canada (CAD)' },
-    { code: 'JP', currency: 'JPY', label: 'Japan (JPY)' },
-    { code: 'SG', currency: 'SGD', label: 'Singapore (SGD)' },
-    { code: 'ES', currency: 'EUR', label: 'Spain (EUR)' },
-    { code: 'IT', currency: 'EUR', label: 'Italy (EUR)' },
-    { code: 'NL', currency: 'EUR', label: 'Netherlands (EUR)' },
-    { code: 'SE', currency: 'SEK', label: 'Sweden (SEK)' },
-    { code: 'PL', currency: 'PLN', label: 'Poland (PLN)' },
-    { code: 'BR', currency: 'BRL', label: 'Brazil (BRL)' },
-    { code: 'MX', currency: 'MXN', label: 'Mexico (MXN)' },
-];
+const COUNTRY_OPTIONS = getCountryOptions();
 
 const HIDDEN_KEYS = new Set(['type']);
 
@@ -220,7 +202,7 @@ export default function BankAccountSection({
                             {!loading && wiseConnected && (
                                 <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-50" variant="outline">
                                     <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Connected
+                                    {t('buyer.account.bank.connected_badge', 'Connected')}
                                 </Badge>
                             )}
                         </div>
@@ -244,10 +226,10 @@ export default function BankAccountSection({
                                         <AlertDialogDescription>{t('buyer.account.bank.disconnect_description', 'This will remove your bank account. You will not be able to receive reimbursements until you connect a new one.')}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
                                         <AlertDialogAction onClick={handleDisconnect} disabled={removing}>
                                             {removing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                                            Disconnect
+                                            {t('buyer.account.bank.disconnect_confirm', 'Disconnect')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -367,7 +349,7 @@ export default function BankAccountSection({
                             {/* Transfer method tabs */}
                             {!loadingRequirements && requirements.length > 1 && (
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium">Transfer method</Label>
+                                    <Label className="text-sm font-medium">{t('buyer.account.bank.transfer_method', 'Transfer method')}</Label>
                                     <div className="flex items-center rounded-lg bg-muted p-1 gap-1">
                                         {requirements.map((req, idx) => (
                                             <button
@@ -419,15 +401,15 @@ export default function BankAccountSection({
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Shield className="h-3.5 w-3.5" />
-                                <span>Secured by Wise</span>
+                                <span>{t('buyer.account.bank.secured_by_wise', 'Secured by Wise')}</span>
                             </div>
                             <DialogFooter className="flex-row gap-2 sm:space-x-0">
                                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                                    Cancel
+                                    {t('common.cancel', 'Cancel')}
                                 </Button>
                                 <Button onClick={handleSubmit} disabled={submitting || !selectedCountry || !activeRequirement}>
                                     {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
-                                    {wiseConnected ? 'Update Account' : 'Connect Account'}
+                                    {wiseConnected ? t('buyer.account.bank.update_account', 'Update Account') : t('buyer.account.bank.connect_account', 'Connect Account')}
                                 </Button>
                             </DialogFooter>
                         </div>

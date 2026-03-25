@@ -3,6 +3,8 @@ import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';
 import { sendPayout, regionToCurrency } from './wise.service';
+import { formatAmountWithCurrency } from '../config/marketplaces';
+import { toUSD } from './exchange-rate.service';
 import { notificationService } from './notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { logAdminAction } from '../utils/auditLog';
@@ -71,7 +73,7 @@ export async function processPayoutForClaim(
     }
 
     // Step 4: Call Wise to send payout
-    const sourceCurrency = regionToCurrency(campaign?.region || 'com');
+    const sourceCurrency = regionToCurrency(campaign?.region || 'US');
     const amount = parseFloat(String(claim.expected_payout_amount));
 
     const result = await sendPayout(
@@ -96,13 +98,15 @@ export async function processPayoutForClaim(
             gross_amount: amount,
             platform_fee: 0,
             net_amount: amount,
+            currency: sourceCurrency,
             type: TransactionType.BUYER_PAYOUT,
             wise_transfer_id: result.wiseTransferId || undefined,
             status: TransactionStatus.SUCCESS,
         });
 
-        // Update buyer's total_earnings
-        const newEarnings = parseFloat(String(buyerProfile.total_earnings)) + amount;
+        // Update buyer's total_earnings in USD (base currency) for consistent aggregation.
+        const earnedAmountUSD = await toUSD(amount, sourceCurrency);
+        const newEarnings = parseFloat(String(buyerProfile.total_earnings)) + earnedAmountUSD;
         await BuyerProfile.update(
             { total_earnings: newEarnings },
             { where: { id: buyerProfile.id } },
@@ -110,8 +114,11 @@ export async function processPayoutForClaim(
 
         // Send success notification
         const productTitle = campaign?.product_title || 'your product';
+        const displayCurrency = result.targetCurrency || sourceCurrency;
+        const displayAmount = result.targetAmount ?? amount;
+        const formattedAmount = formatAmountWithCurrency(displayAmount, displayCurrency);
         notificationService.send(buyerProfile.user_id, NotificationCategory.PAYOUT_PROCESSED, {
-            message: `Your reimbursement of ${sourceCurrency} ${amount.toFixed(2)} for "${productTitle}" has been sent to your bank account.`,
+            message: `Your reimbursement of ${formattedAmount} for "${productTitle}" has been sent to your bank account.`,
             actionLink: '/buyer/account',
         }).catch(err => logger.error('Failed to send payout success notification', { err }));
 
@@ -142,6 +149,7 @@ export async function processPayoutForClaim(
             gross_amount: amount,
             platform_fee: 0,
             net_amount: amount,
+            currency: sourceCurrency,
             type: TransactionType.BUYER_PAYOUT,
             wise_transfer_id: result.wiseTransferId || undefined,
             status: TransactionStatus.FAILED,

@@ -1,4 +1,5 @@
 import { logger } from '../../utils/logger';
+import { getSpApiConfig } from '../../config/marketplaces';
 
 // SP-API regional endpoints
 const SP_API_ENDPOINTS: Record<string, string> = {
@@ -11,29 +12,6 @@ const SP_API_SANDBOX_ENDPOINTS: Record<string, string> = {
     NA: 'https://sandbox.sellingpartnerapi-na.amazon.com',
     EU: 'https://sandbox.sellingpartnerapi-eu.amazon.com',
     FE: 'https://sandbox.sellingpartnerapi-fe.amazon.com',
-};
-
-// Map campaign region (domain suffix) to SP-API region and marketplace ID
-const REGION_MAP: Record<string, { spApiRegion: string; marketplaceId: string }> = {
-    'com':    { spApiRegion: 'NA', marketplaceId: 'ATVPDKIKX0DER' },     // US
-    'ca':     { spApiRegion: 'NA', marketplaceId: 'A2EUQ1WTGCTBG2' },    // Canada
-    'com.mx': { spApiRegion: 'NA', marketplaceId: 'A1AM78C64UM0Y8' },    // Mexico
-    'com.br': { spApiRegion: 'NA', marketplaceId: 'A2Q3Y263D00KWC' },    // Brazil
-    'co.uk':  { spApiRegion: 'EU', marketplaceId: 'A1F83G8C2ARO7P' },    // UK
-    'de':     { spApiRegion: 'EU', marketplaceId: 'A1PA6795UKMFR9' },    // Germany
-    'fr':     { spApiRegion: 'EU', marketplaceId: 'A13V1IB3VIYZZH' },    // France
-    'it':     { spApiRegion: 'EU', marketplaceId: 'APJ6JRA9NG5V4' },     // Italy
-    'es':     { spApiRegion: 'EU', marketplaceId: 'A1RKKUPIHCS9HS' },    // Spain
-    'nl':     { spApiRegion: 'EU', marketplaceId: 'A1805IZSGTT6HS' },    // Netherlands
-    'se':     { spApiRegion: 'EU', marketplaceId: 'A2NODRKZP88ZB9' },    // Sweden
-    'pl':     { spApiRegion: 'EU', marketplaceId: 'A1C3SOZRARQ6R3' },    // Poland
-    'ae':     { spApiRegion: 'EU', marketplaceId: 'A2VIGQ35RCS4UG' },    // UAE
-    'sa':     { spApiRegion: 'EU', marketplaceId: 'A17E79C6D8DWNP' },    // Saudi Arabia
-    'eg':     { spApiRegion: 'EU', marketplaceId: 'ARBP9OOSHTCHU' },     // Egypt
-    'in':     { spApiRegion: 'EU', marketplaceId: 'A21TJRUUN4KGV' },     // India
-    'jp':     { spApiRegion: 'FE', marketplaceId: 'A1VC38T7YXB528' },    // Japan
-    'com.au': { spApiRegion: 'FE', marketplaceId: 'A39IBJ37TRP1C6' },    // Australia
-    'sg':     { spApiRegion: 'FE', marketplaceId: 'A19VAU5U5O7RUS' },    // Singapore
 };
 
 export interface SPAPIOrderResponse {
@@ -73,7 +51,7 @@ function getBaseUrl(spApiRegion: string): string {
 }
 
 export function getRegionConfig(campaignRegion: string): { spApiRegion: string; marketplaceId: string } | null {
-    return REGION_MAP[campaignRegion] || null;
+    return getSpApiConfig(campaignRegion);
 }
 
 /**

@@ -104,7 +104,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                             </div>
                             <div className="rounded-lg border p-3 text-center">
                                 <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                                <p className="text-base font-semibold">{formatPrice(parseFloat(buyer.total_earnings || '0'), buyer.region || 'com')}</p>
+                                <p className="text-base font-semibold">{formatPrice(parseFloat(buyer.total_earnings || '0'), buyer.region || 'US')}</p>
                                 <p className="text-[11px] text-muted-foreground">Earnings</p>
                             </div>
                             <div className="rounded-lg border p-3 text-center">
@@ -140,7 +140,7 @@ export function BuyerDetailModal({ open, onOpenChange, buyerId }: BuyerDetailMod
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {claim.Campaign?.asin} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), claim.Campaign?.region || 'com')}
+                                                    {claim.Campaign?.asin} · {formatPrice(parseFloat(claim.expected_payout_amount || '0'), claim.Campaign?.region || 'US')}
                                                 </span>
                                                 {claimStatusBadge(claim.order_status, claim.review_status, claim.payout_status)}
                                             </div>

@@ -7,6 +7,7 @@ export interface BillingSummary {
     totalSpent: number;
     totalTransactions: number;
     pendingAmount: number;
+    currency: string;
 }
 
 export interface BillingTransaction {
@@ -14,6 +15,7 @@ export interface BillingTransaction {
     gross_amount: number;
     platform_fee: number;
     net_amount: number;
+    currency: string;
     status: string;
     stripe_transaction_id: string;
     receipt_url: string | null;

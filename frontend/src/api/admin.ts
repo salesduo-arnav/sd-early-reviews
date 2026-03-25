@@ -6,6 +6,7 @@ import type { PaginatedResponse } from './types';
 export type { PaginatedResponse };
 
 export interface AdminMetrics {
+    /** Total platform revenue in USD */
     platformRevenue: number;
     pendingOrderVerifications: number;
     pendingReviewVerifications: number;
@@ -236,6 +237,7 @@ export interface TransactionRow {
     gross_amount: string;
     platform_fee: string;
     net_amount: string;
+    currency: string;
     stripe_transaction_id: string | null;
     wise_transfer_id: string | null;
     receipt_url: string | null;
