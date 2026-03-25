@@ -10,6 +10,7 @@ import transactionRoutes from './transaction.routes';
 import configRoutes from './config.routes';
 import auditLogRoutes from './audit-log.routes';
 import notificationRoutes from './notification.routes';
+import claimRoutes from './claim.routes';
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use('/transactions', transactionRoutes);
 router.use('/config', configRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/claims', claimRoutes);
 
 export default router;

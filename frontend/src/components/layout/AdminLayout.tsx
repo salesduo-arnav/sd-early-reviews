@@ -7,6 +7,7 @@ export function AdminLayout() {
     const navLinks = [
         { label: 'Overview', href: '/admin/overview' },
         { label: 'Verifications', href: '/admin/verifications' },
+        { label: 'Claims', href: '/admin/claims' },
         { label: 'Users', href: '/admin/users' },
         { label: 'Campaigns', href: '/admin/campaigns' },
         { label: 'Payouts', href: '/admin/payouts' },

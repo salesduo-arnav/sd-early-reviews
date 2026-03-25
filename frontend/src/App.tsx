@@ -25,6 +25,7 @@ import AdminVerificationsPage from './pages/admin/AdminVerificationsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminCampaignsPage from './pages/admin/AdminCampaignsPage';
 import AdminPayoutsPage from './pages/admin/AdminPayoutsPage';
+import AdminClaimsPage from './pages/admin/AdminClaimsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 import NotFoundPage from './pages/NotFound';
@@ -90,6 +91,7 @@ function App() {
               <Route index element={<AdminOverviewPage />} />
               <Route path="overview" element={<AdminOverviewPage />} />
               <Route path="verifications" element={<AdminVerificationsPage />} />
+              <Route path="claims" element={<AdminClaimsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="campaigns" element={<AdminCampaignsPage />} />
               <Route path="payouts" element={<AdminPayoutsPage />} />

@@ -143,6 +143,80 @@ export interface CampaignDetailResponse {
     }>;
 }
 
+export interface ClaimRow {
+    id: string;
+    BuyerProfile?: { User?: { full_name: string; email: string }; amazon_profile_url?: string; region?: string };
+    Campaign?: { id: string; product_image_url: string; product_title: string; asin: string; product_price: string; region: string };
+    amazon_order_id: string;
+    purchase_date: string;
+    expected_payout_amount: number;
+    order_status: string;
+    review_status: string;
+    payout_status: string;
+    order_proof_url: string;
+    review_proof_url?: string;
+    review_rating?: number;
+    review_title?: string;
+    review_text?: string;
+    review_date?: string;
+    review_deadline?: string;
+    rejection_reason?: string;
+    verification_method?: string;
+    review_verification_method?: string;
+    payout_method?: string;
+    payout_processed_at?: string;
+    wise_transfer_id?: string;
+    created_at: string;
+}
+
+export interface ClaimDetailResponse {
+    id: string;
+    BuyerProfile?: {
+        User?: { full_name: string; email: string };
+        amazon_profile_url?: string;
+        region?: string;
+        on_time_submission_rate?: number;
+        is_blacklisted?: boolean;
+        total_earnings?: string;
+    };
+    Campaign?: {
+        id: string;
+        product_image_url: string;
+        product_title: string;
+        asin: string;
+        product_price: string;
+        region: string;
+        reimbursement_percent: number;
+        guidelines?: string;
+    };
+    amazon_order_id: string;
+    purchase_date: string;
+    expected_payout_amount: number;
+    order_status: string;
+    review_status: string;
+    payout_status: string;
+    order_proof_url: string;
+    review_proof_url?: string;
+    review_rating?: number;
+    review_title?: string;
+    review_text?: string;
+    review_date?: string;
+    review_deadline?: string;
+    rejection_reason?: string;
+    verification_method?: string;
+    verification_details?: Record<string, unknown>;
+    auto_verified_at?: string;
+    review_verification_method?: string;
+    review_verification_details?: Record<string, unknown>;
+    review_auto_verified_at?: string;
+    review_approved_at?: string;
+    payout_method?: string;
+    payout_processed_at?: string;
+    wise_transfer_id?: string;
+    verified_by_admin_id?: string;
+    created_at: string;
+}
+
 export interface PayoutRow {
     id: string;
     BuyerProfile?: { User?: { full_name: string; email: string }; wise_recipient_id?: string | null; bank_display_label?: string | null };
@@ -229,7 +303,7 @@ export const adminApi = {
         return fetchWithAuth(`/admin/verifications/reviews?${params.toString()}`);
     },
 
-    getClaimDetail: (id: string): Promise<unknown> =>
+    getClaimDetail: (id: string): Promise<ClaimDetailResponse> =>
         fetchWithAuth(`/admin/verifications/${id}`),
 
     verifyOrder: (id: string, action: 'APPROVE' | 'REJECT', reason?: string): Promise<{ message: string }> =>
@@ -243,6 +317,17 @@ export const adminApi = {
             method: 'PATCH',
             body: JSON.stringify({ action, reason }),
         }),
+
+    // Claims
+    getClaims: (page = 1, limit = 10, search?: string, pipeline_stage?: string, order_status?: string, review_status?: string, payout_status?: string): Promise<AdminPaginatedResponse<ClaimRow>> => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (search) params.append('search', search);
+        if (pipeline_stage && pipeline_stage !== 'ALL') params.append('pipeline_stage', pipeline_stage);
+        if (order_status && order_status !== 'ALL') params.append('order_status', order_status);
+        if (review_status && review_status !== 'ALL') params.append('review_status', review_status);
+        if (payout_status && payout_status !== 'ALL') params.append('payout_status', payout_status);
+        return fetchWithAuth(`/admin/claims?${params.toString()}`);
+    },
 
     // Buyers
     getBuyers: (page = 1, limit = 10, search?: string, blacklisted?: string, region?: string): Promise<AdminPaginatedResponse<BuyerRow>> => {
