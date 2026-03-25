@@ -36,6 +36,23 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
             status: CampaignStatus.ACTIVE,
         };
 
+        // Exclude campaigns the buyer has already claimed
+        const userId = req.user?.userId;
+        if (userId) {
+            const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId }, attributes: ['id'] });
+            if (buyerProfile) {
+                const claimedCampaignIds = (await OrderClaim.findAll({
+                    where: { buyer_id: buyerProfile.id },
+                    attributes: ['campaign_id'],
+                    raw: true,
+                })).map(c => c.campaign_id);
+
+                if (claimedCampaignIds.length > 0) {
+                    (where as Record<string, unknown>).id = { [Op.notIn]: claimedCampaignIds };
+                }
+            }
+        }
+
         // Keyword / ASIN search
         if (search && typeof search === 'string' && search.trim()) {
             const term = search.trim();
