@@ -160,6 +160,7 @@
             "search_placeholder": "Buscar por producto, ASIN o ID de pedido...",
             "date_range_placeholder": "Filtrar por rango de fechas",
             "sort_placeholder": "Ordenar por",
+            "filter_title": "Filtros",
 
             "status": {
                 "order_submitted": "Pedido Enviado",
@@ -252,10 +253,16 @@
             "browse_marketplace": "Explora el mercado para encontrar productos y comenzar a ganar reembolsos.",
             "go_to_marketplace": "Explorar Mercado",
 
+            "review_title": "Título de la Reseña",
+            "review_title_placeholder": "Pega el título de tu reseña de Amazon aquí...",
+            "review_url_help": "Pega la URL de tu reseña de Amazon. Esto se usa para verificar automáticamente tu reseña.",
+
             "validation": {
                 "select_rating": "Por favor selecciona una calificación",
                 "review_min_length": "La reseña debe tener al menos 10 caracteres",
-                "screenshot_required": "Se requiere captura de pantalla de la reseña"
+                "screenshot_required": "Se requiere captura de pantalla de la reseña",
+                "review_title_required": "El título de la reseña es obligatorio",
+                "review_url_required": "La URL de la reseña de Amazon es obligatoria para la verificación"
             }
         },
         "account": {

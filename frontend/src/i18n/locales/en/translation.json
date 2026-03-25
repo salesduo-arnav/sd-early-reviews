@@ -160,6 +160,7 @@
             "search_placeholder": "Search by product, ASIN, or order ID...",
             "date_range_placeholder": "Filter by date range",
             "sort_placeholder": "Sort by",
+            "filter_title": "Filters",
 
             "status": {
                 "order_submitted": "Order Submitted",
@@ -252,10 +253,16 @@
             "browse_marketplace": "Browse the marketplace to find products and start earning reimbursements.",
             "go_to_marketplace": "Browse Marketplace",
 
+            "review_title": "Review Title",
+            "review_title_placeholder": "Paste the title/headline of your Amazon review...",
+            "review_url_help": "Paste the URL of your review from Amazon. This is used to automatically verify your review.",
+
             "validation": {
                 "select_rating": "Please select a rating",
                 "review_min_length": "Review must be at least 10 characters",
-                "screenshot_required": "Review screenshot is required"
+                "screenshot_required": "Review screenshot is required",
+                "review_title_required": "Review title is required",
+                "review_url_required": "Amazon Review URL is required for verification"
             }
         },
         "account": {
