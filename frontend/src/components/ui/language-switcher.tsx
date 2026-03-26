@@ -16,18 +16,18 @@ import {
 const LANGUAGE_NAMES: Record<string, string> = {
     en: 'English',
     es: 'Español',
-    fr: 'Français',
+    ar: 'العربية',
     de: 'Deutsch',
-    ja: '日本語',
-    zh: '中文',
-    pt: 'Português',
+    fr: 'Français',
+    hi: 'हिन्दी',
     it: 'Italiano',
+    ja: '日本語',
     nl: 'Nederlands',
     pl: 'Polski',
+    pt: 'Português',
     sv: 'Svenska',
     tr: 'Türkçe',
-    ar: 'العربية',
-    hi: 'हिन्दी'
+    'zh-CN': '中文',
 };
 
 interface LanguageSwitcherProps {
@@ -42,8 +42,12 @@ export const LanguageSwitcher = ({ variant = 'icon' }: LanguageSwitcherProps) =>
     };
 
     // Extract supported languages from i18n config
-    const supportedLanguages = Object.keys(i18n.options.resources || { en: {}, es: {} });
-    const currentLangCode = i18n.language ? i18n.language.split('-')[0] : 'en';
+    const supportedLanguages = Object.keys(i18n.options.resources || { en: {} });
+    const resolvedLang = i18n.language || 'en';
+    // Match against supported languages first (e.g. zh-CN), then fall back to base code
+    const currentLangCode = supportedLanguages.includes(resolvedLang)
+        ? resolvedLang
+        : supportedLanguages.find((l) => l.startsWith(resolvedLang.split('-')[0])) || 'en';
 
     if (variant === 'menu-item') {
         return (
