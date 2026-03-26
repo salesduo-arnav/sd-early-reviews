@@ -50,7 +50,7 @@ export default function CampaignsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
         loadCampaigns(currentPage);

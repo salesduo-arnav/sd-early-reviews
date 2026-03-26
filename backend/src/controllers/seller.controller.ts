@@ -4,7 +4,6 @@ import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
 import sequelize from '../config/db';
 import { Transaction, TransactionStatus } from '../models/Transaction';
-import { SellerProfile } from '../models/SellerProfile';
 import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { toUSD } from '../services/exchange-rate.service';
