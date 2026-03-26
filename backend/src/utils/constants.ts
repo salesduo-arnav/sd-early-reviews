@@ -36,6 +36,11 @@ export const SYSTEM_CONFIGS = {
         defaultValue: '{"USD":100,"GBP":80,"EUR":90,"INR":8000,"JPY":15000,"AUD":150,"CAD":135,"BRL":500,"MXN":2000,"SGD":135,"AED":365,"SAR":375,"PLN":400,"SEK":1050}',
         description: 'Per-currency max payout amount for auto-payout (JSON map of currency code to amount). Claims above the limit for their currency require manual admin approval.',
     },
+    NEW_CAMPAIGN_NOTIFICATIONS: {
+        key: 'new_campaign_notifications_enabled',
+        defaultValue: 'false',
+        description: 'Enable or disable buyer notifications when new campaigns match their interests',
+    },
 } as const;
 
 // Flat config key lookup derived from SYSTEM_CONFIGS (zero duplication)

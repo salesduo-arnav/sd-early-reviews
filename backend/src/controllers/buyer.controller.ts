@@ -12,6 +12,8 @@ import { NotificationCategory } from '../models/Notification';
 import { startOfDay, endOfDay } from 'date-fns';
 import { attemptAutoReviewVerification } from '../services/verification';
 import { resolveBuyerProfileId } from '../utils/profileResolvers';
+import { SystemConfig } from '../models/SystemConfig';
+import { CONFIG_KEYS } from '../utils/constants';
 
 // Derive a user-friendly pipeline status from the three internal status fields
 function derivePipelineStatus(orderStatus: string, reviewStatus: string, payoutStatus: string): string {
@@ -408,7 +410,10 @@ export const getAccountProfile = async (req: Request, res: Response) => {
         const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
         if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
 
-        const user = await User.findByPk(userId, { attributes: ['email'] });
+        const [user, campaignAlertsConfig] = await Promise.all([
+            User.findByPk(userId, { attributes: ['email'] }),
+            SystemConfig.findByPk(CONFIG_KEYS.NEW_CAMPAIGN_NOTIFICATIONS),
+        ]);
 
         // Compute claims_completed (payout processed)
         const claimsCompleted = await OrderClaim.count({
@@ -444,6 +449,9 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             payout_country: profile.payout_country || null,
             bank_display_label: profile.bank_display_label || null,
             email_notifications_enabled: profile.email_notifications_enabled,
+            new_campaign_notifications_enabled: profile.new_campaign_notifications_enabled,
+            interested_categories: profile.interested_categories ?? null,
+            campaign_alerts_globally_enabled: campaignAlertsConfig?.value === 'true',
             is_blacklisted: profile.is_blacklisted,
             blacklist_reason: profile.blacklist_reason || null,
         });
@@ -674,15 +682,44 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
         const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
         if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
 
-        const { email_notifications_enabled } = req.body;
+        const { email_notifications_enabled, new_campaign_notifications_enabled, interested_categories } = req.body;
 
-        if (typeof email_notifications_enabled !== 'boolean') {
-            return res.status(400).json({ message: 'email_notifications_enabled must be a boolean' });
+        // Validate provided fields
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateFields: Record<string, any> = {};
+
+        if (email_notifications_enabled !== undefined) {
+            if (typeof email_notifications_enabled !== 'boolean') {
+                return res.status(400).json({ message: 'email_notifications_enabled must be a boolean' });
+            }
+            updateFields.email_notifications_enabled = email_notifications_enabled;
         }
 
-        await profile.update({ email_notifications_enabled });
+        if (new_campaign_notifications_enabled !== undefined) {
+            if (typeof new_campaign_notifications_enabled !== 'boolean') {
+                return res.status(400).json({ message: 'new_campaign_notifications_enabled must be a boolean' });
+            }
+            updateFields.new_campaign_notifications_enabled = new_campaign_notifications_enabled;
+        }
 
-        return res.status(200).json({ email_notifications_enabled: profile.email_notifications_enabled });
+        if (interested_categories !== undefined) {
+            if (!Array.isArray(interested_categories) || !interested_categories.every((c: unknown) => typeof c === 'string')) {
+                return res.status(400).json({ message: 'interested_categories must be an array of strings' });
+            }
+            updateFields.interested_categories = interested_categories;
+        }
+
+        if (Object.keys(updateFields).length === 0) {
+            return res.status(400).json({ message: 'At least one preference field is required' });
+        }
+
+        await profile.update(updateFields);
+
+        return res.status(200).json({
+            email_notifications_enabled: profile.email_notifications_enabled,
+            new_campaign_notifications_enabled: profile.new_campaign_notifications_enabled,
+            interested_categories: profile.interested_categories ?? null,
+        });
     } catch (error) {
         logger.error(`Error updating notification preferences: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while updating notification preferences' });

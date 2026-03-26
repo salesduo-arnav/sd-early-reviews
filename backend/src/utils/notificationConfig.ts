@@ -9,6 +9,12 @@ export interface CategoryConfig {
 
 export const NOTIFICATION_CATEGORY_CONFIG: Record<NotificationCategory, CategoryConfig> = {
     // BUYER FACING
+    [NotificationCategory.NEW_CAMPAIGN_MATCH]: {
+        defaultTitle: 'New Campaign Available',
+        defaultPriority: NotificationPriority.HIGH,
+        actionRoute: '/buyer/marketplace',
+        sendEmail: true,
+    },
     [NotificationCategory.ORDER_APPROVED]: {
         defaultTitle: 'Order Approved',
         defaultPriority: NotificationPriority.MEDIUM,

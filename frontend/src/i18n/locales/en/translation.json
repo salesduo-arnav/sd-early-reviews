@@ -329,7 +329,22 @@
                 "email_description": "Receive email alerts for order updates, review approvals, and payouts",
                 "enabled_success": "Email notifications enabled",
                 "disabled_success": "Email notifications disabled",
-                "toggle_error": "Failed to update preference"
+                "toggle_error": "Failed to update preference",
+                "campaign_alerts_label": "New Campaign Alerts",
+                "campaign_alerts_description": "Get notified when new campaigns go live on the marketplace",
+                "campaign_alerts_disabled": "Campaign alerts are currently disabled by the platform. No notifications will be sent.",
+                "campaign_enabled_success": "Campaign notifications enabled",
+                "campaign_disabled_success": "Campaign notifications disabled",
+                "interests_label": "Category Filter",
+                "interests_all": "You are subscribed to all categories. Select specific ones to narrow down.",
+                "interests_filtered": "You will only be notified for the selected categories.",
+                "interests_all_label": "All categories",
+                "interests_selected": "{{count}} of {{total}} categories",
+                "interests_placeholder": "Select categories...",
+                "interests_search": "Search categories...",
+                "interests_empty": "No categories found",
+                "interests_updated": "Category interests updated",
+                "reset_all": "Reset to all"
             }
         }
     },

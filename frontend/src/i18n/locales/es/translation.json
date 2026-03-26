@@ -329,7 +329,22 @@
                 "email_description": "Recibe alertas por correo sobre actualizaciones de pedidos, aprobaciones de reseñas y pagos",
                 "enabled_success": "Notificaciones por correo activadas",
                 "disabled_success": "Notificaciones por correo desactivadas",
-                "toggle_error": "Error al actualizar preferencia"
+                "toggle_error": "Error al actualizar preferencia",
+                "campaign_alerts_label": "Alertas de Nuevas Campañas",
+                "campaign_alerts_description": "Recibe notificaciones cuando nuevas campañas estén disponibles en el marketplace",
+                "campaign_alerts_disabled": "Las alertas de campañas están desactivadas por la plataforma. No se enviarán notificaciones.",
+                "campaign_enabled_success": "Notificaciones de campañas activadas",
+                "campaign_disabled_success": "Notificaciones de campañas desactivadas",
+                "interests_label": "Filtro de Categorías",
+                "interests_all": "Estás suscrito a todas las categorías. Selecciona específicas para filtrar.",
+                "interests_filtered": "Solo recibirás notificaciones de las categorías seleccionadas.",
+                "interests_all_label": "Todas las categorías",
+                "interests_selected": "{{count}} de {{total}} categorías",
+                "interests_placeholder": "Seleccionar categorías...",
+                "interests_search": "Buscar categorías...",
+                "interests_empty": "No se encontraron categorías",
+                "interests_updated": "Intereses de categorías actualizados",
+                "reset_all": "Restablecer todas"
             }
         }
     },

@@ -17,10 +17,12 @@ interface BuyerProfileAttributes {
     blacklisted_by?: string | null;
     total_earnings: number;
     email_notifications_enabled: boolean;
+    new_campaign_notifications_enabled: boolean;
+    interested_categories: string[] | null;
     deleted_at?: Date;
 }
 
-type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'blacklist_reason' | 'blacklisted_at' | 'blacklisted_by' | 'total_earnings' | 'email_notifications_enabled' | 'wise_recipient_id' | 'payout_currency' | 'payout_country' | 'bank_display_label' | 'deleted_at'>;
+type BuyerProfileCreationAttributes = Optional<BuyerProfileAttributes, 'id' | 'on_time_submission_rate' | 'is_blacklisted' | 'blacklist_reason' | 'blacklisted_at' | 'blacklisted_by' | 'total_earnings' | 'email_notifications_enabled' | 'new_campaign_notifications_enabled' | 'interested_categories' | 'wise_recipient_id' | 'payout_currency' | 'payout_country' | 'bank_display_label' | 'deleted_at'>;
 
 export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCreationAttributes> implements BuyerProfileAttributes {
     public id!: string;
@@ -38,6 +40,8 @@ export class BuyerProfile extends Model<BuyerProfileAttributes, BuyerProfileCrea
     public blacklisted_by!: string | null;
     public total_earnings!: number;
     public email_notifications_enabled!: boolean;
+    public new_campaign_notifications_enabled!: boolean;
+    public interested_categories!: string[] | null;
     public deleted_at!: Date;
 }
 
@@ -109,6 +113,16 @@ BuyerProfile.init(
             type: DataTypes.BOOLEAN,
             defaultValue: true,
             allowNull: false,
+        },
+        new_campaign_notifications_enabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: false,
+        },
+        interested_categories: {
+            type: DataTypes.JSONB,
+            defaultValue: null,
+            allowNull: true,
         },
         deleted_at: {
             type: DataTypes.DATE,

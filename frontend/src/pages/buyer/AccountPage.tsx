@@ -17,11 +17,16 @@ export default function AccountPage() {
     const { t } = useTranslation();
     const [profile, setProfile] = useState<BuyerProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
     const fetchProfile = useCallback(async () => {
         try {
-            const data = await buyerApi.getAccountProfile();
+            const [data, filters] = await Promise.all([
+                buyerApi.getAccountProfile(),
+                buyerApi.getFilters(),
+            ]);
             setProfile(data);
+            setAvailableCategories(filters.categories);
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {
@@ -34,18 +39,44 @@ export default function AccountPage() {
     }, [fetchProfile]);
 
     const handleNotificationToggle = async (enabled: boolean) => {
-        // Optimistic update
         const previous = profile?.email_notifications_enabled;
         setProfile((prev) => prev ? { ...prev, email_notifications_enabled: enabled } : prev);
 
         try {
-            await buyerApi.updateNotificationPreferences(enabled);
+            await buyerApi.updateNotificationPreferences({ email_notifications_enabled: enabled });
             toast.success(enabled
                 ? t('buyer.account.notifications.enabled_success', 'Email notifications enabled')
                 : t('buyer.account.notifications.disabled_success', 'Email notifications disabled'));
         } catch (err) {
-            // Rollback
             setProfile((prev) => prev ? { ...prev, email_notifications_enabled: previous ?? true } : prev);
+            toast.error(getErrorMessage(err));
+        }
+    };
+
+    const handleCampaignNotificationToggle = async (enabled: boolean) => {
+        const previous = profile?.new_campaign_notifications_enabled;
+        setProfile((prev) => prev ? { ...prev, new_campaign_notifications_enabled: enabled } : prev);
+
+        try {
+            await buyerApi.updateNotificationPreferences({ new_campaign_notifications_enabled: enabled });
+            toast.success(enabled
+                ? t('buyer.account.notifications.campaign_enabled_success', 'Campaign notifications enabled')
+                : t('buyer.account.notifications.campaign_disabled_success', 'Campaign notifications disabled'));
+        } catch (err) {
+            setProfile((prev) => prev ? { ...prev, new_campaign_notifications_enabled: previous ?? true } : prev);
+            toast.error(getErrorMessage(err));
+        }
+    };
+
+    const handleUpdateInterests = async (categories: string[] | null) => {
+        const previous = profile?.interested_categories;
+        setProfile((prev) => prev ? { ...prev, interested_categories: categories } : prev);
+
+        try {
+            await buyerApi.updateNotificationPreferences({ interested_categories: categories });
+            toast.success(t('buyer.account.notifications.interests_updated', 'Category interests updated'));
+        } catch (err) {
+            setProfile((prev) => prev ? { ...prev, interested_categories: previous ?? null } : prev);
             toast.error(getErrorMessage(err));
         }
     };
@@ -108,9 +139,15 @@ export default function AccountPage() {
 
                     {/* Notification Preferences */}
                     <NotificationPreferencesSection
-                        enabled={profile?.email_notifications_enabled ?? true}
+                        emailEnabled={profile?.email_notifications_enabled ?? true}
+                        campaignNotificationsEnabled={profile?.new_campaign_notifications_enabled ?? true}
+                        campaignAlertsGloballyEnabled={profile?.campaign_alerts_globally_enabled ?? false}
+                        interestedCategories={profile?.interested_categories ?? null}
+                        availableCategories={availableCategories}
                         loading={loading}
-                        onToggle={handleNotificationToggle}
+                        onToggleEmail={handleNotificationToggle}
+                        onToggleCampaignNotifications={handleCampaignNotificationToggle}
+                        onUpdateInterests={handleUpdateInterests}
                     />
                 </div>
 
