@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, DollarSign, ClipboardCheck, TrendingUp } from 'lucide-react';
 import type { BuyerProfile } from '@/api/buyer';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 interface ProfileStatsSectionProps {
     profile: BuyerProfile | null;
@@ -24,7 +25,7 @@ export default function ProfileStatsSection({ profile, loading }: ProfileStatsSe
         {
             icon: DollarSign,
             title: t('buyer.account.stats.total_earnings', 'Total Earnings'),
-            value: profile ? `$${profile.total_earnings.toFixed(2)}` : '—',
+            value: profile ? formatPriceByCurrency(profile.total_earnings, 'USD') : '—',
             desc: t('buyer.account.stats.total_earnings_desc', 'Reimbursements received'),
             iconColor: 'text-green-600',
             iconBg: 'bg-green-50',

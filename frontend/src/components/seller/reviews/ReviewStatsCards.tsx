@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, CheckCircle, Clock, Star } from 'lucide-react';
 import { dashboardApi, SellerReviewStats } from '@/api/seller';
+import { getErrorMessage } from '@/lib/errors';
 
 export function ReviewStatsCards() {
     const { t } = useTranslation();
@@ -16,8 +17,7 @@ export function ReviewStatsCards() {
                 const data = await dashboardApi.getSellerReviewStats();
                 setStats(data);
             } catch (err: unknown) {
-                console.error('Failed to fetch review stats', err);
-                setError('Failed to load review statistics.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }

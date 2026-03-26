@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import path from 'path';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
@@ -57,7 +57,7 @@ export async function deleteFileFromS3(fileUrl: string): Promise<void> {
 
         logger.info(`File deleted from S3: ${key}`);
     } catch (error) {
-        logger.error(`Failed to delete file from S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Failed to delete file from S3: ${formatError(error)}`);
         throw error;
     }
 }

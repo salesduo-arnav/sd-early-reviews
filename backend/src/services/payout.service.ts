@@ -3,9 +3,12 @@ import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';
 import { sendPayout, regionToCurrency } from './wise.service';
+import { formatAmountWithCurrency } from '../config/marketplaces';
+import { toUSD } from './exchange-rate.service';
 import { notificationService } from './notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { logAdminAction } from '../utils/auditLog';
+import { ADMIN_ACTIONS } from '../utils/constants';
 import { logger } from '../utils/logger';
 
 export interface PayoutProcessResult {
@@ -28,7 +31,7 @@ export async function processPayoutForClaim(
     adminId?: string,
     ipAddress?: string,
 ): Promise<PayoutProcessResult> {
-    // ── Step 1: Atomically claim the row ─────────────────────────────────
+    // Step 1: Atomically claim the row
     const [affectedCount] = await OrderClaim.update(
         { payout_status: PayoutStatus.PROCESSING },
         { where: { id: claimId, payout_status: PayoutStatus.PENDING } },
@@ -38,7 +41,7 @@ export async function processPayoutForClaim(
         return { success: false, claimId, reason: 'Already processing or not in PENDING status' };
     }
 
-    // ── Step 2: Load claim with associations ─────────────────────────────
+    // Step 2: Load claim with associations
     // Wrap everything in try/catch so PROCESSING never gets stuck
     try {
     const claim = await OrderClaim.findByPk(claimId, {
@@ -62,15 +65,15 @@ export async function processPayoutForClaim(
     const buyerProfile = claimData.BuyerProfile;
     const campaign = claimData.Campaign;
 
-    // ── Step 3: Verify buyer has bank account connected ──────────────────
+    // Step 3: Verify buyer has bank account connected
     if (!buyerProfile?.wise_recipient_id) {
         // Set back to PENDING so cron can retry later when buyer connects bank
         await claim.update({ payout_status: PayoutStatus.PENDING });
         return { success: false, claimId, reason: 'Buyer has no bank account connected' };
     }
 
-    // ── Step 4: Call Wise to send payout ─────────────────────────────────
-    const sourceCurrency = regionToCurrency(campaign?.region || 'com');
+    // Step 4: Call Wise to send payout
+    const sourceCurrency = regionToCurrency(campaign?.region || 'US');
     const amount = parseFloat(String(claim.expected_payout_amount));
 
     const result = await sendPayout(
@@ -80,7 +83,7 @@ export async function processPayoutForClaim(
         claimId,
     );
 
-    // ── Step 5: Update claim based on result ─────────────────────────────
+    // Step 5: Update claim based on result
     if (result.success) {
         await claim.update({
             payout_status: PayoutStatus.PROCESSED,
@@ -95,13 +98,15 @@ export async function processPayoutForClaim(
             gross_amount: amount,
             platform_fee: 0,
             net_amount: amount,
+            currency: sourceCurrency,
             type: TransactionType.BUYER_PAYOUT,
             wise_transfer_id: result.wiseTransferId || undefined,
             status: TransactionStatus.SUCCESS,
         });
 
-        // Update buyer's total_earnings
-        const newEarnings = parseFloat(String(buyerProfile.total_earnings)) + amount;
+        // Update buyer's total_earnings in USD (base currency) for consistent aggregation.
+        const earnedAmountUSD = await toUSD(amount, sourceCurrency);
+        const newEarnings = parseFloat(String(buyerProfile.total_earnings)) + earnedAmountUSD;
         await BuyerProfile.update(
             { total_earnings: newEarnings },
             { where: { id: buyerProfile.id } },
@@ -109,8 +114,11 @@ export async function processPayoutForClaim(
 
         // Send success notification
         const productTitle = campaign?.product_title || 'your product';
+        const displayCurrency = result.targetCurrency || sourceCurrency;
+        const displayAmount = result.targetAmount ?? amount;
+        const formattedAmount = formatAmountWithCurrency(displayAmount, displayCurrency);
         notificationService.send(buyerProfile.user_id, NotificationCategory.PAYOUT_PROCESSED, {
-            message: `Your reimbursement of ${sourceCurrency} ${amount.toFixed(2)} for "${productTitle}" has been sent to your bank account.`,
+            message: `Your reimbursement of ${formattedAmount} for "${productTitle}" has been sent to your bank account.`,
             actionLink: '/buyer/account',
         }).catch(err => logger.error('Failed to send payout success notification', { err }));
 
@@ -118,7 +126,7 @@ export async function processPayoutForClaim(
         if (method === 'MANUAL' && adminId) {
             await logAdminAction(
                 adminId,
-                'PAYOUT_PROCESSED',
+                ADMIN_ACTIONS.PAYOUT_PROCESSED,
                 claimId,
                 'ORDER_CLAIM',
                 JSON.stringify({ method, amount, wise_transfer_id: result.wiseTransferId }),
@@ -141,6 +149,7 @@ export async function processPayoutForClaim(
             gross_amount: amount,
             platform_fee: 0,
             net_amount: amount,
+            currency: sourceCurrency,
             type: TransactionType.BUYER_PAYOUT,
             wise_transfer_id: result.wiseTransferId || undefined,
             status: TransactionStatus.FAILED,
@@ -157,7 +166,7 @@ export async function processPayoutForClaim(
         if (method === 'MANUAL' && adminId) {
             await logAdminAction(
                 adminId,
-                'PAYOUT_FAILED',
+                ADMIN_ACTIONS.PAYOUT_FAILED,
                 claimId,
                 'ORDER_CLAIM',
                 JSON.stringify({ method, amount, error: result.error }),

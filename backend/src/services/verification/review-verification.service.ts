@@ -3,7 +3,8 @@ import { PayoutStatus } from '../../models/OrderClaim';
 import { Campaign } from '../../models/Campaign';
 import { BuyerProfile } from '../../models/BuyerProfile';
 import { SystemConfig } from '../../models/SystemConfig';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
+import { VERIFICATION_METHOD } from '../../utils/constants';
 import { fetchProfileReviews, ProfileReview } from '../amazon.service';
 import { extractReviewId, computeTextSimilarity } from '../../utils/reviewVerification';
 import { notificationService } from '../notification.service';
@@ -145,7 +146,7 @@ export async function attemptAutoReviewVerification(
             await claim.update({
                 review_status: ReviewStatus.APPROVED,
                 payout_status: PayoutStatus.PENDING,
-                review_verification_method: 'AUTO_PROFILE_SCRAPE',
+                review_verification_method: VERIFICATION_METHOD.AUTO_PROFILE_SCRAPE,
                 review_auto_verified_at: approvedAt,
                 review_approved_at: approvedAt,
             });
@@ -164,7 +165,7 @@ export async function attemptAutoReviewVerification(
 
             return {
                 autoVerified: true,
-                method: 'AUTO_PROFILE_SCRAPE',
+                method: VERIFICATION_METHOD.AUTO_PROFILE_SCRAPE,
                 matchedReviewId: submittedReviewId,
                 confidence: confidence.total,
             };
@@ -189,7 +190,7 @@ export async function attemptAutoReviewVerification(
         // Graceful fallback: any exception means manual review
         logger.warn('Review auto-verification encountered an error, falling back to manual', {
             claimId: claim.id,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: formatError(error),
         });
 
         return { autoVerified: false, method: 'MANUAL' };

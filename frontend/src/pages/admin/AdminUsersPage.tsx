@@ -3,12 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BuyersTable } from '@/components/admin/buyers/BuyersTable';
 import { SellersTable } from '@/components/admin/sellers/SellersTable';
 import { Users } from 'lucide-react';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function AdminUsersPage() {
     const [activeTab, setActiveTab] = useState('buyers');
 
     return (
         <div className="space-y-6">
+            <PageMeta title="User Management" description="Manage buyers, sellers, and user accounts on the SalesDuo Early Reviews platform." />
             <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 text-indigo-600">
                     <Users className="h-6 w-6" />

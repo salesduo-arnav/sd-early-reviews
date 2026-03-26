@@ -3,7 +3,7 @@ import { User } from '../models/User';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { NOTIFICATION_CATEGORY_CONFIG } from '../utils/notificationConfig';
 import { mailService } from './mail.service';
-import { getNotificationEmail } from '../utils/mailTemplates';
+import { getNotificationEmail, type CampaignEmailData, getNewCampaignEmail } from '../utils/mailTemplates';
 import { logger } from '../utils/logger';
 import { Op } from 'sequelize';
 
@@ -17,6 +17,8 @@ export interface NotificationOverrides {
     message?: string;
     actionLink?: string;
     priority?: NotificationPriority;
+    /** When provided, overrides the default notification email with a custom template */
+    campaignEmailData?: CampaignEmailData;
 }
 
 
@@ -59,7 +61,7 @@ class NotificationService {
             const emailOptedOut = buyerProfile && buyerProfile.email_notifications_enabled === false;
 
             if (!emailOptedOut) {
-                this.sendNotificationEmail(userId, title, overrides.message, actionLink).catch((err) => {
+                this.sendNotificationEmail(userId, title, overrides.message, actionLink, overrides.campaignEmailData).catch((err) => {
                     logger.error('Failed to send notification email', { userId, category, error: err });
                 });
             }
@@ -153,6 +155,7 @@ class NotificationService {
         title: string,
         message: string,
         actionLink?: string,
+        campaignEmailData?: CampaignEmailData,
     ): Promise<void> {
         const user = await User.findByPk(userId);
         if (!user) {
@@ -160,7 +163,9 @@ class NotificationService {
             return;
         }
 
-        const emailContent = getNotificationEmail(title, message, actionLink);
+        const emailContent = campaignEmailData
+            ? getNewCampaignEmail(campaignEmailData)
+            : getNotificationEmail(title, message, actionLink);
         await mailService.sendMail({
             to: user.email,
             ...emailContent,

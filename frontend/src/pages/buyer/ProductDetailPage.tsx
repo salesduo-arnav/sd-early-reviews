@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageMeta } from '@/components/PageMeta';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -89,7 +90,7 @@ export default function ProductDetailPage() {
     }, [fetchProduct]);
 
     const handleClaimSuccess = () => {
-        fetchProduct();
+        navigate('/buyer/claims');
     };
 
     if (isLoading || !product) {
@@ -107,6 +108,7 @@ export default function ProductDetailPage() {
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <PageMeta title={product.title || 'Product Details'} description={`Claim ${product.title} and get reimbursed for your honest review. ${product.reimbursement_pct}% reimbursement available.`} />
             {/* Back button + header */}
             <div className="flex items-center gap-4">
                 <Button

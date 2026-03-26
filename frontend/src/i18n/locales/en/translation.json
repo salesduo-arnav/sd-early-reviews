@@ -160,6 +160,7 @@
             "search_placeholder": "Search by product, ASIN, or order ID...",
             "date_range_placeholder": "Filter by date range",
             "sort_placeholder": "Sort by",
+            "filter_title": "Filters",
 
             "status": {
                 "order_submitted": "Order Submitted",
@@ -252,10 +253,16 @@
             "browse_marketplace": "Browse the marketplace to find products and start earning reimbursements.",
             "go_to_marketplace": "Browse Marketplace",
 
+            "review_title": "Review Title",
+            "review_title_placeholder": "Paste the title/headline of your Amazon review...",
+            "review_url_help": "Paste the URL of your review from Amazon. This is used to automatically verify your review.",
+
             "validation": {
                 "select_rating": "Please select a rating",
                 "review_min_length": "Review must be at least 10 characters",
-                "screenshot_required": "Review screenshot is required"
+                "screenshot_required": "Review screenshot is required",
+                "review_title_required": "Review title is required",
+                "review_url_required": "Amazon Review URL is required for verification"
             }
         },
         "account": {
@@ -302,6 +309,12 @@
                 "removed_success": "Bank details removed",
                 "save_error": "Failed to update bank details",
                 "remove_error": "Failed to remove bank details",
+                "connected_badge": "Connected",
+                "disconnect_confirm": "Disconnect",
+                "transfer_method": "Transfer method",
+                "secured_by_wise": "Secured by Wise",
+                "update_account": "Update Account",
+                "connect_account": "Connect Account",
                 "validation": {
                     "name_min": "Name must be at least 2 characters",
                     "name_max": "Name must be at most 100 characters",
@@ -316,7 +329,22 @@
                 "email_description": "Receive email alerts for order updates, review approvals, and payouts",
                 "enabled_success": "Email notifications enabled",
                 "disabled_success": "Email notifications disabled",
-                "toggle_error": "Failed to update preference"
+                "toggle_error": "Failed to update preference",
+                "campaign_alerts_label": "New Campaign Alerts",
+                "campaign_alerts_description": "Get notified when new campaigns go live on the marketplace",
+                "campaign_alerts_disabled": "Campaign alerts are currently disabled by the platform. No notifications will be sent.",
+                "campaign_enabled_success": "Campaign notifications enabled",
+                "campaign_disabled_success": "Campaign notifications disabled",
+                "interests_label": "Category Filter",
+                "interests_all": "You are subscribed to all categories. Select specific ones to narrow down.",
+                "interests_filtered": "You will only be notified for the selected categories.",
+                "interests_all_label": "All categories",
+                "interests_selected": "{{count}} of {{total}} categories",
+                "interests_placeholder": "Select categories...",
+                "interests_search": "Search categories...",
+                "interests_empty": "No categories found",
+                "interests_updated": "Category interests updated",
+                "reset_all": "Reset to all"
             }
         }
     },
@@ -415,6 +443,9 @@
                 "fetch": "Fetch Details",
                 "asin_help": "Enter the 10-character Amazon Standard Identification Number.",
                 "matched_product": "Matched Product",
+                "lookup_failed": "Product Lookup Failed",
+                "asin_not_found": "This ASIN was not found in the selected marketplace. Please double-check the ASIN and region.",
+                "incomplete_data": "Product data appears incomplete — the price is unavailable or zero. Please try a different ASIN.",
                 "target_reviews": "Target Number of Reviews",
                 "target_desc": "How many units would you like to distribute for this campaign?",
                 "reimbursement": "Reimbursement Percentage",
@@ -647,19 +678,26 @@
         "seller_feature_2_title": "Launch Campaigns",
         "seller_feature_2_desc": "Create targeted review campaigns in minutes and watch your rankings climb.",
         "countries": {
-            "ca": "Canada",
-            "cn": "China",
-            "eg": "Egypt",
-            "fr": "France",
-            "de": "Germany",
-            "in": "India",
-            "it": "Italy",
-            "jp": "Japan",
-            "sa": "Saudi Arabia",
-            "es": "Spain",
-            "ae": "UAE",
-            "co.uk": "United Kingdom",
-            "com": "United States"
+            "US": "United States",
+            "CA": "Canada",
+            "MX": "Mexico",
+            "BR": "Brazil",
+            "GB": "United Kingdom",
+            "DE": "Germany",
+            "FR": "France",
+            "IT": "Italy",
+            "ES": "Spain",
+            "NL": "Netherlands",
+            "SE": "Sweden",
+            "PL": "Poland",
+            "AE": "UAE",
+            "SA": "Saudi Arabia",
+            "EG": "Egypt",
+            "IN": "India",
+            "JP": "Japan",
+            "AU": "Australia",
+            "SG": "Singapore",
+            "CN": "China"
         }
     }
 }

@@ -1,11 +1,13 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User } from 'lucide-react';
+import { User, ExternalLink } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type TransactionRow } from '@/api/admin';
 import { format } from 'date-fns';
+import { useAdminTable } from '@/hooks/use-admin-table';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 const typeBadge = (type: string) => {
     switch (type) {
@@ -25,32 +27,17 @@ const statusBadge = (status: string) => {
     }
 };
 
-interface TransactionUser { full_name: string; email: string; }
-interface TransactionRow {
-    id: string; User?: TransactionUser; type: string; gross_amount: string;
-    platform_fee: string; net_amount: string; stripe_transaction_id: string;
-    status: string; created_at: string;
-}
-
 export function TransactionsTable() {
-    const [data, setData] = useState<TransactionRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('ALL');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getTransactions(pagination.pageIndex + 1, pagination.pageSize, typeFilter, statusFilter, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, typeFilter, statusFilter]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getTransactions(page, size, typeFilter, statusFilter, search),
+        [typeFilter, statusFilter],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery } = useAdminTable<TransactionRow>({ fetchFn });
 
     const columns = useMemo<ColumnDef<TransactionRow, unknown>[]>(() => [
         {
@@ -76,31 +63,60 @@ export function TransactionsTable() {
         {
             accessorKey: 'gross_amount',
             header: () => <DataTableStaticHeader title="Gross" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">${parseFloat(row.original.gross_amount).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPriceByCurrency(parseFloat(row.original.gross_amount), row.original.currency || 'USD')}</span>,
         },
         {
             accessorKey: 'platform_fee',
             header: () => <DataTableStaticHeader title="Fee" />,
-            cell: ({ row }) => <span className="text-muted-foreground">${parseFloat(row.original.platform_fee).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{formatPriceByCurrency(parseFloat(row.original.platform_fee), row.original.currency || 'USD')}</span>,
         },
         {
             accessorKey: 'net_amount',
             header: () => <DataTableStaticHeader title="Net" />,
-            cell: ({ row }) => <span className="font-semibold text-foreground">${parseFloat(row.original.net_amount).toFixed(2)}</span>,
+            cell: ({ row }) => <span className="font-semibold text-foreground">{formatPriceByCurrency(parseFloat(row.original.net_amount), row.original.currency || 'USD')}</span>,
         },
         {
-            accessorKey: 'stripe_transaction_id',
-            header: () => <DataTableStaticHeader title="Stripe ID" />,
-            cell: ({ row }) => (
-                <span className="font-mono text-xs text-muted-foreground">
-                    {row.original.stripe_transaction_id}
-                </span>
-            ),
+            id: 'reference',
+            header: () => <DataTableStaticHeader title="Reference" />,
+            cell: ({ row }) => {
+                const { stripe_transaction_id, wise_transfer_id, type } = row.original;
+                const id = type === 'BUYER_PAYOUT' || type === 'REFUND' ? wise_transfer_id : stripe_transaction_id;
+                const label = type === 'BUYER_PAYOUT' || type === 'REFUND' ? 'Wise' : 'Stripe';
+                if (!id) return <span className="text-xs text-muted-foreground">—</span>;
+                return (
+                    <div>
+                        <span className="text-[10px] text-muted-foreground">{label}</span>
+                        <p className="font-mono text-xs text-muted-foreground truncate max-w-[140px]">{id}</p>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: 'status',
             header: () => <DataTableStaticHeader title="Status" />,
             cell: ({ row }) => statusBadge(row.original.status),
+        },
+        {
+            id: 'links',
+            header: () => <DataTableStaticHeader title="Links" />,
+            cell: ({ row }) => {
+                const { receipt_url, invoice_url } = row.original;
+                if (!receipt_url && !invoice_url) return <span className="text-xs text-muted-foreground">—</span>;
+                return (
+                    <div className="flex items-center gap-2">
+                        {receipt_url && (
+                            <a href={receipt_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                Receipt <ExternalLink className="h-3 w-3" />
+                            </a>
+                        )}
+                        {invoice_url && (
+                            <a href={invoice_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                Invoice <ExternalLink className="h-3 w-3" />
+                            </a>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             accessorKey: 'created_at',
@@ -150,8 +166,8 @@ export function TransactionsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                    placeholder="Search by Stripe ID..."
+                    onSearchChange={setSearchQuery}
+                    placeholder="Search by Stripe or Wise ID..."
                     isLoading={loading}
                 />
             </div>

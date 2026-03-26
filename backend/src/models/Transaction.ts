@@ -19,6 +19,8 @@ interface TransactionAttributes {
     gross_amount: number;
     platform_fee: number;
     net_amount: number;
+    /** ISO 4217 currency code (USD, EUR, INR, …). Indicates the currency of the monetary fields. */
+    currency: string;
     type: TransactionType;
     stripe_transaction_id?: string | null;
     wise_transfer_id?: string | null;
@@ -29,7 +31,7 @@ interface TransactionAttributes {
     deleted_at?: Date;
 }
 
-type TransactionCreationAttributes = Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'stripe_transaction_id' | 'wise_transfer_id' | 'deleted_at'>;
+type TransactionCreationAttributes = Optional<TransactionAttributes, 'id' | 'status' | 'created_at' | 'receipt_url' | 'invoice_url' | 'stripe_transaction_id' | 'wise_transfer_id' | 'currency' | 'deleted_at'>;
 
 export class Transaction extends Model<TransactionAttributes, TransactionCreationAttributes> implements TransactionAttributes {
     public id!: string;
@@ -37,6 +39,7 @@ export class Transaction extends Model<TransactionAttributes, TransactionCreatio
     public gross_amount!: number;
     public platform_fee!: number;
     public net_amount!: number;
+    public currency!: string;
     public type!: TransactionType;
     public stripe_transaction_id!: string | null;
     public wise_transfer_id!: string | null;
@@ -69,6 +72,11 @@ Transaction.init(
         net_amount: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
+        },
+        currency: {
+            type: DataTypes.STRING(3),
+            allowNull: false,
+            defaultValue: 'USD',
         },
         type: {
             type: DataTypes.ENUM(...Object.values(TransactionType)),

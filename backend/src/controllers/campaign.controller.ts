@@ -7,14 +7,16 @@ import { SellerProfile } from '../models/SellerProfile';
 import { User } from '../models/User';
 import { Transaction, TransactionType, TransactionStatus } from '../models/Transaction';
 import { SystemConfig } from '../models/SystemConfig';
-import { logger } from '../utils/logger';
+import { CONFIG_KEYS } from '../utils/constants';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import * as stripeService from '../services/stripe.service';
+import { regionToCurrency } from '../config/marketplaces';
 
 const DEFAULT_PLATFORM_FEE_PERCENT = 10;
 
 async function getPlatformFeePercent(): Promise<number> {
-    const cfg = await SystemConfig.findByPk('platform_fee_percent');
+    const cfg = await SystemConfig.findByPk(CONFIG_KEYS.PLATFORM_FEE_PERCENT);
     return cfg ? parseFloat(cfg.value) : DEFAULT_PLATFORM_FEE_PERCENT;
 }
 
@@ -57,7 +59,7 @@ export const lookupAsin = async (req: Request, res: Response) => {
 
         return res.status(200).json(data);
     } catch (error) {
-        logger.error(`Error looking up ASIN: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error looking up ASIN: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching ASIN details' });
     }
 };
@@ -80,7 +82,7 @@ export const createCampaign = async (req: Request, res: Response) => {
             target_reviews, reimbursement_percent, guidelines,
         } = req.body;
 
-        // --- Server-side cost calculation ---
+        // Server-side cost calculation
         const price = parseFloat(product_price) || 0;
         if (price <= 0 || target_reviews <= 0 || reimbursement_percent <= 0) {
             return res.status(400).json({ message: 'Invalid pricing or target values' });
@@ -91,7 +93,7 @@ export const createCampaign = async (req: Request, res: Response) => {
         const platformFee = reimbursementCost * (platformFeePercent / 100);
         const grossAmount = reimbursementCost + platformFee;
 
-        // --- Create campaign in PENDING_PAYMENT state ---
+        // Create campaign in PENDING_PAYMENT state
         const campaign = await Campaign.create({
             seller_id: sellerProfile.id,
             asin, region,
@@ -106,10 +108,11 @@ export const createCampaign = async (req: Request, res: Response) => {
             status: CampaignStatus.PENDING_PAYMENT,
         });
 
-        // --- Create Stripe customer (lazy) and Checkout Session ---
+        // Create Stripe customer (lazy) and Checkout Session
         const customerId = await stripeService.getOrCreateStripeCustomer(sellerProfile, user.email);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+        const currency = regionToCurrency(region);
         const reimbursementCents = Math.round(reimbursementCost * 100);
         const platformFeeCents = Math.round(platformFee * 100);
 
@@ -119,6 +122,7 @@ export const createCampaign = async (req: Request, res: Response) => {
             productTitle: product_title,
             asin,
             region,
+            currency,
             targetReviews: target_reviews,
             reimbursementCents,
             platformFeeCents,
@@ -126,12 +130,13 @@ export const createCampaign = async (req: Request, res: Response) => {
             cancelUrl: `${frontendUrl}/seller/campaigns?payment=cancelled&campaign=${campaign.id}`,
         });
 
-        // --- Create a PENDING transaction record ---
+        // Create a PENDING transaction record in the campaign's source currency
         await Transaction.create({
             user_id: userId,
             gross_amount: grossAmount,
             platform_fee: platformFee,
             net_amount: reimbursementCost,
+            currency,
             type: TransactionType.SELLER_CHARGE,
             stripe_transaction_id: campaign.id, // updated to checkout session ID via webhook
             status: TransactionStatus.PENDING,
@@ -139,7 +144,7 @@ export const createCampaign = async (req: Request, res: Response) => {
 
         return res.status(201).json({ campaign, checkoutUrl });
     } catch (error) {
-        logger.error(`Error creating campaign: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error creating campaign: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while creating campaign' });
     }
 };
@@ -183,7 +188,7 @@ export const getCampaigns = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(campaignsWithCounts, count, pagination));
     } catch (error) {
-        logger.error(`Error fetching campaigns: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching campaigns: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaigns' });
     }
 };
@@ -212,7 +217,7 @@ export const getCampaign = async (req: Request, res: Response) => {
 
         return res.status(200).json({ ...campaign.toJSON(), claimed_count: claimedCount });
     } catch (error) {
-        logger.error(`Error fetching campaign details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching campaign details: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching campaign details' });
     }
 };
@@ -249,7 +254,7 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
 
         return res.status(200).json({ ...campaign.toJSON(), claimed_count: claimedCount });
     } catch (error) {
-        logger.error(`Error toggling campaign status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error toggling campaign status: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while toggling campaign status' });
     }
 };

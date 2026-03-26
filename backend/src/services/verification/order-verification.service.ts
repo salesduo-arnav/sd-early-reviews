@@ -2,7 +2,8 @@ import { OrderClaim, OrderStatus } from '../../models/OrderClaim';
 import { Campaign } from '../../models/Campaign';
 import { SellerProfile } from '../../models/SellerProfile';
 import { SystemConfig } from '../../models/SystemConfig';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
+import { CONFIG_KEYS, SPAPI_AUTH_STATUS, VERIFICATION_METHOD } from '../../utils/constants';
 import { decryptToken } from '../../utils/encryption';
 import { getAccessToken, verifyOrderBelongsToSeller, getRegionConfig, mockVerifyOrder } from '../spapi';
 import { notificationService } from '../notification.service';
@@ -26,7 +27,7 @@ export async function attemptAutoVerification(
 ): Promise<AutoVerificationResult> {
     try {
         // 1. Check if auto-verification is enabled
-        const config = await SystemConfig.findByPk('auto_order_verification_enabled');
+        const config = await SystemConfig.findByPk(CONFIG_KEYS.AUTO_ORDER_VERIFICATION);
         if (!config || config.value !== 'true') {
             return { autoVerified: false, method: 'MANUAL' };
         }
@@ -48,7 +49,7 @@ export async function attemptAutoVerification(
         }
 
         // 3. Check seller has authorized SP-API
-        if (sellerProfile.amzn_authorization_status !== 'AUTHORIZED') {
+        if (sellerProfile.amzn_authorization_status !== SPAPI_AUTH_STATUS.AUTHORIZED) {
             return { autoVerified: false, method: 'MANUAL' };
         }
 
@@ -97,15 +98,30 @@ export async function attemptAutoVerification(
             verification_details: verificationResult.rawResponse || { result: verificationResult.reason },
         });
 
+        // 9. Check that the order was placed after the campaign was created
+        if (verificationResult.verified && verificationResult.purchaseDate && campaign.created_at) {
+            const purchaseDate = new Date(verificationResult.purchaseDate);
+            const campaignCreatedAt = new Date(campaign.created_at);
+            if (purchaseDate < campaignCreatedAt) {
+                logger.info('Auto-verification failed: order was placed before campaign creation', {
+                    claimId: claim.id,
+                    orderId: claim.amazon_order_id,
+                    purchaseDate: verificationResult.purchaseDate,
+                    campaignCreatedAt: campaign.created_at,
+                });
+                return { autoVerified: false, method: 'MANUAL' };
+            }
+        }
+
         if (verificationResult.verified) {
-            // 9. Auto-approve the claim
+            // 10. Auto-approve the claim
             await claim.update({
                 order_status: OrderStatus.APPROVED,
-                verification_method: 'AUTO_SP_API',
+                verification_method: VERIFICATION_METHOD.AUTO_SP_API,
                 auto_verified_at: new Date(),
             });
 
-            // 10. Notify buyer
+            // 11. Notify buyer
             const buyerProfile = await BuyerProfile.findByPk(claim.buyer_id);
             if (buyerProfile) {
                 notificationService.send(buyerProfile.user_id, NotificationCategory.ORDER_APPROVED, {
@@ -136,7 +152,7 @@ export async function attemptAutoVerification(
         logger.warn('Auto-verification encountered an error, falling back to manual', {
             claimId: claim.id,
             orderId: claim.amazon_order_id,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: formatError(error),
         });
 
         return { autoVerified: false, method: 'MANUAL' };

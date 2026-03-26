@@ -4,8 +4,9 @@ import { OrderClaim, OrderStatus, ReviewStatus, PayoutStatus } from '../../model
 import { Campaign } from '../../models/Campaign';
 import { BuyerProfile } from '../../models/BuyerProfile';
 import { User } from '../../models/User';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { ADMIN_ACTIONS, VERIFICATION_METHOD } from '../../utils/constants';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { notificationService } from '../../services/notification.service';
 import { NotificationCategory } from '../../models/Notification';
@@ -55,7 +56,7 @@ export const getPendingOrders = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching pending orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching pending orders: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -104,7 +105,7 @@ export const getPendingReviews = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching pending reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching pending reviews: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -131,7 +132,7 @@ export const getClaimDetail = async (req: Request, res: Response) => {
 
         return res.status(200).json(claim);
     } catch (error) {
-        logger.error(`Error fetching claim detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching claim detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -164,7 +165,7 @@ export const verifyOrder = async (req: Request, res: Response) => {
         const updateData: Partial<OrderClaim> = {
             order_status: action === 'APPROVE' ? OrderStatus.APPROVED : OrderStatus.REJECTED,
             verified_by_admin_id: adminId,
-            verification_method: 'MANUAL',
+            verification_method: VERIFICATION_METHOD.MANUAL,
         };
 
         if (action === 'REJECT') {
@@ -175,7 +176,7 @@ export const verifyOrder = async (req: Request, res: Response) => {
 
         await logAdminAction(
             adminId,
-            action === 'APPROVE' ? 'VERIFY_ORDER_APPROVED' : 'VERIFY_ORDER_REJECTED',
+            action === 'APPROVE' ? ADMIN_ACTIONS.VERIFY_ORDER_APPROVED : ADMIN_ACTIONS.VERIFY_ORDER_REJECTED,
             id,
             'ORDER_CLAIM',
             reason ? JSON.stringify({ reason }) : undefined,
@@ -200,7 +201,7 @@ export const verifyOrder = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: `Order ${action.toLowerCase()}d successfully`, claim });
     } catch (error) {
-        logger.error(`Error verifying order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error verifying order: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -238,7 +239,7 @@ export const verifyReview = async (req: Request, res: Response) => {
         if (action === 'APPROVE') {
             updateData.payout_status = PayoutStatus.PENDING;
             updateData.review_approved_at = new Date();
-            updateData.review_verification_method = 'MANUAL';
+            updateData.review_verification_method = VERIFICATION_METHOD.MANUAL;
         } else {
             updateData.rejection_reason = reason;
         }
@@ -247,7 +248,7 @@ export const verifyReview = async (req: Request, res: Response) => {
 
         await logAdminAction(
             adminId,
-            action === 'APPROVE' ? 'VERIFY_REVIEW_APPROVED' : 'VERIFY_REVIEW_REJECTED',
+            action === 'APPROVE' ? ADMIN_ACTIONS.VERIFY_REVIEW_APPROVED : ADMIN_ACTIONS.VERIFY_REVIEW_REJECTED,
             id,
             'ORDER_CLAIM',
             reason ? JSON.stringify({ reason }) : undefined,
@@ -272,7 +273,7 @@ export const verifyReview = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: `Review ${action.toLowerCase()}d successfully`, claim });
     } catch (error) {
-        logger.error(`Error verifying review: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error verifying review: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

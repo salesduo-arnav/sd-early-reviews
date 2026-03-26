@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,54 +10,42 @@ import { Textarea } from '@/components/ui/textarea';
 import { MoreHorizontal, Check, X, ExternalLink, User, Package, Zap } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type OrderRow } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { format } from 'date-fns';
 import { formatPrice } from '@/lib/regions';
+import { useAdminTable } from '@/hooks/use-admin-table';
 
-interface OrderRowUser { full_name: string; email: string; }
-interface OrderRowBuyer { User?: OrderRowUser; }
-interface OrderRowCampaign { product_image_url: string; product_title: string; asin: string; region: string; }
-interface OrderRow {
-    id: string; BuyerProfile?: OrderRowBuyer; Campaign?: OrderRowCampaign;
-    amazon_order_id: string; purchase_date: string; expected_payout_amount: number;
-    order_proof_url: string;
+type ExtendedOrderRow = OrderRow & {
     verification_method?: string | null;
     verification_details?: Record<string, unknown> | null;
-}
+};
 
 export function OrderVerificationTable() {
-    const [data, setData] = useState<OrderRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [totalPending, setTotalPending] = useState(0);
     const [rejectModal, setRejectModal] = useState<{ open: boolean; claimId: string }>({ open: false, claimId: '' });
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getPendingOrders(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-            setTotalPending(result.pagination.total);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getPendingOrders(page, size, search) as Promise<{ data: ExtendedOrderRow[]; pagination: { totalPages: number; total?: number } }>,
+        [],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, totalCount, searchQuery, setSearchQuery, refetch } = useAdminTable<ExtendedOrderRow>({ fetchFn });
+
+    const totalPending = totalCount ?? 0;
 
     const handleApprove = useCallback(async (claimId: string) => {
         setActionLoading(claimId);
         try {
             await adminApi.verifyOrder(claimId, 'APPROVE');
             toast.success('Order approved');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
-    }, [fetchData]);
+    }, [refetch]);
 
     const handleReject = async () => {
         if (!rejectReason.trim()) { toast.error('Rejection reason is required'); return; }
@@ -67,12 +55,12 @@ export function OrderVerificationTable() {
             toast.success('Order rejected');
             setRejectModal({ open: false, claimId: '' });
             setRejectReason('');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
         finally { setActionLoading(null); }
     };
 
-    const columns = useMemo<ColumnDef<OrderRow, unknown>[]>(() => [
+    const columns = useMemo<ColumnDef<ExtendedOrderRow, unknown>[]>(() => [
         {
             accessorKey: 'buyer',
             header: () => <DataTableStaticHeader title="Buyer" />,
@@ -124,7 +112,7 @@ export function OrderVerificationTable() {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Payout" />,
             cell: ({ row }) => (
-                <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>
+                <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'US')}</span>
             ),
         },
         {
@@ -204,7 +192,7 @@ export function OrderVerificationTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by order ID, product, ASIN, or buyer..."
                     isLoading={loading}
                 />

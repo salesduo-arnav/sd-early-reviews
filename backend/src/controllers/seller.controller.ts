@@ -4,16 +4,11 @@ import { Campaign, CampaignStatus } from '../models/Campaign';
 import { OrderClaim, ReviewStatus } from '../models/OrderClaim';
 import sequelize from '../config/db';
 import { Transaction, TransactionStatus } from '../models/Transaction';
-import { SellerProfile } from '../models/SellerProfile';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
+import { toUSD } from '../services/exchange-rate.service';
 import { startOfDay, endOfDay, subDays, startOfWeek, subWeeks, endOfWeek, format } from 'date-fns';
-
-/** Shared helper — resolves SellerProfile.id from JWT userId, returns null if not found */
-const resolveSellerProfileId = async (userId: string): Promise<string | null> => {
-    const profile = await SellerProfile.findOne({ where: { user_id: userId } });
-    return profile ? profile.id : null;
-};
+import { resolveSellerProfileId } from '../utils/profileResolvers';
 
 export const getMetrics = async (req: Request, res: Response) => {
     try {
@@ -83,20 +78,29 @@ export const getMetrics = async (req: Request, res: Response) => {
             reviewChangePercent = 100;
         }
 
-        // Total Amount Spent — transactions belong to users (not seller profiles)
-        const totalSpent = await Transaction.sum('gross_amount', {
-            where: { user_id: userId, status: TransactionStatus.SUCCESS }
-        }) || 0;
+        // Total Amount Spent — convert each transaction to USD for a consistent total
+        const spentRows = await Transaction.findAll({
+            attributes: ['gross_amount', 'currency'],
+            where: { user_id: userId, status: TransactionStatus.SUCCESS },
+            raw: true,
+        });
+        let totalSpent = 0;
+        for (const row of spentRows) {
+            const amt = parseFloat(String(row.gross_amount)) || 0;
+            totalSpent += await toUSD(amt, row.currency || 'USD');
+        }
+        totalSpent = Math.round(totalSpent * 100) / 100;
 
         return res.status(200).json({
             activeCampaigns: activeCampaignsCount,
             totalReviews: totalReviewsCompleted,
             reviewChangePercent: parseFloat(reviewChangePercent.toFixed(1)),
-            totalSpent: parseFloat(totalSpent.toString())
+            totalSpent,
+            currency: 'USD',
         });
 
     } catch (error) {
-        logger.error(`Error fetching dashboard metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching dashboard metrics: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -151,7 +155,7 @@ export const getReviewVelocity = async (req: Request, res: Response) => {
 
         return res.status(200).json(formattedData);
     } catch (error) {
-        logger.error(`Error fetching review velocity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching review velocity: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -196,7 +200,7 @@ export const getCampaignProgress = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(progressData, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching campaign progress: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching campaign progress: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -274,7 +278,7 @@ export const getSellerReviewStats = async (req: Request, res: Response) => {
             averageRating: parseFloat(averageRating as string)
         });
     } catch (error) {
-        logger.error(`Error fetching review stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching review stats: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -363,7 +367,7 @@ export const getSellerReviews = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(formattedReviews, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching seller reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching seller reviews: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

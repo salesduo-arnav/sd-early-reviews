@@ -4,8 +4,9 @@ import { SellerProfile } from '../../models/SellerProfile';
 import { User } from '../../models/User';
 import { Campaign } from '../../models/Campaign';
 import { Transaction, TransactionStatus } from '../../models/Transaction';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
+import { toUSD } from '../../services/exchange-rate.service';
 
 export const getSellers = async (req: Request, res: Response) => {
     try {
@@ -55,7 +56,7 @@ export const getSellers = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching sellers: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching sellers: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -78,17 +79,24 @@ export const getSellerDetail = async (req: Request, res: Response) => {
             offset: campaignsPagination.offset,
         });
 
-        const totalSpent = await Transaction.sum('gross_amount', {
+        const spentRows = await Transaction.findAll({
+            attributes: ['gross_amount', 'currency'],
             where: { user_id: seller.user_id, status: TransactionStatus.SUCCESS },
-        }) || 0;
+            raw: true,
+        });
+        let totalSpent = 0;
+        for (const row of spentRows) {
+            totalSpent += await toUSD(parseFloat(String(row.gross_amount)) || 0, row.currency || 'USD');
+        }
+        totalSpent = Math.round(totalSpent * 100) / 100;
 
         return res.status(200).json({
             seller,
             campaigns: buildPaginatedResponse(campaigns, campaignsCount, campaignsPagination),
-            totalSpent: parseFloat(totalSpent.toString()),
+            totalSpent,
         });
     } catch (error) {
-        logger.error(`Error fetching seller detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching seller detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

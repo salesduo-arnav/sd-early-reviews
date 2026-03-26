@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { buyerApi } from '@/api/buyer';
 import type { BuyerClaim } from '@/api/buyer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 
 interface ClaimCardProps {
@@ -150,7 +151,7 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
             setCancelDialogOpen(false);
             onCancelled();
         } catch (err) {
-            const message = err instanceof Error ? err.message : t('buyer.claims.cancel_failed', 'Failed to cancel claim');
+            const message = getErrorMessage(err);
             toast.error(message);
         } finally {
             setIsCancelling(false);
@@ -162,17 +163,16 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
             <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-200 overflow-hidden">
                 <CardContent className="p-0">
                     {/* Main content */}
-                    <div className="p-4">
+                    <div className="px-4 pt-4 pb-3 space-y-3">
                         {/* Top: Product info + Status */}
                         <div className="flex gap-3">
-                            {/* Product Image */}
                             <a
                                 href={getAmazonProductUrl(claim.region, claim.asin)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="relative group flex-shrink-0"
                             >
-                                <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted border border-border">
+                                <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border">
                                     {claim.product_image_url ? (
                                         <img
                                             src={claim.product_image_url}
@@ -190,11 +190,10 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                                 </div>
                             </a>
 
-                            {/* Product Info */}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
                                     <p className="text-sm font-medium line-clamp-2 leading-snug">{claim.product_title}</p>
-                                    <ClaimStatusBadge status={claim.pipeline_status} className="flex-shrink-0 ml-1" />
+                                    <ClaimStatusBadge status={claim.pipeline_status} className="flex-shrink-0" />
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-1">
                                     <span className="text-xs text-muted-foreground font-mono">{claim.asin}</span>
@@ -208,19 +207,19 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                         </div>
 
                         {/* Metadata row */}
-                        <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-border/40">
-                            {/* Payout */}
+                        <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 pt-2.5 border-t border-border/40">
                             <div className="flex items-center gap-1.5">
-                                <Wallet className="w-3.5 h-3.5 text-green-600" />
+                                <Wallet className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                                 <span className="text-sm font-semibold text-green-700">
                                     {formatPrice(Number(claim.expected_payout_amount), claim.region)}
                                 </span>
                             </div>
 
+                            
                             {/* Order ID */}
-                            <div className="flex items-center gap-1.5">
-                                <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground font-mono truncate max-w-[140px]" title={claim.amazon_order_id}>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <Receipt className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                <span className="text-xs text-muted-foreground font-mono truncate" title={claim.amazon_order_id}>
                                     {claim.amazon_order_id}
                                 </span>
                             </div>
@@ -228,15 +227,14 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                             {/* Deadline */}
                             {showDeadline && <DeadlineCountdown deadline={claim.review_deadline!} />}
 
-                            {/* Date - pushed right */}
-                            <span className="text-xs text-muted-foreground ml-auto">
+                            <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
                                 {format(new Date(claim.created_at), 'MMM d, yyyy')}
                             </span>
                         </div>
 
-                        {/* Review stars (if review was submitted) */}
+                        {/* Review stars */}
                         {claim.review_rating && (
-                            <div className="flex items-center gap-0.5 mt-2.5">
+                            <div className="flex items-center gap-0.5">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                     <Star
                                         key={i}
@@ -251,23 +249,21 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                                 <span className="text-[11px] text-muted-foreground ml-1">{t('buyer.claims.your_review_label', 'Your review')}</span>
                             </div>
                         )}
-                    </div>
 
-                    {/* Status context strip */}
-                    <div className="px-4 pb-3">
+                        {/* Status context strip */}
                         <StatusContextStrip claim={claim} />
                     </div>
 
                     {/* Actions footer */}
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/30 border-t border-border/50">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-t border-border/50">
                         <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => onViewDetails(claim)}
-                            className="h-7 px-2.5 text-muted-foreground hover:text-brand-primary hover:bg-brand-primary/10"
+                            className="h-7 px-3 text-xs font-medium border-border/60 hover:text-brand-primary hover:border-brand-primary/40 hover:bg-brand-primary/5"
                         >
                             <Eye className="w-3.5 h-3.5 mr-1.5" />
-                            <span className="text-xs font-medium">{t('common.view_details', 'Details')}</span>
+                            {t('common.view_details', 'Details')}
                         </Button>
 
                         {showUploadAction && (
@@ -275,10 +271,10 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                                 variant="default"
                                 size="sm"
                                 onClick={() => onUploadReview(claim)}
-                                className="h-7 px-3 shadow-none hover:shadow-none"
+                                className="h-7 px-3 text-xs font-medium"
                             >
                                 <Upload className="w-3.5 h-3.5 mr-1.5" />
-                                <span className="text-xs font-medium">{t('buyer.claims.upload_review', 'Submit Review')}</span>
+                                {t('buyer.claims.upload_review', 'Submit Review')}
                             </Button>
                         )}
 
@@ -287,10 +283,10 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setCancelDialogOpen(true)}
-                                className="h-7 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                                className="h-7 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto text-xs font-medium"
                             >
                                 <X className="w-3.5 h-3.5 mr-1" />
-                                <span className="text-xs font-medium">{t('common.cancel', 'Cancel')}</span>
+                                {t('common.cancel', 'Cancel')}
                             </Button>
                         )}
                     </div>

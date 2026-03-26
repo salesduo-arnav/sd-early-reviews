@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { User, UserRole } from '../../models/User';
 import { Notification, NotificationCategory } from '../../models/Notification';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { ADMIN_ACTIONS, BROADCAST_TARGETS } from '../../utils/constants';
 
 export const broadcastNotification = async (req: Request, res: Response) => {
     try {
@@ -16,13 +17,13 @@ export const broadcastNotification = async (req: Request, res: Response) => {
 
         let userIds: string[] = [];
 
-        if (target === 'ALL') {
+        if (target === BROADCAST_TARGETS.ALL) {
             const users = await User.findAll({ attributes: ['id'] });
             userIds = users.map(u => u.id);
-        } else if (target === 'BUYERS') {
+        } else if (target === BROADCAST_TARGETS.BUYERS) {
             const users = await User.findAll({ where: { role: UserRole.BUYER }, attributes: ['id'] });
             userIds = users.map(u => u.id);
-        } else if (target === 'SELLERS') {
+        } else if (target === BROADCAST_TARGETS.SELLERS) {
             const users = await User.findAll({ where: { role: UserRole.SELLER }, attributes: ['id'] });
             userIds = users.map(u => u.id);
         } else if (Array.isArray(target)) {
@@ -48,7 +49,7 @@ export const broadcastNotification = async (req: Request, res: Response) => {
 
         await logAdminAction(
             adminId,
-            'NOTIFICATION_BROADCAST',
+            ADMIN_ACTIONS.NOTIFICATION_BROADCAST,
             adminId,
             'NOTIFICATION',
             JSON.stringify({ target, title, recipients_count: userIds.length }),
@@ -57,7 +58,7 @@ export const broadcastNotification = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: `Notification sent to ${userIds.length} users` });
     } catch (error) {
-        logger.error(`Error broadcasting notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error broadcasting notification: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { buyerApi } from '@/api/buyer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 
 interface SubmitReviewFormProps {
@@ -100,7 +101,7 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
             toast.success(t('buyer.claims.review_submitted', 'Review submitted successfully! It will be verified shortly.'));
             onSuccess();
         } catch (err) {
-            const message = err instanceof Error ? err.message : t('buyer.claims.review_submit_failed', 'Failed to submit review');
+            const message = getErrorMessage(err);
             setError(message);
         } finally {
             setIsSubmitting(false);

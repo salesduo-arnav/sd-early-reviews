@@ -4,8 +4,9 @@ import { BuyerProfile } from '../../models/BuyerProfile';
 import { User } from '../../models/User';
 import { OrderClaim } from '../../models/OrderClaim';
 import { Campaign } from '../../models/Campaign';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { ADMIN_ACTIONS } from '../../utils/constants';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 
 export const getBuyers = async (req: Request, res: Response) => {
@@ -47,7 +48,7 @@ export const getBuyers = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching buyers: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching buyers: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -76,7 +77,7 @@ export const getBuyerDetail = async (req: Request, res: Response) => {
             claims: buildPaginatedResponse(claims, claimsCount, claimsPagination),
         });
     } catch (error) {
-        logger.error(`Error fetching buyer detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching buyer detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -104,7 +105,7 @@ export const toggleBlacklist = async (req: Request, res: Response) => {
 
         await logAdminAction(
             adminId,
-            is_blacklisted ? 'BUYER_BLACKLISTED' : 'BUYER_UNBLACKLISTED',
+            is_blacklisted ? ADMIN_ACTIONS.BUYER_BLACKLISTED : ADMIN_ACTIONS.BUYER_UNBLACKLISTED,
             id,
             'BUYER_PROFILE',
             reason ? JSON.stringify({ reason }) : undefined,
@@ -116,7 +117,7 @@ export const toggleBlacklist = async (req: Request, res: Response) => {
             buyer,
         });
     } catch (error) {
-        logger.error(`Error toggling blacklist: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error toggling blacklist: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

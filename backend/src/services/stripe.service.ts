@@ -39,30 +39,33 @@ export async function createCheckoutSession(opts: {
     productTitle: string;
     asin: string;
     region: string;
+    /** ISO 4217 currency code (usd, inr, eur, …) — lowercase for Stripe */
+    currency: string;
     targetReviews: number;
     reimbursementCents: number;
     platformFeeCents: number;
     successUrl: string;
     cancelUrl: string;
 }): Promise<string> {
+    const cur = opts.currency.toLowerCase();
     const session = await stripe.checkout.sessions.create({
         customer: opts.customerId,
         mode: 'payment',
         line_items: [
             {
                 price_data: {
-                    currency: 'usd',
+                    currency: cur,
                     unit_amount: Math.round(opts.reimbursementCents / opts.targetReviews),
                     product_data: {
                         name: `Buyer Reimbursement — ${opts.productTitle}`,
-                        description: `ASIN: ${opts.asin} | Region: amazon.${opts.region}`,
+                        description: `ASIN: ${opts.asin} | Region: ${opts.region}`,
                     },
                 },
                 quantity: opts.targetReviews,
             },
             {
                 price_data: {
-                    currency: 'usd',
+                    currency: cur,
                     unit_amount: opts.platformFeeCents,
                     product_data: {
                         name: 'Platform Service Fee',

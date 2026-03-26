@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { formatPrice } from '@/lib/regions';
+import { formatPrice, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 const CAMPAIGN_STEPS = [
     {
@@ -104,6 +105,7 @@ export default function CampaignDetailPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <PageMeta title={`Campaign: ${campaign.product_title || 'Details'}`} description={`Track progress and manage your campaign for ${campaign.product_title} on SalesDuo Early Reviews.`} />
             <div className="flex items-center gap-4 mb-6">
                 <Button variant="ghost" size="icon" onClick={() => navigate('/seller/campaigns')} className="rounded-full">
                     <ArrowLeft className="h-5 w-5" />
@@ -196,7 +198,7 @@ export default function CampaignDetailPage() {
                                 <div className="flex items-center gap-4 text-sm text-foreground/80 mb-4 flex-wrap">
                                     <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs border border-border">ASIN: {campaign.asin}</span>
                                     <span>{campaign.category}</span>
-                                    <a href={`https://www.amazon.${campaign.region}/dp/${campaign.asin}`} target="_blank" rel="noopener noreferrer" className="flex items-center hover:text-brand-primary cursor-pointer"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> Amazon.{campaign.region}</a>
+                                    <a href={`https://www.${getAmazonDomain(campaign.region)}/dp/${campaign.asin}`} target="_blank" rel="noopener noreferrer" className="flex items-center hover:text-brand-primary cursor-pointer"><ExternalLink className="w-3 h-3 ml-1 mr-1" /> {getAmazonDomain(campaign.region)}</a>
                                     {campaign.product_rating != null && (
                                         <span className="flex items-center gap-1 text-amber-500 font-semibold text-lg">
                                             ★ {Number(campaign.product_rating).toFixed(1)}

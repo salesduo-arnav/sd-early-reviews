@@ -160,6 +160,7 @@
             "search_placeholder": "Buscar por producto, ASIN o ID de pedido...",
             "date_range_placeholder": "Filtrar por rango de fechas",
             "sort_placeholder": "Ordenar por",
+            "filter_title": "Filtros",
 
             "status": {
                 "order_submitted": "Pedido Enviado",
@@ -252,10 +253,16 @@
             "browse_marketplace": "Explora el mercado para encontrar productos y comenzar a ganar reembolsos.",
             "go_to_marketplace": "Explorar Mercado",
 
+            "review_title": "Título de la Reseña",
+            "review_title_placeholder": "Pega el título de tu reseña de Amazon aquí...",
+            "review_url_help": "Pega la URL de tu reseña de Amazon. Esto se usa para verificar automáticamente tu reseña.",
+
             "validation": {
                 "select_rating": "Por favor selecciona una calificación",
                 "review_min_length": "La reseña debe tener al menos 10 caracteres",
-                "screenshot_required": "Se requiere captura de pantalla de la reseña"
+                "screenshot_required": "Se requiere captura de pantalla de la reseña",
+                "review_title_required": "El título de la reseña es obligatorio",
+                "review_url_required": "La URL de la reseña de Amazon es obligatoria para la verificación"
             }
         },
         "account": {
@@ -302,6 +309,12 @@
                 "removed_success": "Datos bancarios eliminados",
                 "save_error": "Error al actualizar datos bancarios",
                 "remove_error": "Error al eliminar datos bancarios",
+                "connected_badge": "Connected",
+                "disconnect_confirm": "Disconnect",
+                "transfer_method": "Transfer method",
+                "secured_by_wise": "Secured by Wise",
+                "update_account": "Update Account",
+                "connect_account": "Connect Account",
                 "validation": {
                     "name_min": "El nombre debe tener al menos 2 caracteres",
                     "name_max": "El nombre debe tener como máximo 100 caracteres",
@@ -316,7 +329,22 @@
                 "email_description": "Recibe alertas por correo sobre actualizaciones de pedidos, aprobaciones de reseñas y pagos",
                 "enabled_success": "Notificaciones por correo activadas",
                 "disabled_success": "Notificaciones por correo desactivadas",
-                "toggle_error": "Error al actualizar preferencia"
+                "toggle_error": "Error al actualizar preferencia",
+                "campaign_alerts_label": "Alertas de Nuevas Campañas",
+                "campaign_alerts_description": "Recibe notificaciones cuando nuevas campañas estén disponibles en el marketplace",
+                "campaign_alerts_disabled": "Las alertas de campañas están desactivadas por la plataforma. No se enviarán notificaciones.",
+                "campaign_enabled_success": "Notificaciones de campañas activadas",
+                "campaign_disabled_success": "Notificaciones de campañas desactivadas",
+                "interests_label": "Filtro de Categorías",
+                "interests_all": "Estás suscrito a todas las categorías. Selecciona específicas para filtrar.",
+                "interests_filtered": "Solo recibirás notificaciones de las categorías seleccionadas.",
+                "interests_all_label": "Todas las categorías",
+                "interests_selected": "{{count}} de {{total}} categorías",
+                "interests_placeholder": "Seleccionar categorías...",
+                "interests_search": "Buscar categorías...",
+                "interests_empty": "No se encontraron categorías",
+                "interests_updated": "Intereses de categorías actualizados",
+                "reset_all": "Restablecer todas"
             }
         }
     },
@@ -415,6 +443,9 @@
                 "fetch": "Obtener Detalles",
                 "asin_help": "Ingresa el Número de Identificación Estándar de Amazon de 10 caracteres.",
                 "matched_product": "Producto Coincidente",
+                "lookup_failed": "Product Lookup Failed",
+                "asin_not_found": "This ASIN was not found in the selected marketplace. Please double-check the ASIN and region.",
+                "incomplete_data": "Product data appears incomplete — the price is unavailable or zero. Please try a different ASIN.",
                 "target_reviews": "Número de Reseñas Objetivo",
                 "target_desc": "¿Cuántas unidades te gustaría distribuir para esta campaña?",
                 "reimbursement": "Porcentaje de Reembolso",
@@ -647,19 +678,26 @@
         "seller_feature_2_title": "Lanza Campañas",
         "seller_feature_2_desc": "Crea campañas de reseñas específicas en minutos y observa cómo suben tus rankings.",
         "countries": {
-            "ca": "Canadá",
-            "cn": "China",
-            "eg": "Egipto",
-            "fr": "Francia",
-            "de": "Alemania",
-            "in": "India",
-            "it": "Italia",
-            "jp": "Japón",
-            "sa": "Arabia Saudita",
-            "es": "España",
-            "ae": "EAU",
-            "co.uk": "Reino Unido",
-            "com": "Estados Unidos"
+            "US": "Estados Unidos",
+            "CA": "Canadá",
+            "MX": "México",
+            "BR": "Brasil",
+            "GB": "Reino Unido",
+            "DE": "Alemania",
+            "FR": "Francia",
+            "IT": "Italia",
+            "ES": "España",
+            "NL": "Países Bajos",
+            "SE": "Suecia",
+            "PL": "Polonia",
+            "AE": "EAU",
+            "SA": "Arabia Saudita",
+            "EG": "Egipto",
+            "IN": "India",
+            "JP": "Japón",
+            "AU": "Australia",
+            "SG": "Singapur",
+            "CN": "China"
         }
     }
 }

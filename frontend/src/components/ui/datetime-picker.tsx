@@ -13,9 +13,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-// ============================================================================
 // Types
-// ============================================================================
 
 type TimeFormat = "12h" | "24h";
 
@@ -57,18 +55,14 @@ interface DateTimeRangePickerProps {
     minuteInterval?: 1 | 5 | 10 | 15 | 30;
 }
 
-// ============================================================================
 // Constants
-// ============================================================================
 
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1);
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
 const PERIODS = ["AM", "PM"] as const;
 const TIME_ITEM_HEIGHT = 32;
 
-// ============================================================================
 // Utility Hooks
-// ============================================================================
 
 function useTimeOptions(minuteInterval: number, showSeconds: boolean) {
     return React.useMemo(() => {
@@ -109,9 +103,7 @@ function useTimeState(value: Date | undefined) {
     }, [value]);
 }
 
-// ============================================================================
 // Sub-Components
-// ============================================================================
 
 interface TimeColumnProps {
     items: (number | string)[];
@@ -324,9 +316,7 @@ function TimeSelector({
     );
 }
 
-// ============================================================================
 // Main Components
-// ============================================================================
 
 export function DateTimePicker({
     value,
@@ -470,9 +460,7 @@ export function DateTimePicker({
     );
 }
 
-// ============================================================================
 // DateTime Range Picker
-// ============================================================================
 
 export function DateTimeRangePicker({
     from,
@@ -530,8 +518,6 @@ export function DateTimeRangePicker({
     );
 }
 
-// ============================================================================
 // Exports
-// ============================================================================
 
 export type { DateTimePickerProps, DateTimeRangePickerProps, TimeFormat };

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SellerProfile } from '../models/SellerProfile';
 import { logger } from '../utils/logger';
+import { SPAPI_AUTH_STATUS } from '../utils/constants';
 import { verifyToken } from '../utils/jwt';
 import { encryptToken } from '../utils/encryption';
 import { exchangeCodeForTokens } from '../services/spapi';
@@ -63,7 +64,7 @@ export const spapiCallback = async (req: Request, res: Response): Promise<void> 
             amzn_refresh_token_iv: iv,
             amzn_refresh_token_tag: tag,
             amzn_authorized_at: new Date(),
-            amzn_authorization_status: 'AUTHORIZED',
+            amzn_authorization_status: SPAPI_AUTH_STATUS.AUTHORIZED,
         });
 
         logger.info('SP-API OAuth completed successfully', {

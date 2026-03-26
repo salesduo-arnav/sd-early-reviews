@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { fetchWithAuth, buildQueryString } from './httpClient';
 import type { PaginatedResponse } from './types';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Types
 
 export interface MarketplaceProduct {
     id: string;
@@ -114,6 +114,7 @@ export interface BuyerProfile {
     id: string;
     email: string;
     amazon_profile_url: string;
+    region: string;
     on_time_rate: number;
     total_earnings: number;
     claims_completed: number;
@@ -123,6 +124,9 @@ export interface BuyerProfile {
     payout_country: string | null;
     bank_display_label: string | null;
     email_notifications_enabled: boolean;
+    new_campaign_notifications_enabled: boolean;
+    interested_categories: string[] | null;
+    campaign_alerts_globally_enabled: boolean;
     is_blacklisted: boolean;
     blacklist_reason: string | null;
 }
@@ -163,7 +167,7 @@ export interface ConnectBankResponse {
     bank_display_label: string | null;
 }
 
-// ─── API ────────────────────────────────────────────────────────────────────
+// API
 
 export const buyerApi = {
     getMarketplaceProducts: async (
@@ -259,10 +263,18 @@ export const buyerApi = {
         return fetchWithAuth('/buyer/bank-account', { method: 'DELETE' });
     },
 
-    updateNotificationPreferences: async (enabled: boolean): Promise<{ email_notifications_enabled: boolean }> => {
+    updateNotificationPreferences: async (prefs: {
+        email_notifications_enabled?: boolean;
+        new_campaign_notifications_enabled?: boolean;
+        interested_categories?: string[] | null;
+    }): Promise<{
+        email_notifications_enabled: boolean;
+        new_campaign_notifications_enabled: boolean;
+        interested_categories: string[] | null;
+    }> => {
         return fetchWithAuth('/buyer/notifications', {
             method: 'PATCH',
-            body: JSON.stringify({ email_notifications_enabled: enabled }),
+            body: JSON.stringify(prefs),
         });
     },
 };

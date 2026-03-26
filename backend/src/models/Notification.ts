@@ -3,6 +3,7 @@ import sequelize from '../config/db';
 
 export enum NotificationCategory {
     // Buyer-facing
+    NEW_CAMPAIGN_MATCH = 'NEW_CAMPAIGN_MATCH',
     ORDER_APPROVED = 'ORDER_APPROVED',
     ORDER_REJECTED = 'ORDER_REJECTED',
     REVIEW_APPROVED = 'REVIEW_APPROVED',

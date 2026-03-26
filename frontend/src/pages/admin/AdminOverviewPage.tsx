@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, ShieldCheck, Star, BarChart3, Users, CreditCard, Loader2, LayoutDashboard } from 'lucide-react';
 import { adminApi, AdminMetrics, ChartDataPoint } from '@/api/admin';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
+import { formatPriceByCurrency } from '@/lib/regions';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function AdminOverviewPage() {
     const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -29,7 +33,7 @@ export default function AdminOverviewPage() {
                 setClaimsData(c);
                 setUsersData(u);
             } catch (error) {
-                console.error('Failed to load dashboard data', error);
+                toast.error(getErrorMessage(error));
             } finally {
                 setLoading(false);
             }
@@ -46,7 +50,7 @@ export default function AdminOverviewPage() {
     }
 
     const metricCards = [
-        { title: 'Platform Revenue', value: `$${(metrics?.platformRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: 'text-green-600' },
+        { title: 'Platform Revenue', value: formatPriceByCurrency(metrics?.platformRevenue ?? 0, 'USD'), icon: DollarSign, color: 'text-green-600' },
         { title: 'Pending Orders', value: metrics?.pendingOrderVerifications ?? 0, icon: ShieldCheck, color: 'text-orange-600' },
         { title: 'Pending Reviews', value: metrics?.pendingReviewVerifications ?? 0, icon: Star, color: 'text-blue-600' },
         { title: 'Active Campaigns', value: metrics?.activeCampaigns ?? 0, icon: BarChart3, color: 'text-purple-600' },
@@ -56,6 +60,7 @@ export default function AdminOverviewPage() {
 
     return (
         <div className="space-y-8">
+            <PageMeta title="Admin Overview" description="Platform-wide metrics, revenue charts, and activity overview for SalesDuo Early Reviews administration." />
             <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 text-green-600">
                     <LayoutDashboard className="h-6 w-6" />
@@ -90,8 +95,8 @@ export default function AdminOverviewPage() {
                             <LineChart data={revenueData}>
                                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => format(new Date(v), 'MMM d')} />
-                                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                                <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, 'Revenue']} labelFormatter={(l) => format(new Date(l), 'MMM d, yyyy')} />
+                                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatPriceByCurrency(v, 'USD')} />
+                                <Tooltip formatter={(v: number) => [formatPriceByCurrency(v, 'USD'), 'Revenue']} labelFormatter={(l) => format(new Date(l), 'MMM d, yyyy')} />
                                 <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                             </LineChart>
                         </ResponsiveContainer>

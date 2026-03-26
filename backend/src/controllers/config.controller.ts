@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SystemConfig } from '../models/SystemConfig';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 
 /**
  * GET /api/config
@@ -16,7 +16,7 @@ export const getPublicConfig = async (_req: Request, res: Response) => {
         }, {});
         return res.status(200).json(configMap);
     } catch (error) {
-        logger.error(`Error fetching system config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching system config: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching config' });
     }
 };
@@ -37,7 +37,7 @@ export const updateConfig = async (req: Request, res: Response) => {
         const [config, created] = await SystemConfig.upsert({ key, value });
         return res.status(created ? 201 : 200).json(config);
     } catch (error) {
-        logger.error(`Error updating system config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error updating system config: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while updating config' });
     }
 };

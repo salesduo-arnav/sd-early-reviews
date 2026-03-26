@@ -5,20 +5,15 @@ import { Campaign } from '../models/Campaign';
 import { BuyerProfile } from '../models/BuyerProfile';
 import { SellerProfile } from '../models/SellerProfile';
 import { User } from '../models/User';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { startOfDay, endOfDay } from 'date-fns';
 import { attemptAutoReviewVerification } from '../services/verification';
-
-// Helpers
-
-// Resolve BuyerProfile.id from JWT userId
-const resolveBuyerProfileId = async (userId: string): Promise<string | null> => {
-    const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
-    return profile ? profile.id : null;
-};
+import { resolveBuyerProfileId } from '../utils/profileResolvers';
+import { SystemConfig } from '../models/SystemConfig';
+import { CONFIG_KEYS } from '../utils/constants';
 
 // Derive a user-friendly pipeline status from the three internal status fields
 function derivePipelineStatus(orderStatus: string, reviewStatus: string, payoutStatus: string): string {
@@ -91,7 +86,7 @@ function formatClaimResponse(claim: OrderClaim): Record<string, unknown> {
         product_title: c.Campaign?.product_title ?? '',
         product_image_url: c.Campaign?.product_image_url ?? '',
         asin: c.Campaign?.asin ?? '',
-        region: c.Campaign?.region ?? 'com',
+        region: c.Campaign?.region ?? 'US',
         guidelines: c.Campaign?.guidelines ?? null,
     };
 }
@@ -173,7 +168,7 @@ export const getMyClaims = async (req: Request, res: Response) => {
         const claims = rows.map(formatClaimResponse);
         return res.status(200).json(buildPaginatedResponse(claims, count, pagination));
     } catch (error) {
-        logger.error(`Error fetching buyer claims: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching buyer claims: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching claims' });
     }
 };
@@ -207,7 +202,7 @@ export const getClaimDetail = async (req: Request, res: Response) => {
 
         return res.status(200).json(formatClaimResponse(claim));
     } catch (error) {
-        logger.error(`Error fetching claim detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching claim detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching claim details' });
     }
 };
@@ -288,6 +283,16 @@ export const submitReviewProof = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'The review submission deadline has passed.' });
         }
 
+        // Check for duplicate review URL
+        if (amazon_review_id) {
+            const existing = await OrderClaim.findOne({
+                where: { amazon_review_id, id: { [Op.ne]: id } },
+            });
+            if (existing) {
+                return res.status(409).json({ message: 'This Amazon review URL has already been submitted for another claim.' });
+            }
+        }
+
         // Update claim with review data
         await claim.update({
             review_proof_url,
@@ -330,7 +335,7 @@ export const submitReviewProof = async (req: Request, res: Response) => {
             claim: formatClaimResponse(claim),
         });
     } catch (error) {
-        logger.error(`Error submitting review proof: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error submitting review proof: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while submitting review' });
     }
 };
@@ -386,12 +391,12 @@ export const cancelClaim = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: 'Claim cancelled successfully' });
     } catch (error) {
-        logger.error(`Error cancelling claim: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error cancelling claim: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while cancelling claim' });
     }
 };
 
-// ─── Profile & Earnings ──────────────────────────────────────────────────────
+// Profile & Earnings
 
 /**
  * GET /api/buyer/profile
@@ -405,7 +410,10 @@ export const getAccountProfile = async (req: Request, res: Response) => {
         const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
         if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
 
-        const user = await User.findByPk(userId, { attributes: ['email'] });
+        const [user, campaignAlertsConfig] = await Promise.all([
+            User.findByPk(userId, { attributes: ['email'] }),
+            SystemConfig.findByPk(CONFIG_KEYS.NEW_CAMPAIGN_NOTIFICATIONS),
+        ]);
 
         // Compute claims_completed (payout processed)
         const claimsCompleted = await OrderClaim.count({
@@ -431,6 +439,7 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             id: profile.id,
             email: user?.email ?? '',
             amazon_profile_url: profile.amazon_profile_url,
+            region: profile.region,
             on_time_rate: profile.on_time_submission_rate,
             total_earnings: parseFloat(String(profile.total_earnings)),
             claims_completed: claimsCompleted,
@@ -440,11 +449,14 @@ export const getAccountProfile = async (req: Request, res: Response) => {
             payout_country: profile.payout_country || null,
             bank_display_label: profile.bank_display_label || null,
             email_notifications_enabled: profile.email_notifications_enabled,
+            new_campaign_notifications_enabled: profile.new_campaign_notifications_enabled,
+            interested_categories: profile.interested_categories ?? null,
+            campaign_alerts_globally_enabled: campaignAlertsConfig?.value === 'true',
             is_blacklisted: profile.is_blacklisted,
             blacklist_reason: profile.blacklist_reason || null,
         });
     } catch (error) {
-        logger.error(`Error fetching account profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching account profile: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching profile' });
     }
 };
@@ -468,7 +480,7 @@ export const getBankRequirements = async (req: Request, res: Response) => {
 
         return res.status(200).json(requirements);
     } catch (error) {
-        logger.error(`Error fetching bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching bank requirements: ${formatError(error)}`);
         return res.status(500).json({ message: 'Failed to fetch bank account requirements' });
     }
 };
@@ -525,7 +537,7 @@ export const refreshBankRequirements = async (req: Request, res: Response) => {
 
         return res.status(200).json(requirements);
     } catch (error) {
-        logger.error(`Error refreshing bank requirements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error refreshing bank requirements: ${formatError(error)}`);
         return res.status(500).json({ message: 'Failed to refresh bank account requirements' });
     }
 };
@@ -618,7 +630,7 @@ export const connectBankAccount = async (req: Request, res: Response) => {
             bank_display_label: profile.bank_display_label,
         });
     } catch (error) {
-        logger.error(`Error connecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error connecting bank account: ${formatError(error)}`);
         return res.status(500).json({ message: error instanceof Error ? error.message : 'Failed to connect bank account' });
     }
 };
@@ -653,7 +665,7 @@ export const disconnectBankAccount = async (req: Request, res: Response) => {
 
         return res.status(200).json({ success: true });
     } catch (error) {
-        logger.error(`Error disconnecting bank account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error disconnecting bank account: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while disconnecting bank account' });
     }
 };
@@ -670,17 +682,46 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
         const profile = await BuyerProfile.findOne({ where: { user_id: userId } });
         if (!profile) return res.status(403).json({ message: 'Buyer profile not found. Complete onboarding first.' });
 
-        const { email_notifications_enabled } = req.body;
+        const { email_notifications_enabled, new_campaign_notifications_enabled, interested_categories } = req.body;
 
-        if (typeof email_notifications_enabled !== 'boolean') {
-            return res.status(400).json({ message: 'email_notifications_enabled must be a boolean' });
+        // Validate provided fields
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateFields: Record<string, any> = {};
+
+        if (email_notifications_enabled !== undefined) {
+            if (typeof email_notifications_enabled !== 'boolean') {
+                return res.status(400).json({ message: 'email_notifications_enabled must be a boolean' });
+            }
+            updateFields.email_notifications_enabled = email_notifications_enabled;
         }
 
-        await profile.update({ email_notifications_enabled });
+        if (new_campaign_notifications_enabled !== undefined) {
+            if (typeof new_campaign_notifications_enabled !== 'boolean') {
+                return res.status(400).json({ message: 'new_campaign_notifications_enabled must be a boolean' });
+            }
+            updateFields.new_campaign_notifications_enabled = new_campaign_notifications_enabled;
+        }
 
-        return res.status(200).json({ email_notifications_enabled: profile.email_notifications_enabled });
+        if (interested_categories !== undefined) {
+            if (!Array.isArray(interested_categories) || !interested_categories.every((c: unknown) => typeof c === 'string')) {
+                return res.status(400).json({ message: 'interested_categories must be an array of strings' });
+            }
+            updateFields.interested_categories = interested_categories;
+        }
+
+        if (Object.keys(updateFields).length === 0) {
+            return res.status(400).json({ message: 'At least one preference field is required' });
+        }
+
+        await profile.update(updateFields);
+
+        return res.status(200).json({
+            email_notifications_enabled: profile.email_notifications_enabled,
+            new_campaign_notifications_enabled: profile.new_campaign_notifications_enabled,
+            interested_categories: profile.interested_categories ?? null,
+        });
     } catch (error) {
-        logger.error(`Error updating notification preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error updating notification preferences: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while updating notification preferences' });
     }
 };

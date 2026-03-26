@@ -26,6 +26,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { buyerApi } from '@/api/buyer';
 import type { MarketplaceProduct } from '@/api/buyer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/regions';
 
@@ -109,7 +110,7 @@ export function ClaimProductModal({ product, open, onOpenChange, onClaimSuccess 
             onClaimSuccess();
             handleClose();
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to claim product';
+            const message = getErrorMessage(err);
             setError(message);
         } finally {
             setIsSubmitting(false);

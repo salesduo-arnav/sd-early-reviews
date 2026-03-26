@@ -45,7 +45,7 @@ describe('Mail Templates', () => {
     describe('getLoginOtpEmail', () => {
         it('should return subject, text, and html', () => {
             const result = getLoginOtpEmail('654321');
-            expect(result.subject).toContain('Login');
+            expect(result.subject).toContain('sign-in');
             expect(result.text).toContain('654321');
             expect(result.html).toContain('654321');
         });
@@ -63,7 +63,7 @@ describe('Mail Templates', () => {
     describe('getNotificationEmail', () => {
         it('should return subject with SalesDuo prefix', () => {
             const result = getNotificationEmail('Order Update', 'Your order has been processed');
-            expect(result.subject).toBe('SalesDuo - Order Update');
+            expect(result.subject).toBe('Order Update — SalesDuo');
         });
 
         it('should include message in text body', () => {

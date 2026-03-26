@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
 
-// ─── Configuration ──────────────────────────────────────────────────────────
+// Configuration
 
 const WISE_API_TOKEN = process.env.WISE_API_TOKEN as string;
 const WISE_PROFILE_ID = process.env.WISE_PROFILE_ID as string;
@@ -11,7 +11,7 @@ const BASE_URL = WISE_MODE === 'live'
     ? 'https://api.wise.com'
     : 'https://api.wise-sandbox.com';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// Helpers
 
 async function wiseRequest<T>(
     path: string,
@@ -40,34 +40,11 @@ async function wiseRequest<T>(
     return data as T;
 }
 
-// ─── Region → Currency mapping ──────────────────────────────────────────────
+// Region → Currency mapping (delegated to centralized config)
 
-const REGION_CURRENCY_MAP: Record<string, string> = {
-    'com': 'USD',
-    'co.uk': 'GBP',
-    'de': 'EUR',
-    'fr': 'EUR',
-    'it': 'EUR',
-    'es': 'EUR',
-    'nl': 'EUR',
-    'co.jp': 'JPY',
-    'in': 'INR',
-    'com.au': 'AUD',
-    'ca': 'CAD',
-    'com.br': 'BRL',
-    'com.mx': 'MXN',
-    'sg': 'SGD',
-    'ae': 'AED',
-    'sa': 'SAR',
-    'pl': 'PLN',
-    'se': 'SEK',
-};
+export { regionToCurrency } from '../config/marketplaces';
 
-export function regionToCurrency(region: string): string {
-    return REGION_CURRENCY_MAP[region] || 'USD';
-}
-
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Types
 
 export interface WiseAccountRequirementField {
     name: string;
@@ -125,7 +102,7 @@ interface WiseFundResponse {
     errorCode: string | null;
 }
 
-// ─── Account Requirements (dynamic bank fields) ────────────────────────────
+// Account Requirements (dynamic bank fields)
 
 export async function getAccountRequirements(
     targetCurrency: string,
@@ -151,7 +128,7 @@ export async function refreshAccountRequirements(
     );
 }
 
-// ─── Recipient Management ───────────────────────────────────────────────────
+// Recipient Management
 
 export async function createRecipient(data: {
     accountHolderName: string;
@@ -185,7 +162,7 @@ export async function getRecipient(recipientId: string): Promise<WiseRecipient> 
     return wiseRequest<WiseRecipient>(`/v1/accounts/${recipientId}`);
 }
 
-// ─── Quote ──────────────────────────────────────────────────────────────────
+// Quote
 
 export async function createQuote(
     sourceCurrency: string,
@@ -204,7 +181,7 @@ export async function createQuote(
     });
 }
 
-// ─── Transfer ───────────────────────────────────────────────────────────────
+// Transfer
 
 export async function createTransfer(
     quoteId: string,
@@ -240,12 +217,15 @@ export async function getTransferStatus(transferId: number): Promise<WiseTransfe
     return wiseRequest<WiseTransfer>(`/v1/transfers/${transferId}`);
 }
 
-// ─── High-level payout function ─────────────────────────────────────────────
+// High-level payout function
 
 export interface PayoutResult {
     success: boolean;
     transferId?: number;
     wiseTransferId?: string;
+    /** Amount the buyer actually receives in their payout currency */
+    targetAmount?: number;
+    targetCurrency?: string;
     error?: string;
 }
 
@@ -260,8 +240,15 @@ export async function sendPayout(
         const recipient = await getRecipient(recipientId);
         const targetCurrency = recipient.currency;
 
-        // 1. Create quote
-        const quote = await createQuote(sourceCurrency, targetCurrency, amount);
+        // 1. Create quote — always fund from USD balance.
+        //    Convert source amount to USD if it isn't already.
+        let quoteAmount = amount;
+        if (sourceCurrency !== 'USD') {
+            const { toUSD } = await import('./exchange-rate.service');
+            quoteAmount = Math.round((await toUSD(amount, sourceCurrency)) * 100) / 100;
+        }
+
+        const quote = await createQuote('USD', targetCurrency, quoteAmount);
         logger.info(`Wise quote created`, { quoteId: quote.id, rate: quote.rate, fee: quote.fee, claimId });
 
         // 2. Create transfer (use unique UUID per attempt to avoid idempotency conflicts on retry)
@@ -280,6 +267,8 @@ export async function sendPayout(
             success: true,
             transferId: transfer.id,
             wiseTransferId: String(transfer.id),
+            targetAmount: quote.targetAmount,
+            targetCurrency: targetCurrency,
         };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown Wise payout error';
@@ -288,7 +277,7 @@ export async function sendPayout(
     }
 }
 
-// ─── Webhook signature verification ─────────────────────────────────────────
+// Webhook signature verification
 
 export function verifyWebhookSecret(req: { headers: Record<string, string | string[] | undefined> }): boolean {
     const expected = process.env.WISE_WEBHOOK_SECRET;

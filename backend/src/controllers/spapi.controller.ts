@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { SellerProfile } from '../models/SellerProfile';
 import { logger } from '../utils/logger';
+import { SPAPI_AUTH_STATUS } from '../utils/constants';
 import { clearTokenCache } from '../services/spapi';
 
 const APP_ID = process.env.AMZN_SP_APP_ID || '';
@@ -67,7 +68,7 @@ export const getSpapiStatus = async (req: Request, res: Response): Promise<void>
         }
 
         res.status(200).json({
-            authorized: sellerProfile.amzn_authorization_status === 'AUTHORIZED',
+            authorized: sellerProfile.amzn_authorization_status === SPAPI_AUTH_STATUS.AUTHORIZED,
             authorizedAt: sellerProfile.amzn_authorized_at || null,
             sellingPartnerId: sellerProfile.amzn_selling_partner_id || null,
         });
@@ -99,7 +100,7 @@ export const revokeSpapiAuth = async (req: Request, res: Response): Promise<void
             amzn_refresh_token_encrypted: undefined,
             amzn_refresh_token_iv: undefined,
             amzn_refresh_token_tag: undefined,
-            amzn_authorization_status: 'REVOKED',
+            amzn_authorization_status: SPAPI_AUTH_STATUS.REVOKED,
         });
 
         clearTokenCache(sellerProfile.id);

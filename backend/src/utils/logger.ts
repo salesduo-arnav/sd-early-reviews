@@ -29,6 +29,10 @@ export const logger = winston.createLogger({
     ],
 });
 
+export function formatError(error: unknown): string {
+    return error instanceof Error ? error.message : 'Unknown error';
+}
+
 // A custom stream for morgan to use the winston logger
 export const stream = {
     write: (message: string) => {

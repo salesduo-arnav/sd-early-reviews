@@ -5,8 +5,9 @@ import { OrderClaim } from '../../models/OrderClaim';
 import { SellerProfile } from '../../models/SellerProfile';
 import { BuyerProfile } from '../../models/BuyerProfile';
 import { User } from '../../models/User';
-import { logger } from '../../utils/logger';
+import { logger, formatError } from '../../utils/logger';
 import { logAdminAction } from '../../utils/auditLog';
+import { ADMIN_ACTIONS } from '../../utils/constants';
 import { parsePaginationParams, buildPaginatedResponse } from '../../utils/pagination';
 import { notificationService } from '../../services/notification.service';
 import { NotificationCategory } from '../../models/Notification';
@@ -53,7 +54,7 @@ export const getCampaigns = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(rows, count, paginationParams));
     } catch (error) {
-        logger.error(`Error fetching campaigns: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching campaigns: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -90,7 +91,7 @@ export const getCampaignDetail = async (req: Request, res: Response) => {
             claims: buildPaginatedResponse(claims, count, claimsPagination),
         });
     } catch (error) {
-        logger.error(`Error fetching campaign detail: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching campaign detail: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -120,7 +121,7 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
 
         await logAdminAction(
             adminId,
-            newStatus === CampaignStatus.PAUSED ? 'CAMPAIGN_PAUSED' : 'CAMPAIGN_RESUMED',
+            newStatus === CampaignStatus.PAUSED ? ADMIN_ACTIONS.CAMPAIGN_PAUSED : ADMIN_ACTIONS.CAMPAIGN_RESUMED,
             id,
             'CAMPAIGN',
             JSON.stringify({ previous_status: oldStatus, new_status: newStatus }),
@@ -137,7 +138,7 @@ export const toggleCampaignStatus = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: `Campaign ${newStatus.toLowerCase()} successfully`, campaign });
     } catch (error) {
-        logger.error(`Error toggling campaign status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error toggling campaign status: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

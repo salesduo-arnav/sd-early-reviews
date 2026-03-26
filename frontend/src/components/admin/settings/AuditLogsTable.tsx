@@ -1,14 +1,18 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, User } from 'lucide-react';
+import { Eye, User, X, ScrollText } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { adminApi } from '@/api/admin';
+import { adminApi, type AuditLogRow } from '@/api/admin';
 import { format } from 'date-fns';
+import { useAdminTable } from '@/hooks/use-admin-table';
+
+// Helpers
 
 const actionBadge = (action: string) => {
     if (action.includes('APPROVED') || action.includes('PROCESSED') || action.includes('UNBLACKLISTED') || action.includes('RESUMED'))
@@ -28,34 +32,31 @@ const formatDetails = (details: string | null) => {
     }
 };
 
-interface AuditLogUser { full_name: string; email: string; }
-interface AuditLogRow {
-    id: string; User?: AuditLogUser; action: string; target_type: string;
-    target_id: string; created_at: string; ip_address?: string; details?: string;
-}
+// Main Component
 
 export function AuditLogsTable() {
-    const [data, setData] = useState<AuditLogRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [detailModal, setDetailModal] = useState<{ open: boolean; log: AuditLogRow | null }>({ open: false, log: null });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
+    const hasDateFilter = startDate !== undefined || endDate !== undefined;
+
+    const clearDateFilters = () => {
+        setStartDate(undefined);
+        setEndDate(undefined);
+        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    };
+
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) => {
             const startStr = startDate ? format(startDate, 'yyyy-MM-dd') : undefined;
             const endStr = endDate ? format(endDate, 'yyyy-MM-dd') : undefined;
-            const result = await adminApi.getAuditLogs(pagination.pageIndex + 1, pagination.pageSize, searchQuery || undefined, startStr, endStr);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, startDate, endDate]);
+            return adminApi.getAuditLogs(page, size, search, startStr, endStr);
+        },
+        [startDate, endDate],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery } = useAdminTable<AuditLogRow>({ fetchFn, defaultPageSize: 20 });
 
     const columns = useMemo<ColumnDef<AuditLogRow, unknown>[]>(() => [
         {
@@ -66,9 +67,9 @@ export function AuditLogsTable() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-muted/50">
                         <User className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div>
-                        <p className="font-medium text-foreground">{row.original.User?.full_name || '—'}</p>
-                        <p className="text-sm text-muted-foreground">{row.original.User?.email}</p>
+                    <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{row.original.User?.full_name || '\u2014'}</p>
+                        <p className="text-sm text-muted-foreground truncate">{row.original.User?.email}</p>
                     </div>
                 </div>
             ),
@@ -81,7 +82,7 @@ export function AuditLogsTable() {
         {
             accessorKey: 'target_type',
             header: () => <DataTableStaticHeader title="Target Type" />,
-            cell: ({ row }) => <span className="text-muted-foreground">{row.original.target_type || '—'}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{row.original.target_type || '\u2014'}</span>,
         },
         {
             accessorKey: 'target_id',
@@ -121,102 +122,134 @@ export function AuditLogsTable() {
     const formattedDetails = selectedLog ? formatDetails(selectedLog.details) : null;
 
     return (
-        <div className="space-y-4">
-            <div className="flex gap-4 items-end flex-wrap">
-                <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground mr-2">From</Label>
-                    <DateTimePicker
-                        value={startDate}
-                        onChange={(date) => { setStartDate(date); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                        placeholder="Start date"
-                        timeFormat="24h"
-                        minuteInterval={15}
-                        className="h-9 w-[180px]"
-                    />
-                    <Label className="text-xs text-muted-foreground mx-4">To</Label>
-                    <DateTimePicker
-                        value={endDate}
-                        onChange={(date) => { setEndDate(date); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                        placeholder="End date"
-                        timeFormat="24h"
-                        minuteInterval={15}
-                        className="h-9 w-[180px]"
+        <Card className="border shadow-sm">
+            <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <ScrollText className="w-4 h-4 text-muted-foreground" />
+                            Audit Logs
+                        </CardTitle>
+                        <CardDescription>Track all administrative actions performed on the platform.</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* Date Filters */}
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground me-3">From</Label>
+                        <DateTimePicker
+                            value={startDate}
+                            onChange={(date) => { setStartDate(date); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                            placeholder="Start date"
+                            timeFormat="24h"
+                            minuteInterval={15}
+                            className="h-9 w-[180px]"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground me-3">To</Label>
+                        <DateTimePicker
+                            value={endDate}
+                            onChange={(date) => { setEndDate(date); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                            placeholder="End date"
+                            timeFormat="24h"
+                            minuteInterval={15}
+                            className="h-9 w-[180px]"
+                        />
+                    </div>
+                    {hasDateFilter && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 text-muted-foreground hover:text-foreground"
+                            onClick={clearDateFilters}
+                        >
+                            <X className="h-3.5 w-3.5 mr-1" /> Clear dates
+                        </Button>
+                    )}
+                </div>
+
+                {/* Data Table */}
+                <div className="rounded-xl border bg-card overflow-hidden">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        pageCount={pageCount}
+                        pagination={pagination}
+                        onPaginationChange={setPagination}
+                        sorting={[]}
+                        onSortingChange={() => {}}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        placeholder="Search by action or admin..."
+                        isLoading={loading}
                     />
                 </div>
-            </div>
+            </CardContent>
 
-            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    pageCount={pageCount}
-                    pagination={pagination}
-                    onPaginationChange={setPagination}
-                    sorting={[]}
-                    onSortingChange={() => {}}
-                    searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
-                    placeholder="Search by action or admin..."
-                    isLoading={loading}
-                />
-            </div>
-
+            {/* Detail Modal */}
             <Dialog open={detailModal.open} onOpenChange={(open) => { if (!open) setDetailModal({ open: false, log: null }); }}>
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Audit Log Details</DialogTitle>
                     </DialogHeader>
                     {selectedLog && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 pt-2">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Admin</p>
-                                    <p className="text-sm font-medium">{selectedLog.User?.full_name || '—'}</p>
+                                <DetailField label="Admin">
+                                    <p className="text-sm font-medium">{selectedLog.User?.full_name || '\u2014'}</p>
                                     <p className="text-xs text-muted-foreground">{selectedLog.User?.email}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Timestamp</p>
+                                </DetailField>
+                                <DetailField label="Timestamp">
                                     <p className="text-sm">{format(new Date(selectedLog.created_at), 'MMM d, yyyy HH:mm:ss')}</p>
-                                </div>
+                                </DetailField>
                             </div>
 
-                            <div className="space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground">Action</p>
+                            <DetailField label="Action">
                                 <div>{actionBadge(selectedLog.action)}</div>
-                            </div>
+                            </DetailField>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Target Type</p>
-                                    <p className="text-sm">{selectedLog.target_type || '—'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Target ID</p>
-                                    <p className="text-sm font-mono break-all">{selectedLog.target_id || '—'}</p>
-                                </div>
+                                <DetailField label="Target Type">
+                                    <p className="text-sm">{selectedLog.target_type || '\u2014'}</p>
+                                </DetailField>
+                                <DetailField label="Target ID">
+                                    <p className="text-sm font-mono break-all">{selectedLog.target_id || '\u2014'}</p>
+                                </DetailField>
                             </div>
 
                             {selectedLog.ip_address && (
-                                <div className="space-y-1">
-                                    <p className="text-xs font-medium text-muted-foreground">IP Address</p>
+                                <DetailField label="IP Address">
                                     <p className="text-sm font-mono">{selectedLog.ip_address}</p>
-                                </div>
+                                </DetailField>
                             )}
 
-                            <div className="space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground">Details</p>
+                            <DetailField label="Details">
                                 {formattedDetails ? (
                                     <pre className="text-xs bg-muted/50 border rounded-lg p-3 overflow-auto max-h-[200px] whitespace-pre-wrap break-all">
                                         {formattedDetails}
                                     </pre>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No additional details</p>
+                                    <p className="text-sm text-muted-foreground italic">No additional details</p>
                                 )}
-                            </div>
+                            </DetailField>
                         </div>
                     )}
                 </DialogContent>
             </Dialog>
+        </Card>
+    );
+}
+
+// Detail Field
+
+function DetailField({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            {children}
         </div>
     );
 }

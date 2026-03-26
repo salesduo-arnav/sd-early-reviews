@@ -3,12 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrderVerificationTable } from '@/components/admin/verifications/OrderVerificationTable';
 import { ReviewVerificationTable } from '@/components/admin/verifications/ReviewVerificationTable';
 import { ShieldCheck } from 'lucide-react';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function AdminVerificationsPage() {
     const [activeTab, setActiveTab] = useState('orders');
 
     return (
         <div className="space-y-6">
+            <PageMeta title="Verifications" description="Review and approve order and review verifications across the SalesDuo Early Reviews platform." />
             <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 text-orange-600">
                     <ShieldCheck className="h-6 w-6" />

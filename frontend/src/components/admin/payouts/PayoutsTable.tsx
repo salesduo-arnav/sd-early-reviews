@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,97 +10,95 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, DollarSign, User, RotateCcw, Loader2, Eye } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, DataTableStaticHeader } from '@/components/ui/data-table';
-import { adminApi } from '@/api/admin';
+import { adminApi, type PayoutRow } from '@/api/admin';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { formatPrice } from '@/lib/regions';
+import { useAdminTable } from '@/hooks/use-admin-table';
+import { ClaimDetailModal } from '@/components/admin/claims/ClaimDetailModal';
 
 const payoutBadge = (status: string) => {
     switch (status) {
         case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
-        case 'PROCESSING': return <Badge variant="secondary" className="animate-pulse">Processing</Badge>;
+        case 'PROCESSING': return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processing</Badge>;
         case 'PROCESSED': return <Badge variant="default" className="capitalize">Processed</Badge>;
         case 'FAILED': return <Badge variant="destructive">Failed</Badge>;
         default: return <Badge variant="outline">{status}</Badge>;
     }
 };
 
-interface PayoutRowUser { full_name: string; email: string; }
-interface PayoutRowBuyer { User?: PayoutRowUser; wise_recipient_id?: string | null; bank_display_label?: string | null; }
-interface PayoutRowCampaign { product_title: string; region: string; }
-interface PayoutRow {
-    id: string; BuyerProfile?: PayoutRowBuyer; Campaign?: PayoutRowCampaign;
-    amazon_order_id: string; expected_payout_amount: number; payout_status: string;
-    payout_method?: string | null; payout_processed_at?: string | null;
-}
-
 export function PayoutsTable() {
-    const [data, setData] = useState<PayoutRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-    const [pageCount, setPageCount] = useState(-1);
-    const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [overrideDialog, setOverrideDialog] = useState<{ open: boolean; claimId: string; currentAmount: number; region: string }>({ open: false, claimId: '', currentAmount: 0, region: 'com' });
     const [overrideAmount, setOverrideAmount] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [detailModal, setDetailModal] = useState<{ open: boolean; claimId: string }>({ open: false, claimId: '' });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await adminApi.getPayouts(pagination.pageIndex + 1, pagination.pageSize, statusFilter, searchQuery || undefined);
-            setData(result.data);
-            setPageCount(result.pagination.totalPages);
-        } catch (err) { console.error('Failed to fetch data:', err); } finally { setLoading(false); }
-    }, [pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+    const fetchFn = useCallback(
+        (page: number, size: number, search: string | undefined) =>
+            adminApi.getPayouts(page, size, statusFilter, search),
+        [statusFilter],
+    );
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    const { data, loading, pagination, setPagination, pageCount, searchQuery, setSearchQuery, refetch } = useAdminTable<PayoutRow>({ fetchFn });
+
+    const addProcessingIds = useCallback((ids: string[]) => {
+        setProcessingIds(prev => { const next = new Set(prev); ids.forEach(id => next.add(id)); return next; });
+    }, []);
+    const removeProcessingIds = useCallback((ids: string[]) => {
+        setProcessingIds(prev => { const next = new Set(prev); ids.forEach(id => next.delete(id)); return next; });
+    }, []);
 
     const handleUpdateStatus = useCallback(async (claimId: string, status: 'PROCESSED' | 'FAILED') => {
-        setActionLoading(claimId);
+        addProcessingIds([claimId]);
         try {
             await adminApi.updatePayoutStatus(claimId, status);
             toast.success(`Payout marked as ${status.toLowerCase()}`);
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
-        finally { setActionLoading(null); }
-    }, [fetchData]);
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
+        finally { removeProcessingIds([claimId]); }
+    }, [refetch, addProcessingIds, removeProcessingIds]);
 
     const handleRetry = useCallback(async (claimId: string) => {
-        setActionLoading(claimId);
+        addProcessingIds([claimId]);
         try {
             await adminApi.retryPayout(claimId);
             toast.success('Payout retried successfully');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'Retry failed'); }
-        finally { setActionLoading(null); }
-    }, [fetchData]);
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
+        finally { removeProcessingIds([claimId]); }
+    }, [refetch, addProcessingIds, removeProcessingIds]);
 
     const handleOverride = async () => {
         const amount = parseFloat(overrideAmount);
         if (isNaN(amount) || amount < 0) { toast.error('Invalid amount'); return; }
-        setActionLoading(overrideDialog.claimId);
+        const claimId = overrideDialog.claimId;
+        addProcessingIds([claimId]);
         try {
-            await adminApi.updatePayoutStatus(overrideDialog.claimId, 'PROCESSED', amount);
+            await adminApi.updatePayoutStatus(claimId, 'PROCESSED', amount);
             toast.success('Payout overridden and processed');
             setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' });
             setOverrideAmount('');
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
-        finally { setActionLoading(null); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
+        finally { removeProcessingIds([claimId]); }
     };
 
     const handleBatchProcess = async () => {
         if (selectedIds.length === 0) { toast.error('No payouts selected'); return; }
+        const ids = [...selectedIds];
+        addProcessingIds(ids);
         try {
-            await adminApi.batchUpdatePayouts(selectedIds, 'PROCESSED');
-            toast.success(`${selectedIds.length} payouts processed`);
+            await adminApi.batchUpdatePayouts(ids, 'PROCESSED');
+            toast.success(`${ids.length} payouts processed`);
             setSelectedIds([]);
-            fetchData();
-        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : 'An error occurred'); }
+            refetch();
+        } catch (e: unknown) { toast.error(getErrorMessage(e)); }
+        finally { removeProcessingIds(ids); }
     };
 
     const toggleSelect = (id: string) => {
@@ -123,7 +121,7 @@ export function PayoutsTable() {
                     }}
                 />
             ),
-            cell: ({ row }) => row.original.payout_status === 'PENDING' ? (
+            cell: ({ row }) => row.original.payout_status === 'PENDING' && !processingIds.has(row.original.id) ? (
                 <Checkbox
                     checked={selectedIds.includes(row.original.id)}
                     onCheckedChange={() => toggleSelect(row.original.id)}
@@ -169,18 +167,35 @@ export function PayoutsTable() {
         {
             accessorKey: 'expected_payout_amount',
             header: () => <DataTableStaticHeader title="Amount" />,
-            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'com')}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{formatPrice(row.original.expected_payout_amount, row.original.Campaign?.region || 'US')}</span>,
         },
         {
             accessorKey: 'payout_status',
             header: () => <DataTableStaticHeader title="Status" />,
+            cell: ({ row }) => {
+                const displayStatus = processingIds.has(row.original.id) ? 'PROCESSING' : row.original.payout_status;
+                return (
+                    <div className="flex items-center gap-1.5">
+                        {payoutBadge(displayStatus)}
+                        {row.original.payout_status === 'PROCESSED' && row.original.payout_method && (
+                            <Badge variant="outline" className="text-[10px] capitalize">{row.original.payout_method.toLowerCase()}</Badge>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'details',
+            header: () => <DataTableStaticHeader title="Details" srOnly />,
             cell: ({ row }) => (
-                <div className="flex items-center gap-1.5">
-                    {payoutBadge(row.original.payout_status)}
-                    {row.original.payout_status === 'PROCESSED' && row.original.payout_method && (
-                        <Badge variant="outline" className="text-[10px] capitalize">{row.original.payout_method.toLowerCase()}</Badge>
-                    )}
-                </div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-muted"
+                    onClick={() => setDetailModal({ open: true, claimId: row.original.id })}
+                >
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                </Button>
             ),
         },
         {
@@ -188,7 +203,8 @@ export function PayoutsTable() {
             header: () => <DataTableStaticHeader title="Actions" srOnly />,
             cell: ({ row }) => {
                 const status = row.original.payout_status;
-                if (status !== 'PENDING' && status !== 'FAILED') return null;
+                const isProcessing = processingIds.has(row.original.id);
+                if (isProcessing || (status !== 'PENDING' && status !== 'FAILED')) return null;
                 return (
                     <div className="text-right">
                         <DropdownMenu>
@@ -201,7 +217,6 @@ export function PayoutsTable() {
                                 {status === 'FAILED' ? (
                                     <DropdownMenuItem
                                         onClick={() => handleRetry(row.original.id)}
-                                        disabled={actionLoading === row.original.id}
                                         className="cursor-pointer"
                                     >
                                         <RotateCcw className="h-4 w-4 mr-2" />
@@ -211,14 +226,13 @@ export function PayoutsTable() {
                                     <>
                                         <DropdownMenuItem
                                             onClick={() => handleUpdateStatus(row.original.id, 'PROCESSED')}
-                                            disabled={actionLoading === row.original.id}
                                             className="cursor-pointer"
                                         >
                                             <CheckCircle className="h-4 w-4 mr-2" />
                                             Mark Processed
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'com' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
+                                            onClick={() => { setOverrideDialog({ open: true, claimId: row.original.id, currentAmount: row.original.expected_payout_amount, region: row.original.Campaign?.region || 'US' }); setOverrideAmount(row.original.expected_payout_amount.toString()); }}
                                             className="cursor-pointer"
                                         >
                                             <DollarSign className="h-4 w-4 mr-2" />
@@ -227,7 +241,6 @@ export function PayoutsTable() {
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             onClick={() => handleUpdateStatus(row.original.id, 'FAILED')}
-                                            disabled={actionLoading === row.original.id}
                                             className="text-destructive focus:text-destructive cursor-pointer"
                                         >
                                             <XCircle className="h-4 w-4 mr-2" />
@@ -241,7 +254,7 @@ export function PayoutsTable() {
                 );
             },
         },
-    ], [actionLoading, selectedIds, allPendingSelected, handleUpdateStatus, handleRetry, pendingIds]);
+    ], [processingIds, selectedIds, allPendingSelected, handleUpdateStatus, handleRetry, pendingIds]);
 
     return (
         <div className="space-y-4">
@@ -274,11 +287,18 @@ export function PayoutsTable() {
                     sorting={[]}
                     onSortingChange={() => {}}
                     searchQuery={searchQuery}
-                    onSearchChange={(sq) => { setSearchQuery(sq); setPagination(prev => ({ ...prev, pageIndex: 0 })); }}
+                    onSearchChange={setSearchQuery}
                     placeholder="Search by order ID, product, ASIN, or buyer..."
                     isLoading={loading}
                 />
             </div>
+
+            <ClaimDetailModal
+                open={detailModal.open}
+                onOpenChange={(open) => { if (!open) setDetailModal({ open: false, claimId: '' }); }}
+                claimId={detailModal.claimId}
+                onAction={refetch}
+            />
 
             <Dialog open={overrideDialog.open} onOpenChange={(open) => { if (!open) setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' }); }}>
                 <DialogContent>
@@ -294,7 +314,7 @@ export function PayoutsTable() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOverrideDialog({ open: false, claimId: '', currentAmount: 0, region: 'com' })}>Cancel</Button>
-                        <Button onClick={handleOverride} disabled={!!actionLoading}>Override & Process</Button>
+                        <Button onClick={handleOverride} disabled={processingIds.has(overrideDialog.claimId)}>Override & Process</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

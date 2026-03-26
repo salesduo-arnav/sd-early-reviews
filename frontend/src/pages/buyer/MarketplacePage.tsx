@@ -9,8 +9,7 @@ import { MarketplaceSidebar } from '@/components/buyer/marketplace/MarketplaceSi
 import { buyerApi } from '@/api/buyer';
 import type { MarketplaceProduct, MarketplaceQueryParams, MarketplaceFilters as FilterOptions } from '@/api/buyer';
 import type { PaginationMeta } from '@/components/common/AppPagination';
-import { detectUserRegion } from '@/lib/regions';
-
+import { PageMeta } from '@/components/PageMeta';
 const DEFAULT_FILTERS: MarketplaceQueryParams = {
     page: 1,
     limit: 12,
@@ -48,16 +47,18 @@ export default function MarketplacePage() {
     const [appliedParams, setAppliedParams] = useState<MarketplaceQueryParams & { search?: string }>(DEFAULT_FILTERS);
     const isInitialMount = useRef(true);
 
-    // Fetch filter options on mount + auto-select user's region
+    // Fetch filter options on mount + auto-select buyer's profile region
     useEffect(() => {
-        buyerApi.getFilters().then((opts) => {
-            setFilterOptions(opts);
-            const detected = detectUserRegion();
-            if (detected && opts.regions.includes(detected)) {
-                setFilters((prev) => ({ ...prev, region: detected }));
-                setAppliedParams((prev) => ({ ...prev, region: detected }));
-            }
-        }).catch(() => {});
+        Promise.all([buyerApi.getFilters(), buyerApi.getAccountProfile()])
+            .then(([opts, profile]) => {
+                setFilterOptions(opts);
+                const buyerRegion = profile.region;
+                if (buyerRegion && opts.regions.includes(buyerRegion)) {
+                    setFilters((prev) => ({ ...prev, region: buyerRegion }));
+                    setAppliedParams((prev) => ({ ...prev, region: buyerRegion }));
+                }
+            })
+            .catch(() => {});
     }, []);
 
     // Fetch products only when appliedParams change
@@ -120,6 +121,7 @@ export default function MarketplacePage() {
 
     return (
         <div className="space-y-6">
+            <PageMeta title="Marketplace" description="Browse available products, claim deals, and earn reimbursements for writing honest reviews on SalesDuo." />
             {/* Page header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">

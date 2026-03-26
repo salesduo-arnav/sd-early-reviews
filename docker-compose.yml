@@ -17,10 +17,13 @@ services:
     container_name: reviews-backend
     env_file: .env
     environment:
+      # Docker-specific overrides (the .env values are for local dev)
       - PGHOST=postgres
       - NODE_ENV=development
+      - FRONTEND_URL=http://localhost:5173
+      - CORS_ORIGINS=http://localhost:5173
     ports:
-      - "3000:3000"
+      - "3030:3030"
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,9 +36,8 @@ services:
         - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
         - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     container_name: reviews-frontend
-    env_file: .env
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       - backend
 

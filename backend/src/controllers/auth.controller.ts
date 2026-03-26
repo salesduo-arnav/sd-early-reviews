@@ -537,3 +537,40 @@ export const me = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            res.status(400).json({ message: 'Refresh token is required' });
+            return;
+        }
+
+        // Verify the refresh token
+        let payload: { userId: string; email: string; role: string };
+        try {
+            payload = verifyToken<{ userId: string; email: string; role: string }>(refreshToken);
+        } catch {
+            res.status(401).json({ message: 'Invalid or expired refresh token' });
+            return;
+        }
+
+        // Ensure user still exists
+        const user = await User.findByPk(payload.userId);
+        if (!user) {
+            res.status(401).json({ message: 'User no longer exists' });
+            return;
+        }
+
+        // Issue new tokens
+        const newAccessToken = generateAccessToken({ userId: user.id, email: user.email, role: user.role });
+        const newRefreshToken = generateRefreshToken({ userId: user.id, email: user.email, role: user.role });
+
+        res.status(200).json({
+            tokens: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+        });
+    } catch (error) {
+        logger.error('Refresh token error', { error });
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};

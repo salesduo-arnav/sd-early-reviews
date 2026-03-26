@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { uploadFileToS3 } from '../services/s3.service';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 
 /**
  * POST /api/uploads
@@ -16,7 +16,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 
         return res.status(200).json({ url });
     } catch (error) {
-        logger.error(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Image upload failed: ${formatError(error)}`);
         return res.status(500).json({ message: 'Failed to upload image' });
     }
 };

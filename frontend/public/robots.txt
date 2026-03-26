@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /buyer/
+Disallow: /onboarding
+Disallow: /spapi-callback
+
+# Public pages
+Allow: /login
+Allow: /signup
+Allow: /forgot-password

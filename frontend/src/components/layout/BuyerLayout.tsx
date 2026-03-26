@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardNavbar } from '@/components/layout/DashboardNavbar';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AlertTriangle, Landmark } from 'lucide-react';
 import { buyerApi } from '@/api/buyer';
 
@@ -12,13 +13,21 @@ export function BuyerLayout() {
     const [needsBankAccount, setNeedsBankAccount] = useState(false);
 
     useEffect(() => {
-        buyerApi.getAccountProfile().then((profile) => {
-            setIsBlacklisted(profile.is_blacklisted);
-            setBlacklistReason(profile.blacklist_reason);
-            setNeedsBankAccount(!profile.wise_connected && !profile.is_blacklisted);
-        }).catch(() => {
-            // Silently fail — profile page will show its own error
-        });
+        const fetchProfile = () => {
+            buyerApi.getAccountProfile().then((profile) => {
+                setIsBlacklisted(profile.is_blacklisted);
+                setBlacklistReason(profile.blacklist_reason);
+                setNeedsBankAccount(!profile.wise_connected && !profile.is_blacklisted);
+            }).catch(() => {
+                // Silently fail — profile page will show its own error
+            });
+        };
+
+        fetchProfile();
+
+        // Re-fetch when bank account status changes (fired by BankAccountSection)
+        window.addEventListener('bank-account-changed', fetchProfile);
+        return () => window.removeEventListener('bank-account-changed', fetchProfile);
     }, []);
 
     const navLinks = [
@@ -73,7 +82,9 @@ export function BuyerLayout() {
                 </div>
             )}
             <main className={`w-full px-4 md:px-8 pt-24 pb-12 ${hasBanner ? 'mt-14' : ''}`}>
-                <Outlet />
+                <ErrorBoundary>
+                    <Outlet />
+                </ErrorBoundary>
             </main>
         </div>
     );

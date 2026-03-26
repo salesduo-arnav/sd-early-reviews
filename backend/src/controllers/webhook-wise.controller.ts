@@ -5,7 +5,7 @@ import { BuyerProfile } from '../models/BuyerProfile';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { Campaign } from '../models/Campaign';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 
 /**
  * Wise webhook handler for transfer state changes.
@@ -96,7 +96,7 @@ export const handleWiseWebhook = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: 'OK' });
     } catch (error) {
-        logger.error(`Wise webhook error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Wise webhook error: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

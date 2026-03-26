@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/auth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info } from 'lucide-react';
 import { SplitScreenLayout } from '@/components/layout/SplitScreenLayout';
 import SpApiConnect from '@/components/seller/SpApiConnect';
+import { getMarketplaceOptions, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 const OnboardingPage: React.FC = () => {
     const { t } = useTranslation();
@@ -22,7 +25,7 @@ const OnboardingPage: React.FC = () => {
 
     // Buyer fields
     const [amazonUrl, setAmazonUrl] = useState('');
-    const [region, setRegion] = useState('com');
+    const [region, setRegion] = useState('US');
 
     // Seller fields
     const [companyName, setCompanyName] = useState('');
@@ -64,7 +67,7 @@ const OnboardingPage: React.FC = () => {
                 setSellerStep(2);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : t('onboarding.fail', 'Failed to complete onboarding. Please try again.'));
+            toast.error(getErrorMessage(error));
         } finally {
             setIsLoading(false);
         }
@@ -118,6 +121,7 @@ const OnboardingPage: React.FC = () => {
 
     return (
         <SplitScreenLayout leftContent={leftContent}>
+            <PageMeta title="Complete Your Profile" description="Set up your SalesDuo Early Reviews profile to start managing campaigns or claiming products." />
             {/* Seller Step 2: SP-API Connection */}
             {user.role === 'SELLER' && sellerStep === 2 ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-400">
@@ -171,19 +175,11 @@ const OnboardingPage: React.FC = () => {
                                                     <SelectValue placeholder={t('onboarding.select_region', 'Select Region')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="ca">{t('onboarding.countries.ca', 'Canada')}</SelectItem>
-                                                    <SelectItem value="cn">{t('onboarding.countries.cn', 'China')}</SelectItem>
-                                                    <SelectItem value="eg">{t('onboarding.countries.eg', 'Egypt')}</SelectItem>
-                                                    <SelectItem value="fr">{t('onboarding.countries.fr', 'France')}</SelectItem>
-                                                    <SelectItem value="de">{t('onboarding.countries.de', 'Germany')}</SelectItem>
-                                                    <SelectItem value="in">{t('onboarding.countries.in', 'India')}</SelectItem>
-                                                    <SelectItem value="it">{t('onboarding.countries.it', 'Italy')}</SelectItem>
-                                                    <SelectItem value="jp">{t('onboarding.countries.jp', 'Japan')}</SelectItem>
-                                                    <SelectItem value="sa">{t('onboarding.countries.sa', 'Saudi Arabia')}</SelectItem>
-                                                    <SelectItem value="es">{t('onboarding.countries.es', 'Spain')}</SelectItem>
-                                                    <SelectItem value="ae">{t('onboarding.countries.ae', 'UAE')}</SelectItem>
-                                                    <SelectItem value="co.uk">{t('onboarding.countries.co.uk', 'United Kingdom')}</SelectItem>
-                                                    <SelectItem value="com">{t('onboarding.countries.com', 'United States')}</SelectItem>
+                                                    {getMarketplaceOptions().map(opt => (
+                                                        <SelectItem key={opt.value} value={opt.value}>
+                                                            {t(`onboarding.countries.${opt.value}`, opt.label)}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -198,7 +194,7 @@ const OnboardingPage: React.FC = () => {
                                                         <Info className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent className="max-w-[250px] p-3 text-sm flex flex-col border border-border bg-popover text-popover-foreground shadow-md">
-                                                        <p>{t('onboarding.amazon_profile_help_1', 'To find your profile URL, go to ')}<a href={`https://amazon.${region || 'com'}/gp/profile`} target="_blank" rel="noopener noreferrer" className="underline text-blue-500">amazon.{region || 'com'}/gp/profile</a>{t('onboarding.amazon_profile_help_2', ' while logged into your Amazon account.')}</p>
+                                                        <p>{t('onboarding.amazon_profile_help_1', 'To find your profile URL, go to ')}<a href={`https://${getAmazonDomain(region || 'US')}/gp/profile`} target="_blank" rel="noopener noreferrer" className="underline text-blue-500">{getAmazonDomain(region || 'US')}/gp/profile</a>{t('onboarding.amazon_profile_help_2', ' while logged into your Amazon account.')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -211,7 +207,7 @@ const OnboardingPage: React.FC = () => {
                                                 required
                                                 value={amazonUrl}
                                                 onChange={(e) => setAmazonUrl(e.target.value)}
-                                                placeholder={`https://amazon.${region || 'com'}/gp/profile/amzn1.account...`}
+                                                placeholder={`https://${getAmazonDomain(region || 'US')}/gp/profile/amzn1.account...`}
                                             />
                                         </div>
                                     </div>

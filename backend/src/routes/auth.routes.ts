@@ -14,6 +14,7 @@ router.post('/forgot-password', authRateLimiter, authController.forgotPassword);
 router.post('/reset-password', authRateLimiter, authController.resetPassword);
 
 router.post('/google', authRateLimiter, authController.googleAuth);
+router.post('/refresh', authRateLimiter, authController.refreshAccessToken);
 router.post('/onboarding', authenticateJWT, authController.onboarding);
 router.get('/me', authenticateJWT, authController.me);
 

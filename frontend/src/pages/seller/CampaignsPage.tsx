@@ -8,6 +8,8 @@ import { CampaignList } from '@/components/seller/campaigns/CampaignList';
 import { CampaignWizardModal } from '@/components/seller/campaigns/wizard/CampaignWizardModal';
 import { AppPagination } from '@/components/common/AppPagination';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
+import { PageMeta } from '@/components/PageMeta';
 
 const PAGE_SIZE = 12;
 
@@ -44,13 +46,12 @@ export default function CampaignsPage() {
             setCampaigns(result.data);
             setPagination(result.pagination);
         } catch (err) {
-            console.error('Failed to load campaigns', err);
-            setError(t('seller.campaigns.fetch_error', 'Failed to load campaigns.') as string);
-            toast.error(t('seller.campaigns.fetch_error', 'Failed to load campaigns.'));
+            setError(getErrorMessage(err));
+            toast.error(getErrorMessage(err));
         } finally {
             setIsLoading(false);
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
         loadCampaigns(currentPage);
@@ -68,6 +69,7 @@ export default function CampaignsPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            <PageMeta title="Campaigns" description="Create and manage your product review campaigns. Track progress, pause or resume campaigns on SalesDuo." />
             {paymentBanner === 'success' && (
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/40 px-5 py-4 animate-in slide-in-from-top-4 fade-in duration-500">
                     <div className="flex items-center gap-3">

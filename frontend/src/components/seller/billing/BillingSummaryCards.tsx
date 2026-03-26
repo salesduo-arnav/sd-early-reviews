@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Receipt, Clock } from 'lucide-react';
 import { billingApi, BillingSummary } from '@/api/billing';
+import { formatPriceByCurrency } from '@/lib/regions';
 
 export function BillingSummaryCards() {
     const { t } = useTranslation();
@@ -42,7 +43,7 @@ export function BillingSummaryCards() {
     const cards = [
         {
             label: t('seller.billing.total_spent', 'Total Spent'),
-            value: `$${summary.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+            value: formatPriceByCurrency(summary.totalSpent, summary.currency),
             sub: t('seller.billing.lifetime_charges', 'Lifetime campaign charges'),
             icon: <DollarSign className="w-4 h-4 text-brand-primary" />,
         },
@@ -54,7 +55,7 @@ export function BillingSummaryCards() {
         },
         {
             label: t('seller.billing.pending', 'Pending'),
-            value: `$${summary.pendingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+            value: formatPriceByCurrency(summary.pendingAmount, summary.currency),
             sub: t('seller.billing.awaiting_processing', 'Awaiting processing'),
             icon: <Clock className="w-4 h-4 text-orange-500" />,
         },

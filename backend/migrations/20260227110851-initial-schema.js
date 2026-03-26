@@ -21,7 +21,8 @@ module.exports = {
         'NEW_ORDER_CLAIM', 'REVIEW_SUBMITTED',
         'SELLER_PAYMENT_DUE',
         'ADMIN_VERIFICATION_NEEDED', 'ADMIN_FLAGGED_USER',
-        'SYSTEM_ANNOUNCEMENT', 'WELCOME'
+        'SYSTEM_ANNOUNCEMENT', 'WELCOME',
+        'NEW_CAMPAIGN_MATCH'
       );
       CREATE TYPE "enum_notifications_priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
     `);
@@ -145,6 +146,16 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: true,
         allowNull: false,
+      },
+      new_campaign_notifications_enabled: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+        allowNull: false,
+      },
+      interested_categories: {
+        type: Sequelize.JSONB,
+        defaultValue: null,
+        allowNull: true,
       },
       deleted_at: {
         type: Sequelize.DATE,
@@ -483,6 +494,11 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      currency: {
+        type: Sequelize.STRING(3),
+        allowNull: false,
+        defaultValue: 'USD',
+      },
       type: {
         type: 'enum_transactions_type',
         allowNull: false,
@@ -669,6 +685,12 @@ module.exports = {
         key: 'reimbursement_delay_days',
         value: '14',
         description: 'Number of days after review approval before auto-payout',
+        updated_at: new Date(),
+      },
+      {
+        key: 'new_campaign_notifications_enabled',
+        value: 'false',
+        description: 'Enable or disable buyer notifications when new campaigns match their interests. When disabled, no interest-match notifications are sent.',
         updated_at: new Date(),
       },
     ]);

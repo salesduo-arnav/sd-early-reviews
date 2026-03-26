@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -12,32 +14,15 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Landmark, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Landmark, Pencil, Trash2, Plus, Loader2, Shield, CheckCircle2, Globe, CreditCard } from 'lucide-react';
 import { buyerApi } from '@/api/buyer';
 import type { WiseAccountRequirement, ConnectBankPayload } from '@/api/buyer';
 import { WiseFormRenderer } from '@/components/ui/wise-form-renderer';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
+import { getCountryOptions } from '@/lib/regions';
 
-const COUNTRY_OPTIONS = [
-    { code: 'IN', currency: 'INR', label: 'India (INR)' },
-    { code: 'US', currency: 'USD', label: 'United States (USD)' },
-    { code: 'GB', currency: 'GBP', label: 'United Kingdom (GBP)' },
-    { code: 'DE', currency: 'EUR', label: 'Germany (EUR)' },
-    { code: 'FR', currency: 'EUR', label: 'France (EUR)' },
-    { code: 'AE', currency: 'AED', label: 'UAE (AED)' },
-    { code: 'AU', currency: 'AUD', label: 'Australia (AUD)' },
-    { code: 'NZ', currency: 'NZD', label: 'New Zealand (NZD)' },
-    { code: 'CA', currency: 'CAD', label: 'Canada (CAD)' },
-    { code: 'JP', currency: 'JPY', label: 'Japan (JPY)' },
-    { code: 'SG', currency: 'SGD', label: 'Singapore (SGD)' },
-    { code: 'ES', currency: 'EUR', label: 'Spain (EUR)' },
-    { code: 'IT', currency: 'EUR', label: 'Italy (EUR)' },
-    { code: 'NL', currency: 'EUR', label: 'Netherlands (EUR)' },
-    { code: 'SE', currency: 'SEK', label: 'Sweden (SEK)' },
-    { code: 'PL', currency: 'PLN', label: 'Poland (PLN)' },
-    { code: 'BR', currency: 'BRL', label: 'Brazil (BRL)' },
-    { code: 'MX', currency: 'MXN', label: 'Mexico (MXN)' },
-];
+const COUNTRY_OPTIONS = getCountryOptions();
 
 const HIDDEN_KEYS = new Set(['type']);
 
@@ -98,7 +83,7 @@ export default function BankAccountSection({
                     toast.error('No bank account options available for this country');
                 }
             })
-            .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load bank account requirements'))
+            .catch((err) => toast.error(getErrorMessage(err)))
             .finally(() => setLoadingRequirements(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedCountryObj is derived from selectedCountry; listing both would be redundant
     }, [selectedCountry]);
@@ -138,7 +123,6 @@ export default function BankAccountSection({
             }
         } catch {
             // Silent fail — fields just won't update
-            console.warn('Failed to refresh bank requirements, fields may be outdated');
         }
     }, [selectedCountryObj, activeRequirement, formValues, selectedTypeIndex]);
 
@@ -170,8 +154,9 @@ export default function BankAccountSection({
             setRequirements([]);
             setFormValues({});
             onConnected();
+            window.dispatchEvent(new Event('bank-account-changed'));
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to connect bank account');
+            toast.error(getErrorMessage(err));
         } finally {
             setSubmitting(false);
         }
@@ -183,8 +168,9 @@ export default function BankAccountSection({
             await buyerApi.disconnectBankAccount();
             toast.success(t('buyer.account.bank.disconnected_success', 'Bank account disconnected'));
             onDisconnected();
+            window.dispatchEvent(new Event('bank-account-changed'));
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to disconnect bank account');
+            toast.error(getErrorMessage(err));
         } finally {
             setRemoving(false);
         }
@@ -202,28 +188,36 @@ export default function BankAccountSection({
 
     return (
         <>
-            {/* ── Connected / Empty state card ─────────────────────────────── */}
+            {/* Connected / Empty state card */}
             <Card className="shadow-sm border-border">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-green-50">
-                            <Landmark className="h-4 w-4 text-green-600" />
+                        <div className={`p-2 rounded-lg ${wiseConnected ? 'bg-green-50' : 'bg-muted'}`}>
+                            <Landmark className={`h-4 w-4 ${wiseConnected ? 'text-green-600' : 'text-muted-foreground'}`} />
                         </div>
-                        <CardTitle className="text-lg">
-                            {t('buyer.account.bank.title', 'Bank Account')}
-                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-lg">
+                                {t('buyer.account.bank.title', 'Bank Account')}
+                            </CardTitle>
+                            {!loading && wiseConnected && (
+                                <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-50" variant="outline">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    {t('buyer.account.bank.connected_badge', 'Connected')}
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                     {!loading && wiseConnected && (
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={handleOpenDialog}>
-                                <Pencil className="h-4 w-4 mr-1" />
+                        <div className="flex items-center gap-1.5">
+                            <Button variant="ghost" size="sm" onClick={handleOpenDialog} className="text-muted-foreground hover:text-foreground">
+                                <Pencil className="h-3.5 w-3.5 mr-1" />
                                 {t('buyer.account.bank.edit', 'Edit')}
                             </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        {t('buyer.account.bank.disconnect', 'Disconnect')}
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                        {t('buyer.account.bank.disconnect', 'Remove')}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -232,10 +226,10 @@ export default function BankAccountSection({
                                         <AlertDialogDescription>{t('buyer.account.bank.disconnect_description', 'This will remove your bank account. You will not be able to receive reimbursements until you connect a new one.')}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
                                         <AlertDialogAction onClick={handleDisconnect} disabled={removing}>
                                             {removing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                                            Disconnect
+                                            {t('buyer.account.bank.disconnect_confirm', 'Disconnect')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -250,24 +244,38 @@ export default function BankAccountSection({
                             <Skeleton className="h-4 w-36" />
                         </div>
                     ) : wiseConnected ? (
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">{t('buyer.account.bank.country', 'Country')}</span>
-                                <span className="font-medium">{countryLabel}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">{t('buyer.account.bank.account_info', 'Account')}</span>
-                                <span className="font-medium">{bankDisplayLabel}</span>
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Globe className="h-3.5 w-3.5" />
+                                        {t('buyer.account.bank.country', 'Country')}
+                                    </div>
+                                    <span className="text-sm font-medium">{countryLabel}</span>
+                                </div>
+                                <Separator />
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <CreditCard className="h-3.5 w-3.5" />
+                                        {t('buyer.account.bank.account_info', 'Account')}
+                                    </div>
+                                    <span className="text-sm font-medium font-mono">{bankDisplayLabel}</span>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-6">
-                            <Landmark className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground mb-4">
-                                {t('buyer.account.bank.empty_title', 'No bank account connected. Add your bank account to receive reimbursements.')}
+                        <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center">
+                            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                                <Landmark className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-sm font-medium mb-1">
+                                {t('buyer.account.bank.empty_heading', 'No bank account connected')}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-5 max-w-xs mx-auto">
+                                {t('buyer.account.bank.empty_title', 'Add your bank account to start receiving reimbursements for your reviews.')}
                             </p>
-                            <Button onClick={handleOpenDialog}>
-                                <Plus className="h-4 w-4 mr-1" />
+                            <Button onClick={handleOpenDialog} size="sm">
+                                <Plus className="h-4 w-4 mr-1.5" />
                                 {t('buyer.account.bank.add', 'Add Bank Account')}
                             </Button>
                         </div>
@@ -275,96 +283,137 @@ export default function BankAccountSection({
                 </CardContent>
             </Card>
 
-            {/* ── Add / Edit dialog ────────────────────────────────────────── */}
+            {/* Add / Edit dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {wiseConnected
-                                ? t('buyer.account.bank.dialog_edit_title', 'Update Bank Account')
-                                : t('buyer.account.bank.dialog_add_title', 'Add Bank Account')}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {t('buyer.account.bank.dialog_description', 'Select your country and enter your bank details. Your information is securely stored with our payment partner.')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        {/* Country selector */}
-                        <div className="space-y-2">
-                            <Label>{t('buyer.account.bank.select_country', 'Country')}</Label>
-                            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select your country" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                    {COUNTRY_OPTIONS.map(c => (
-                                        <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Loading */}
-                        {loadingRequirements && (
-                            <div className="space-y-3 py-4">
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </div>
-                        )}
-
-                        {/* Account type tabs (ACH vs Wire, etc.) */}
-                        {!loadingRequirements && requirements.length > 1 && (
-                            <div className="space-y-2">
-                                <Label>Transfer method</Label>
-                                <div className="flex gap-2">
-                                    {requirements.map((req, idx) => (
-                                        <button
-                                            key={req.type}
-                                            type="button"
-                                            onClick={() => handleTypeChange(idx)}
-                                            className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                                                selectedTypeIndex === idx
-                                                    ? 'bg-primary text-primary-foreground border-primary'
-                                                    : 'bg-background text-muted-foreground border-border hover:bg-muted'
-                                            }`}
-                                        >
-                                            {req.title}
-                                        </button>
-                                    ))}
+                <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+                    {/* Dialog header */}
+                    <div className="p-6 pb-4">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-brand-primary/10">
+                                    <Landmark className="h-4 w-4 text-brand-primary" />
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Dynamic form via WiseFormRenderer */}
-                        {!loadingRequirements && activeRequirement && (
-                            <WiseFormRenderer
-                                fields={activeRequirement.fields}
-                                values={formValues}
-                                onChange={handleFieldChange}
-                                hiddenKeys={HIDDEN_KEYS}
-                                onRefreshNeeded={handleRefreshRequirements}
-                            />
-                        )}
-
-                        {/* No requirements */}
-                        {!loadingRequirements && selectedCountry && requirements.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                {t('buyer.account.bank.no_requirements', 'Unable to load bank requirements for this country. Please try again.')}
-                            </p>
-                        )}
+                                {wiseConnected
+                                    ? t('buyer.account.bank.dialog_edit_title', 'Update Bank Details')
+                                    : t('buyer.account.bank.dialog_add_title', 'Add Bank Details')}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {t('buyer.account.bank.dialog_description', 'Select your country and enter your bank details to receive reimbursements.')}
+                            </DialogDescription>
+                        </DialogHeader>
                     </div>
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={submitting || !selectedCountry || !activeRequirement}>
-                            {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                            {wiseConnected ? 'Update' : 'Connect'}
-                        </Button>
-                    </DialogFooter>
+                    <Separator />
+
+                    {/* Scrollable form body */}
+                    <div className="flex-1 overflow-y-auto px-6 py-5">
+                        <div className="space-y-5">
+                            {/* Step 1: Country selector */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">
+                                    {t('buyer.account.bank.select_country', 'Country')}
+                                </Label>
+                                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                                    <SelectTrigger className="h-10">
+                                        <div className="flex items-center gap-2">
+                                            <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            <SelectValue placeholder="Select your country" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                        {COUNTRY_OPTIONS.map(c => (
+                                            <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Loading skeleton */}
+                            {loadingRequirements && (
+                                <div className="space-y-4 py-2">
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-10 w-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-32" />
+                                        <Skeleton className="h-10 w-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-28" />
+                                        <Skeleton className="h-10 w-full" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Transfer method tabs */}
+                            {!loadingRequirements && requirements.length > 1 && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">{t('buyer.account.bank.transfer_method', 'Transfer method')}</Label>
+                                    <div className="flex items-center rounded-lg bg-muted p-1 gap-1">
+                                        {requirements.map((req, idx) => (
+                                            <button
+                                                key={req.type}
+                                                type="button"
+                                                onClick={() => handleTypeChange(idx)}
+                                                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 ${
+                                                    selectedTypeIndex === idx
+                                                        ? 'bg-background text-foreground shadow-sm'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {req.title}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Dynamic form fields */}
+                            {!loadingRequirements && activeRequirement && (
+                                <>
+                                    {selectedCountry && <Separator />}
+                                    <WiseFormRenderer
+                                        fields={activeRequirement.fields}
+                                        values={formValues}
+                                        onChange={handleFieldChange}
+                                        hiddenKeys={HIDDEN_KEYS}
+                                        onRefreshNeeded={handleRefreshRequirements}
+                                    />
+                                </>
+                            )}
+
+                            {/* No requirements fallback */}
+                            {!loadingRequirements && selectedCountry && requirements.length === 0 && (
+                                <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('buyer.account.bank.no_requirements', 'Unable to load bank requirements for this country. Please try again.')}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Dialog footer */}
+                    <div className="p-6 pt-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Shield className="h-3.5 w-3.5" />
+                                <span>{t('buyer.account.bank.secured_by_wise', 'Secured by Wise')}</span>
+                            </div>
+                            <DialogFooter className="flex-row gap-2 sm:space-x-0">
+                                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                                    {t('common.cancel', 'Cancel')}
+                                </Button>
+                                <Button onClick={handleSubmit} disabled={submitting || !selectedCountry || !activeRequirement}>
+                                    {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+                                    {wiseConnected ? t('buyer.account.bank.update_account', 'Update Account') : t('buyer.account.bank.connect_account', 'Connect Account')}
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

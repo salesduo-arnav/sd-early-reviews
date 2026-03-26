@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { BillingSummaryCards } from '@/components/seller/billing/BillingSummaryCards';
 import { BillingHistoryTable } from '@/components/seller/billing/BillingHistoryTable';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function BillingPage() {
     const { t } = useTranslation();
 
     return (
         <div className="space-y-8">
+            <PageMeta title="Billing" description="View your payment history, transaction details, and download invoices on SalesDuo Early Reviews." />
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">
                     {t('seller.nav.billing', 'Billing')}

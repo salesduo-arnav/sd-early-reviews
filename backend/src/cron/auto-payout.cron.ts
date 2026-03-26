@@ -4,7 +4,8 @@ import { Campaign } from '../models/Campaign';
 import { SystemConfig } from '../models/SystemConfig';
 import { processPayoutForClaim } from '../services/payout.service';
 import { regionToCurrency } from '../services/wise.service';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
+import { CONFIG_KEYS } from '../utils/constants';
 
 /**
  * Auto-payout cron handler.
@@ -20,10 +21,16 @@ export async function runAutoPayouts(): Promise<void> {
 
     try {
         // Read configs
-        const [delayConfig, maxAmountConfig] = await Promise.all([
-            SystemConfig.findByPk('reimbursement_delay_days'),
-            SystemConfig.findByPk('auto_payout_max_amount'),
+        const [enabledConfig, delayConfig, maxAmountConfig] = await Promise.all([
+            SystemConfig.findByPk(CONFIG_KEYS.AUTO_PAYOUT_ENABLED),
+            SystemConfig.findByPk(CONFIG_KEYS.REIMBURSEMENT_DELAY_DAYS),
+            SystemConfig.findByPk(CONFIG_KEYS.AUTO_PAYOUT_MAX_AMOUNT),
         ]);
+
+        if (enabledConfig?.value === 'false') {
+            logger.info('[AutoPayout] Auto payouts are disabled, skipping run');
+            return;
+        }
 
         const delayDays = delayConfig ? parseInt(delayConfig.value, 10) : 14;
         if (isNaN(delayDays) || delayDays < 0) {
@@ -63,7 +70,7 @@ export async function runAutoPayouts(): Promise<void> {
         const claimsToProcess = maxAmounts
             ? eligibleClaims.filter((claim) => {
                   const campaignData = claim.get('Campaign') as { region: string } | undefined;
-                  const region = campaignData?.region ?? 'com';
+                  const region = campaignData?.region ?? 'US';
                   const currency = regionToCurrency(region);
                   const limit = maxAmounts![currency];
                   if (limit !== undefined && Number(claim.expected_payout_amount) > limit) {
@@ -98,6 +105,6 @@ export async function runAutoPayouts(): Promise<void> {
 
         logger.info(`[AutoPayout] Run complete: ${processed} processed, ${failed} failed, ${skipped} skipped (no bank account), ${heldBack} held for manual review`);
     } catch (error) {
-        logger.error(`[AutoPayout] Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`[AutoPayout] Unexpected error: ${formatError(error)}`);
     }
 }

@@ -8,6 +8,8 @@ import { Loader2, Search, AlertTriangle } from 'lucide-react';
 import { CampaignWizardData } from '../wizard/CampaignWizardModal';
 import { campaignsApi } from '@/api/campaigns';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
+import { getMarketplaceOptions } from '@/lib/regions';
 
 interface Step1ProductProps {
     data: CampaignWizardData;
@@ -15,21 +17,7 @@ interface Step1ProductProps {
     onNext: () => void;
 }
 
-const REGIONS = [
-    { value: 'com', label: 'United States (Amazon.com)' },
-    { value: 'ca', label: 'Canada (Amazon.ca)' },
-    { value: 'co.uk', label: 'United Kingdom (Amazon.co.uk)' },
-    { value: 'de', label: 'Germany (Amazon.de)' },
-    { value: 'fr', label: 'France (Amazon.fr)' },
-    { value: 'it', label: 'Italy (Amazon.it)' },
-    { value: 'es', label: 'Spain (Amazon.es)' },
-    { value: 'jp', label: 'Japan (Amazon.co.jp)' },
-    { value: 'in', label: 'India (Amazon.in)' },
-    { value: 'cn', label: 'China (Amazon.cn)' },
-    { value: 'ae', label: 'UAE (Amazon.ae)' },
-    { value: 'sa', label: 'Saudi Arabia (Amazon.sa)' },
-    { value: 'eg', label: 'Egypt (Amazon.eg)' },
-];
+const REGIONS = getMarketplaceOptions();
 
 
 
@@ -53,7 +41,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
 
             // Client-side validation: ensure we got meaningful data back
             if (!response.product_title) {
-                setFetchError('This ASIN was not found in the selected marketplace. Please double-check the ASIN and region.');
+                setFetchError(t('seller.campaigns.wizard.asin_not_found', 'This ASIN was not found in the selected marketplace. Please double-check the ASIN and region.'));
                 return;
             }
 
@@ -64,7 +52,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
 
             // Client-side price validation as safety net
             if (price <= 0) {
-                setFetchError('Product data appears incomplete — the price is unavailable or zero. Please try a different ASIN.');
+                setFetchError(t('seller.campaigns.wizard.incomplete_data', 'Product data appears incomplete — the price is unavailable or zero. Please try a different ASIN.'));
                 return;
             }
 
@@ -87,9 +75,9 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
             });
             toast.success(t('seller.campaigns.wizard.fetch_success', 'Product details fetched successfully!'));
         } catch (error) {
-            const message = error instanceof Error ? error.message : '';
+            const message = getErrorMessage(error);
             // Show the backend's descriptive message if available
-            setFetchError(message || 'Failed to fetch product details. Please check the ASIN and selected region.');
+            setFetchError(message || t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));
             toast.error(message || t('seller.campaigns.wizard.fetch_error', 'Failed to fetch product details. Please check ASIN & Region.'));
         } finally {
             setIsFetching(false);
@@ -144,7 +132,7 @@ export function Step1Product({ data, updateData, onNext }: Step1ProductProps) {
                 <div className="mt-6 p-4 border border-destructive/30 rounded-lg bg-destructive/5 flex items-start space-x-3 animate-in zoom-in-95 duration-300">
                     <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-destructive mb-0.5">Product Lookup Failed</p>
+                        <p className="text-sm font-semibold text-destructive mb-0.5">{t('seller.campaigns.wizard.lookup_failed', 'Product Lookup Failed')}</p>
                         <p className="text-sm text-muted-foreground">{fetchError}</p>
                     </div>
                 </div>

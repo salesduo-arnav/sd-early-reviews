@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
+import { PageMeta } from '@/components/PageMeta';
 
 import { HeroSection } from './components/HeroSection';
 import { StatsSection } from './components/StatsSection';
@@ -26,6 +27,7 @@ const LandingPage = () => {
 
     return (
         <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+            <PageMeta title="Authentic Product Reviews for Sellers & Buyers" description="SalesDuo Early Reviews connects sellers with verified buyers to generate authentic product reviews. Buyers purchase products and get reimbursed for honest reviews." />
             {/* Minimal and clean Header. Language Switcher moved to Footer */}
             <nav className="fixed top-0 left-0 right-0 h-20 flex items-center z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
                 <div className="container px-4 flex justify-between items-center h-full">

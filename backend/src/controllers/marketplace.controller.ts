@@ -4,11 +4,12 @@ import { Campaign, CampaignStatus } from '../models/Campaign';
 import { SellerProfile } from '../models/SellerProfile';
 import { OrderClaim } from '../models/OrderClaim';
 import { BuyerProfile } from '../models/BuyerProfile';
-import { logger } from '../utils/logger';
+import { logger, formatError } from '../utils/logger';
 import { parsePaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { attemptAutoVerification } from '../services/verification';
+import { getMarketplace } from '../config/marketplaces';
 
 /**
  * GET /api/marketplace
@@ -34,6 +35,23 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
         const where: WhereOptions = {
             status: CampaignStatus.ACTIVE,
         };
+
+        // Exclude campaigns the buyer has already claimed
+        const userId = req.user?.userId;
+        if (userId) {
+            const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId }, attributes: ['id'] });
+            if (buyerProfile) {
+                const claimedCampaignIds = (await OrderClaim.findAll({
+                    where: { buyer_id: buyerProfile.id },
+                    attributes: ['campaign_id'],
+                    raw: true,
+                })).map(c => c.campaign_id);
+
+                if (claimedCampaignIds.length > 0) {
+                    (where as Record<string, unknown>).id = { [Op.notIn]: claimedCampaignIds };
+                }
+            }
+        }
 
         // Keyword / ASIN search
         if (search && typeof search === 'string' && search.trim()) {
@@ -124,9 +142,10 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
                 rating: raw.product_rating,
                 rating_count: raw.product_rating_count,
                 reimbursement_pct: raw.reimbursement_percent,
-                reimbursement_amount: (
-                    (Number(raw.product_price) * Number(raw.reimbursement_percent)) / 100
-                ).toFixed(2),
+                reimbursement_amount: parseFloat(
+                    ((Number(raw.product_price) * Number(raw.reimbursement_percent)) / 100)
+                        .toFixed(getMarketplace(String(raw.region || 'US')).decimalDigits),
+                ),
                 region: raw.region,
                 category: raw.category,
                 target_reviews: raw.target_reviews,
@@ -140,7 +159,7 @@ export const getMarketplaceProducts = async (req: Request, res: Response) => {
 
         return res.status(200).json(buildPaginatedResponse(products, count, pagination));
     } catch (error) {
-        logger.error(`Error fetching marketplace products: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching marketplace products: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching marketplace products' });
     }
 };
@@ -199,7 +218,7 @@ export const getMarketplaceProduct = async (req: Request, res: Response) => {
 
         return res.status(200).json(product);
     } catch (error) {
-        logger.error(`Error fetching marketplace product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching marketplace product: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching product details' });
     }
 };
@@ -232,7 +251,7 @@ export const getMarketplaceFilters = async (_req: Request, res: Response) => {
             regions: regions.map((r) => (r as unknown as Record<string, string>).region).filter(Boolean),
         });
     } catch (error) {
-        logger.error(`Error fetching marketplace filters: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error fetching marketplace filters: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while fetching filters' });
     }
 };
@@ -342,13 +361,13 @@ export const claimProduct = async (req: Request, res: Response) => {
             review_deadline: reviewDeadline,
         });
 
-        // ── Attempt automatic order verification ──
+        // Attempt automatic order verification
         const verificationResult = await attemptAutoVerification(claim, campaignId);
         if (verificationResult.autoVerified) {
             await claim.reload();
         }
 
-        // ── Notifications (non-blocking) ──
+        // Notifications (non-blocking)
 
         // Notify the seller about the new claim
         const sellerProfile = await SellerProfile.findByPk(campaign.seller_id);
@@ -375,7 +394,7 @@ export const claimProduct = async (req: Request, res: Response) => {
             claim,
         });
     } catch (error) {
-        logger.error(`Error claiming product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`Error claiming product: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while claiming product' });
     }
 };

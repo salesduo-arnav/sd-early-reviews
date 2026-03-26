@@ -16,7 +16,10 @@ import { Info } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 import { GoogleButton } from '@/components/auth/GoogleButton';
+import { getMarketplaceOptions, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 type Role = 'seller' | 'buyer';
 
@@ -103,7 +106,7 @@ export default function SignupPage() {
                 setIsOtpModalOpen(true);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -123,7 +126,7 @@ export default function SignupPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Google signup failed');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -138,7 +141,7 @@ export default function SignupPage() {
                 else navigate('/seller');
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Something went wrong');
+            toast.error(getErrorMessage(error));
         }
     };
 
@@ -184,6 +187,7 @@ export default function SignupPage() {
 
     return (
         <>
+            <PageMeta title="Create Account" description="Join SalesDuo Early Reviews as a seller to get authentic product reviews, or as a buyer to earn reimbursements for honest reviews." />
             <SplitScreenLayout leftContent={currentContent}>
                 <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
                     <div className="flex flex-col space-y-2 text-center lg:text-left">
@@ -270,19 +274,9 @@ export default function SignupPage() {
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="ca">Canada</SelectItem>
-                                                        <SelectItem value="cn">China</SelectItem>
-                                                        <SelectItem value="eg">Egypt</SelectItem>
-                                                        <SelectItem value="fr">France</SelectItem>
-                                                        <SelectItem value="de">Germany</SelectItem>
-                                                        <SelectItem value="in">India</SelectItem>
-                                                        <SelectItem value="it">Italy</SelectItem>
-                                                        <SelectItem value="jp">Japan</SelectItem>
-                                                        <SelectItem value="sa">Saudi Arabia</SelectItem>
-                                                        <SelectItem value="es">Spain</SelectItem>
-                                                        <SelectItem value="ae">UAE</SelectItem>
-                                                        <SelectItem value="co.uk">United Kingdom</SelectItem>
-                                                        <SelectItem value="com">United States</SelectItem>
+                                                        {getMarketplaceOptions().map(opt => (
+                                                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -302,13 +296,13 @@ export default function SignupPage() {
                                                                 <Info className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors cursor-help" />
                                                             </TooltipTrigger>
                                                             <TooltipContent className="max-w-[250px] p-3 text-sm">
-                                                                <p>To find your profile URL, go to <a href={`https://amazon.${form.watch('region') || 'com'}/gp/profile`} target="_blank" rel="noopener noreferrer" className="underline text-blue-500">amazon.{form.watch('region') || 'com'}/gp/profile</a> while logged into your Amazon account.</p>
+                                                                <p>To find your profile URL, go to <a href={`https://${getAmazonDomain(form.watch('region') || 'US')}/gp/profile`} target="_blank" rel="noopener noreferrer" className="underline text-blue-500">{getAmazonDomain(form.watch('region') || 'US')}/gp/profile</a> while logged into your Amazon account.</p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                 </div>
                                                 <FormControl>
-                                                    <Input placeholder={`https://amazon.${form.watch('region') || 'com'}/gp/profile/amzn1.account...`} {...field} />
+                                                    <Input placeholder={`https://${getAmazonDomain(form.watch('region') || 'US')}/gp/profile/amzn1.account...`} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
