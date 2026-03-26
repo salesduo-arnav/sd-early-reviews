@@ -14,6 +14,7 @@ import { Info } from 'lucide-react';
 import { SplitScreenLayout } from '@/components/layout/SplitScreenLayout';
 import SpApiConnect from '@/components/seller/SpApiConnect';
 import { getMarketplaceOptions, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 const OnboardingPage: React.FC = () => {
     const { t } = useTranslation();
@@ -120,6 +121,7 @@ const OnboardingPage: React.FC = () => {
 
     return (
         <SplitScreenLayout leftContent={leftContent}>
+            <PageMeta title="Complete Your Profile" description="Set up your SalesDuo Early Reviews profile to start managing campaigns or claiming products." />
             {/* Seller Step 2: SP-API Connection */}
             {user.role === 'SELLER' && sellerStep === 2 ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-400">

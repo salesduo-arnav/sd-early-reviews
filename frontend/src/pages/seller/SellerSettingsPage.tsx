@@ -1,12 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SpApiConnect from '@/components/seller/SpApiConnect';
+import { PageMeta } from '@/components/PageMeta';
 
 const SellerSettingsPage: React.FC = () => {
     const { t } = useTranslation();
 
     return (
         <div className="w-full mx-auto space-y-8">
+            <PageMeta title="Settings" description="Manage your Amazon SP-API integration, account preferences, and seller settings on SalesDuo." />
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                     {t('seller.settings.title', 'Settings')}

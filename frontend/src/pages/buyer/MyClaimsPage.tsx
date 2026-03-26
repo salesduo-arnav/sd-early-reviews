@@ -17,6 +17,7 @@ import { Search, Package, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function MyClaimsPage() {
     const { t } = useTranslation();
@@ -99,6 +100,7 @@ export default function MyClaimsPage() {
 
     return (
         <div className="space-y-6">
+            <PageMeta title="My Claims" description="Track your claimed products, upload review proof, and monitor your reimbursement status on SalesDuo." />
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">

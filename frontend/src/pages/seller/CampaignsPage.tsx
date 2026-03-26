@@ -9,6 +9,7 @@ import { CampaignWizardModal } from '@/components/seller/campaigns/wizard/Campai
 import { AppPagination } from '@/components/common/AppPagination';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { PageMeta } from '@/components/PageMeta';
 
 const PAGE_SIZE = 12;
 
@@ -68,6 +69,7 @@ export default function CampaignsPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            <PageMeta title="Campaigns" description="Create and manage your product review campaigns. Track progress, pause or resume campaigns on SalesDuo." />
             {paymentBanner === 'success' && (
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/40 px-5 py-4 animate-in slide-in-from-top-4 fade-in duration-500">
                     <div className="flex items-center gap-3">

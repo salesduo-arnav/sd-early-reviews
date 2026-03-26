@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { formatPrice, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 const CAMPAIGN_STEPS = [
     {
@@ -104,6 +105,7 @@ export default function CampaignDetailPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <PageMeta title={`Campaign: ${campaign.product_title || 'Details'}`} description={`Track progress and manage your campaign for ${campaign.product_title} on SalesDuo Early Reviews.`} />
             <div className="flex items-center gap-4 mb-6">
                 <Button variant="ghost" size="icon" onClick={() => navigate('/seller/campaigns')} className="rounded-full">
                     <ArrowLeft className="h-5 w-5" />

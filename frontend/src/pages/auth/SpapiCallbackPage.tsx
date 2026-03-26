@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { PageMeta } from '@/components/PageMeta';
 
 /**
  * Minimal page that the SP-API OAuth popup lands on.
@@ -27,6 +28,7 @@ export default function SpapiCallbackPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background">
+            <PageMeta title="SP-API Authorization" description="Completing Amazon Selling Partner API authorization for your SalesDuo account." />
             <div className="text-center space-y-4 p-8">
                 {status === 'loading' && (
                     <Loader2 className="h-10 w-10 animate-spin text-muted-foreground mx-auto" />

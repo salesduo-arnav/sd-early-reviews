@@ -12,6 +12,7 @@ import type { BuyerProfile } from '@/api/buyer';
 import ProfileStatsSection from '@/components/buyer/account/ProfileStatsSection';
 import BankAccountSection from '@/components/buyer/account/BankAccountSection';
 import NotificationPreferencesSection from '@/components/buyer/account/NotificationPreferencesSection';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function AccountPage() {
     const { t } = useTranslation();
@@ -83,6 +84,7 @@ export default function AccountPage() {
 
     return (
         <div className="space-y-8">
+            <PageMeta title="Profile & Earnings" description="Manage your SalesDuo buyer profile, bank details, notification preferences, and track your earnings." />
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">

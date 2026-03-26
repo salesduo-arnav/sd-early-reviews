@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { formatPriceByCurrency } from '@/lib/regions';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function AdminOverviewPage() {
     const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -59,6 +60,7 @@ export default function AdminOverviewPage() {
 
     return (
         <div className="space-y-8">
+            <PageMeta title="Admin Overview" description="Platform-wide metrics, revenue charts, and activity overview for SalesDuo Early Reviews administration." />
             <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 text-green-600">
                     <LayoutDashboard className="h-6 w-6" />

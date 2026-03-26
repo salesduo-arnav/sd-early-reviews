@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { GoogleButton } from '@/components/auth/GoogleButton';
 import { getMarketplaceOptions, getAmazonDomain } from '@/lib/regions';
+import { PageMeta } from '@/components/PageMeta';
 
 type Role = 'seller' | 'buyer';
 
@@ -186,6 +187,7 @@ export default function SignupPage() {
 
     return (
         <>
+            <PageMeta title="Create Account" description="Join SalesDuo Early Reviews as a seller to get authentic product reviews, or as a buyer to earn reimbursements for honest reviews." />
             <SplitScreenLayout leftContent={currentContent}>
                 <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
                     <div className="flex flex-col space-y-2 text-center lg:text-left">

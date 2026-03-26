@@ -2,12 +2,14 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReviewStatsCards } from '@/components/seller/reviews/ReviewStatsCards';
 import { ReviewsTable } from '@/components/seller/reviews/ReviewsTable';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function ReviewsPage() {
     const { t } = useTranslation();
 
     return (
         <div className="space-y-6">
+            <PageMeta title="Reviews" description="Monitor and verify incoming buyer reviews for your products on SalesDuo Early Reviews." />
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">{t('seller.nav.reviews', 'Reviews')}</h1>
                 <p className="text-muted-foreground mt-2">{t('seller.reviews_page_desc', 'Monitor and verify incoming reviews from buyers.')}</p>

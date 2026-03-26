@@ -14,6 +14,7 @@ import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
+import { PageMeta } from '@/components/PageMeta';
 
 const emailSchema = z.object({
     email: z.string().email(),
@@ -124,6 +125,7 @@ export default function ForgotPasswordPage() {
 
     return (
         <SplitScreenLayout leftContent={leftContent}>
+            <PageMeta title="Reset Password" description="Reset your SalesDuo Early Reviews account password. Enter your email to receive a verification code." />
             <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
                 <Link to="/login" className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground w-fit mb-2 transition-colors">
                     <ArrowLeft className="w-4 h-4 mr-1" />

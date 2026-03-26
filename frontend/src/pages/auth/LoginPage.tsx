@@ -16,6 +16,7 @@ import { authApi } from '@/api/auth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
 import { GoogleButton } from '@/components/auth/GoogleButton';
+import { PageMeta } from '@/components/PageMeta';
 
 export default function LoginPage() {
     const { t } = useTranslation();
@@ -147,6 +148,7 @@ export default function LoginPage() {
 
     return (
         <SplitScreenLayout leftContent={leftContent}>
+            <PageMeta title="Sign In" description="Sign in to your SalesDuo Early Reviews account to manage campaigns, claim products, and track reimbursements." />
             <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
                 <div className="flex flex-col space-y-2 text-center lg:text-left">
                     <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('auth.sign_in', 'Sign In')}</h1>

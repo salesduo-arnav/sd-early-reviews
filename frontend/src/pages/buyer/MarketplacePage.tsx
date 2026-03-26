@@ -9,6 +9,7 @@ import { MarketplaceSidebar } from '@/components/buyer/marketplace/MarketplaceSi
 import { buyerApi } from '@/api/buyer';
 import type { MarketplaceProduct, MarketplaceQueryParams, MarketplaceFilters as FilterOptions } from '@/api/buyer';
 import type { PaginationMeta } from '@/components/common/AppPagination';
+import { PageMeta } from '@/components/PageMeta';
 const DEFAULT_FILTERS: MarketplaceQueryParams = {
     page: 1,
     limit: 12,
@@ -120,6 +121,7 @@ export default function MarketplacePage() {
 
     return (
         <div className="space-y-6">
+            <PageMeta title="Marketplace" description="Browse available products, claim deals, and earn reimbursements for writing honest reviews on SalesDuo." />
             {/* Page header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">
