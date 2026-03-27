@@ -38,3 +38,4 @@ docs/              Flow documentation
 - [Auto Review Verification](docs/auto-review-verification.md) — Profile scrape + confidence scoring flow
 - [Payout Flow](docs/payout-flow.md) — Wise payout processing + auto-payout cron
 - [Stripe Payment Flow](docs/stripe-payment-flow.md) — Campaign payment + webhook handling
+- [Deployment](docs/deployment.md) — Docker setup, env vars, resource estimates
