@@ -69,6 +69,7 @@ const CONFIG_CATEGORIES: ConfigCategory[] = [
         keys: [
             'auto_order_verification_enabled',
             'auto_review_verification_enabled',
+            'review_verification_confidence_threshold',
             'auto_payout_enabled',
             'auto_payout_cron_schedule',
         ],

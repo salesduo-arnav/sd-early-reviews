@@ -4,7 +4,7 @@ import { Campaign } from '../../models/Campaign';
 import { BuyerProfile } from '../../models/BuyerProfile';
 import { SystemConfig } from '../../models/SystemConfig';
 import { logger, formatError } from '../../utils/logger';
-import { VERIFICATION_METHOD } from '../../utils/constants';
+import { CONFIG_KEYS, SYSTEM_CONFIGS, VERIFICATION_METHOD } from '../../utils/constants';
 import { fetchProfileReviews, ProfileReview } from '../amazon.service';
 import { extractReviewId, computeTextSimilarity } from '../../utils/reviewVerification';
 import { notificationService } from '../notification.service';
@@ -46,11 +46,15 @@ export async function attemptAutoReviewVerification(
     campaignId: string
 ): Promise<ReviewVerificationResult> {
     try {
-        // 1. Check if auto-verification is enabled
-        const config = await SystemConfig.findByPk('auto_review_verification_enabled');
+        // 1. Check if auto-verification is enabled & fetch confidence threshold
+        const [config, thresholdConfig] = await Promise.all([
+            SystemConfig.findByPk(CONFIG_KEYS.AUTO_REVIEW_VERIFICATION),
+            SystemConfig.findByPk(CONFIG_KEYS.REVIEW_VERIFICATION_CONFIDENCE_THRESHOLD),
+        ]);
         if (!config || config.value !== 'true') {
             return { autoVerified: false, method: 'MANUAL' };
         }
+        const confidenceThreshold = parseInt(thresholdConfig?.value ?? SYSTEM_CONFIGS.REVIEW_VERIFICATION_CONFIDENCE_THRESHOLD.defaultValue, 10);
 
         // 2. Load campaign and buyer profile
         const campaign = await Campaign.findByPk(campaignId);
@@ -141,7 +145,7 @@ export async function attemptAutoReviewVerification(
         });
 
         // 8. Auto-approve if confidence meets threshold
-        if (confidence.total >= 85) {
+        if (confidence.total >= confidenceThreshold) {
             const approvedAt = new Date();
             await claim.update({
                 review_status: ReviewStatus.APPROVED,
