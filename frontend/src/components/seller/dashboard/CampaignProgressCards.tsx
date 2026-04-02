@@ -5,6 +5,7 @@ import { dashboardApi, CampaignProgress } from '@/api/seller';
 import { Badge } from '@/components/ui/badge';
 import { AppPagination, PaginationMeta } from '@/components/common/AppPagination';
 import { getErrorMessage } from '@/lib/errors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PAGE_SIZE = 12;
 
@@ -34,10 +35,33 @@ export function CampaignProgressCards() {
 
     if (loading) {
         return (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="shadow-sm border-border animate-pulse h-[200px]" />
-                ))}
+            <div className="space-y-4 col-span-1 md:col-span-2">
+                <h2 className="text-xl font-semibold tracking-tight">{t('seller.dashboard.campaign_progress', 'Campaign Progress')}</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[...Array(3)].map((_, i) => (
+                        <Card key={i} className="shadow-sm border-border flex flex-col justify-between">
+                            <CardHeader className="pb-2">
+                                <div className="flex gap-3 items-center">
+                                    <Skeleton className="h-10 w-10 rounded flex-shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-3 w-16" />
+                                        <Skeleton className="h-5 w-14 rounded-full" />
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mt-2 space-y-3">
+                                    <div className="flex justify-between">
+                                        <Skeleton className="h-3 w-28" />
+                                        <Skeleton className="h-3 w-12" />
+                                    </div>
+                                    <Skeleton className="h-2 w-full rounded-full" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
         );
     }

@@ -5,6 +5,7 @@ import { Package, TrendingUp, DollarSign } from 'lucide-react';
 import { dashboardApi, DashboardMetrics as IDashboardMetrics } from '@/api/seller';
 import { getErrorMessage } from '@/lib/errors';
 import { formatPriceByCurrency } from '@/lib/regions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardMetrics() {
     const { t } = useTranslation();
@@ -30,7 +31,16 @@ export function DashboardMetrics() {
         return (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="shadow-sm border-border animate-pulse h-[120px]" />
+                    <Card key={i} className="shadow-sm border-border">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-4 rounded" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-7 w-16 mb-2" />
+                            <Skeleton className="h-3 w-24" />
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         );

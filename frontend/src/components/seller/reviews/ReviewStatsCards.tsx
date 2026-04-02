@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MessageSquare, CheckCircle, Clock, Star } from 'lucide-react';
 import { dashboardApi, SellerReviewStats } from '@/api/seller';
 import { getErrorMessage } from '@/lib/errors';
@@ -29,7 +30,16 @@ export function ReviewStatsCards() {
         return (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {[...Array(4)].map((_, i) => (
-                    <Card key={i} className="shadow-sm border-border animate-pulse h-[120px]" />
+                    <Card key={i} className="shadow-sm border-border">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-4 rounded" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-7 w-14 mb-2" />
+                            <Skeleton className="h-3 w-24" />
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         );

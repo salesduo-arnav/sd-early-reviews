@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, Receipt, Clock } from 'lucide-react';
 import { billingApi, BillingSummary } from '@/api/billing';
 import { formatPriceByCurrency } from '@/lib/regions';
@@ -24,7 +25,16 @@ export function BillingSummaryCards() {
         return (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="shadow-sm border-border animate-pulse h-[120px]" />
+                    <Card key={i} className="shadow-sm border-border">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-4 rounded" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-7 w-20 mb-2" />
+                            <Skeleton className="h-3 w-24" />
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         );

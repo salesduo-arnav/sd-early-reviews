@@ -6,6 +6,7 @@ import { dashboardApi, ReviewVelocity } from '@/api/seller';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { subDays, format } from 'date-fns';
 import { getErrorMessage } from '@/lib/errors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function ReviewVelocityChart() {
     const { t } = useTranslation();
@@ -64,7 +65,23 @@ export function ReviewVelocityChart() {
             <CardContent>
                 <div className="h-[300px] w-full mt-4">
                     {loading ? (
-                        <div className="w-full h-full animate-pulse bg-muted rounded-xl" />
+                        <div className="w-full h-full flex flex-col gap-3">
+                            <div className="flex-1 flex gap-3">
+                                <div className="flex flex-col justify-between py-2">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Skeleton key={i} className="h-3 w-6" />
+                                    ))}
+                                </div>
+                                <div className="flex-1 relative">
+                                    <Skeleton className="absolute inset-0 rounded-lg" />
+                                </div>
+                            </div>
+                            <div className="flex justify-between pl-9">
+                                {[...Array(7)].map((_, i) => (
+                                    <Skeleton key={i} className="h-3 w-8" />
+                                ))}
+                            </div>
+                        </div>
                     ) : error ? (
                         <div className="w-full h-full flex items-center justify-center text-destructive font-medium">
                             {error}
