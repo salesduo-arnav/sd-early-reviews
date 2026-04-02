@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
     ArrowLeft,
     ExternalLink,
-    Loader2,
     ShoppingCart,
     Star,
     Upload,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageMeta } from '@/components/PageMeta';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -95,8 +95,120 @@ export default function ProductDetailPage() {
 
     if (isLoading || !product) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+            <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+                {/* Back button + header */}
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-7 w-40" />
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                </div>
+
+                {/* How It Works — static, renders immediately */}
+                <div className="rounded-xl bg-brand-primary/5 p-6 sm:p-8">
+                    <div className="text-center mb-8">
+                        <h2 className="text-xl font-bold tracking-tight">
+                            {t('buyer.product_detail.how_it_works', 'How It Works')}
+                        </h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {t('buyer.product_detail.how_it_works_subtitle', 'Earn reimbursements in 4 simple steps')}
+                        </p>
+                    </div>
+                    <div className="relative">
+                        <div className="hidden lg:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 bg-brand-primary/20" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0">
+                            {PROCESS_STEPS.map((step, index) => (
+                                <div key={index} className="relative flex flex-col items-center text-center px-4">
+                                    <div className="relative z-10 flex items-center justify-center h-14 w-14 rounded-full bg-brand-primary text-white mb-4 shadow-md">
+                                        <step.icon className="h-6 w-6" />
+                                    </div>
+                                    <p className="text-sm font-bold mb-1">{t(step.titleKey, step.titleFallback)}</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">{t(step.descKey, step.descFallback)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Two-column layout skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                    <div className="md:col-span-2 flex flex-col gap-6">
+                        {/* Product card skeleton */}
+                        <Card className="shadow-sm border-border overflow-hidden">
+                            <div className="md:flex">
+                                <Skeleton className="h-64 md:h-full md:w-64 flex-shrink-0" />
+                                <div className="p-6 flex-1 min-w-0 space-y-3">
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <div className="flex gap-3 flex-wrap">
+                                        <Skeleton className="h-5 w-20 rounded" />
+                                        <Skeleton className="h-5 w-16" />
+                                        <Skeleton className="h-5 w-24" />
+                                    </div>
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-4 w-40" />
+                                    <div className="pt-4 border-t border-border space-y-2">
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-2/3" />
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                        {/* Guidelines skeleton */}
+                        <Card className="shadow-sm border-border min-h-[22vh]">
+                            <CardHeader>
+                                <CardTitle className="text-lg">{t('buyer.product_detail.guidelines_title', 'Seller Guidelines')}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-5/6" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    {/* Right column skeleton */}
+                    <div className="flex flex-col gap-6">
+                        <Card className="shadow-sm border-border">
+                            <CardContent className="p-5 space-y-4">
+                                <div>
+                                    <Skeleton className="h-9 w-24" />
+                                    <Skeleton className="h-3 w-36 mt-2" />
+                                </div>
+                                <Separator />
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-5 w-12 rounded-full" />
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <Skeleton className="h-4 w-20" />
+                                        <Skeleton className="h-5 w-16" />
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between">
+                                    <Skeleton className="h-4 w-28" />
+                                    <Skeleton className="h-4 w-16" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="shadow-sm border-border">
+                            <CardContent className="p-5 space-y-3">
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-9 w-full rounded-md" />
+                            </CardContent>
+                        </Card>
+                        <Card className="shadow-sm border-border bg-muted/30">
+                            <CardContent className="p-5 space-y-3">
+                                <Skeleton className="h-4 w-40" />
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-10 w-full rounded-md" />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         );
     }

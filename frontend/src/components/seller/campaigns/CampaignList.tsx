@@ -2,7 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Campaign } from '@/api/campaigns';
 import { CampaignCard } from './CampaignCard';
-import { Loader2 } from 'lucide-react';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CampaignListProps {
     campaigns: Campaign[];
@@ -15,8 +16,42 @@ export function CampaignList({ campaigns, isLoading, error }: CampaignListProps)
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+            <div className="space-y-10">
+                <section>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Skeleton className="w-2 h-2 rounded-full" />
+                        <Skeleton className="h-6 w-40" />
+                    </div>
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {[...Array(6)].map((_, i) => (
+                            <Card key={i} className="shadow-sm border-border flex flex-col justify-between">
+                                <CardHeader className="pb-2">
+                                    <div className="flex gap-4 items-center">
+                                        <Skeleton className="h-16 w-16 rounded-md flex-shrink-0" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-5 w-full" />
+                                            <Skeleton className="h-3 w-24" />
+                                            <Skeleton className="h-4 w-12" />
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="mt-2 space-y-3">
+                                        <div className="flex justify-between">
+                                            <Skeleton className="h-3 w-24" />
+                                            <Skeleton className="h-3 w-16" />
+                                        </div>
+                                        <Skeleton className="h-2.5 w-full rounded-full" />
+                                        <div className="flex justify-between pt-2">
+                                            <Skeleton className="h-5 w-16 rounded-full" />
+                                            <Skeleton className="h-3 w-20" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
             </div>
         );
     }

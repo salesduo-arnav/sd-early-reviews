@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { formatPrice, getAmazonDomain } from '@/lib/regions';
 import { PageMeta } from '@/components/PageMeta';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CAMPAIGN_STEPS = [
     {
@@ -93,8 +94,109 @@ export default function CampaignDetailPage() {
 
     if (isLoading || !campaign) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+            <div className="space-y-6 max-w-5xl mx-auto">
+                {/* Header skeleton */}
+                <div className="flex items-center gap-4 mb-6">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-7 w-48" />
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="ml-auto">
+                        <Skeleton className="h-10 w-40" />
+                    </div>
+                </div>
+
+                {/* How It Works — static, renders immediately */}
+                <div className="rounded-xl bg-brand-primary/5 p-6 sm:p-8">
+                    <div className="text-center mb-8">
+                        <h2 className="text-xl font-bold tracking-tight">
+                            {t('seller.campaigns.detail.how_it_works', 'How It Works')}
+                        </h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {t('seller.campaigns.detail.how_it_works_subtitle', 'Your campaign lifecycle from start to finish')}
+                        </p>
+                    </div>
+                    <div className="relative">
+                        <div className="hidden lg:block absolute top-7 left-[12.5%] right-[12.5%] h-0.5 bg-brand-primary/20" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0">
+                            {CAMPAIGN_STEPS.map((step, index) => (
+                                <div key={index} className="relative flex flex-col items-center text-center px-4">
+                                    <div className="relative z-10 flex items-center justify-center h-14 w-14 rounded-full bg-brand-primary text-white mb-4 shadow-md">
+                                        <step.icon className="h-6 w-6" />
+                                    </div>
+                                    <p className="text-sm font-bold mb-1">{t(step.titleKey, step.titleFallback)}</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">{t(step.descKey, step.descFallback)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Two-column layout skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 space-y-6">
+                        <Card className="shadow-sm border-border overflow-hidden">
+                            <div className="md:flex">
+                                <Skeleton className="h-48 md:h-full md:w-48 flex-shrink-0" />
+                                <div className="p-6 flex-1 space-y-3">
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <div className="flex gap-3">
+                                        <Skeleton className="h-5 w-20 rounded" />
+                                        <Skeleton className="h-5 w-16" />
+                                        <Skeleton className="h-5 w-24" />
+                                    </div>
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-2/3" />
+                                </div>
+                            </div>
+                        </Card>
+                        <Card className="shadow-sm border-border">
+                            <CardHeader>
+                                <CardTitle className="text-lg">{t('seller.campaigns.detail.guidelines', 'Active Guidelines')}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-5/6" />
+                                    <Skeleton className="h-4 w-4/6" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="space-y-6">
+                        <Card className="shadow-sm border-border">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg">{t('seller.campaigns.detail.progress', 'Campaign Progress')}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex justify-between items-end mb-2">
+                                    <Skeleton className="h-8 w-20" />
+                                    <Skeleton className="h-4 w-10" />
+                                </div>
+                                <Skeleton className="h-3 w-full rounded-full" />
+                                <Skeleton className="h-3 w-32 mt-1" />
+                                <div className="pt-4 border-t border-border space-y-3">
+                                    <Skeleton className="h-4 w-24" />
+                                    {[...Array(4)].map((_, i) => (
+                                        <div key={i} className="flex justify-between">
+                                            <Skeleton className="h-3 w-28" />
+                                            <Skeleton className="h-3 w-16" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="shadow-sm border-border bg-muted/30">
+                            <CardContent className="p-4 space-y-3">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-3 w-4/5" />
+                                <Skeleton className="h-8 w-full rounded-md" />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         );
     }
