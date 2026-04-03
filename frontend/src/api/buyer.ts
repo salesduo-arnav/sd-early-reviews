@@ -90,6 +90,8 @@ export interface BuyerClaim {
     asin: string;
     region: string;
     guidelines: string | null;
+    order_retry_count: number;
+    review_retry_count: number;
 }
 
 export interface SubmitReviewPayload {
@@ -98,6 +100,12 @@ export interface SubmitReviewPayload {
     review_title: string;
     review_text: string;
     amazon_review_id?: string;
+}
+
+export interface RetryOrderPayload {
+    amazon_order_id: string;
+    order_proof_url: string;
+    purchase_date: string;
 }
 
 export interface ClaimsQueryParams {
@@ -235,6 +243,26 @@ export const buyerApi = {
 
     cancelClaim: async (claimId: string): Promise<{ message: string }> => {
         return fetchWithAuth(`/buyer/claims/${claimId}`, { method: 'DELETE' });
+    },
+
+    retryOrder: async (
+        claimId: string,
+        payload: RetryOrderPayload,
+    ): Promise<{ message: string; claim: BuyerClaim }> => {
+        return fetchWithAuth(`/buyer/claims/${claimId}/retry-order`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    retryReview: async (
+        claimId: string,
+        payload: SubmitReviewPayload,
+    ): Promise<{ message: string; claim: BuyerClaim }> => {
+        return fetchWithAuth(`/buyer/claims/${claimId}/retry-review`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
     },
 
     getAccountProfile: async (): Promise<BuyerProfile> => {

@@ -5,6 +5,8 @@ import {
     getClaimDetail,
     submitReviewProof,
     cancelClaim,
+    retryOrderProof,
+    retryReviewProof,
     getAccountProfile,
     getBankRequirements,
     refreshBankRequirements,
@@ -24,6 +26,8 @@ router.get('/claims', getMyClaims);
 router.get('/claims/:id', getClaimDetail);
 router.post('/claims/:id/review', submitReviewProof);
 router.delete('/claims/:id', cancelClaim);
+router.post('/claims/:id/retry-order', retryOrderProof);
+router.post('/claims/:id/retry-review', retryReviewProof);
 
 // Profile & Earnings
 router.get('/profile', getAccountProfile);

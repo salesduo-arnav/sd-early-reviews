@@ -10,10 +10,21 @@ import { parsePaginationParams, buildPaginatedResponse } from '../utils/paginati
 import { notificationService } from '../services/notification.service';
 import { NotificationCategory } from '../models/Notification';
 import { startOfDay, endOfDay } from 'date-fns';
-import { attemptAutoReviewVerification } from '../services/verification';
+import { attemptAutoVerification, attemptAutoReviewVerification } from '../services/verification';
 import { resolveBuyerProfileId } from '../utils/profileResolvers';
 import { SystemConfig } from '../models/SystemConfig';
 import { CONFIG_KEYS } from '../utils/constants';
+
+async function getMaxRetries(): Promise<{ maxOrderRetries: number; maxReviewRetries: number }> {
+    const [orderConfig, reviewConfig] = await Promise.all([
+        SystemConfig.findByPk(CONFIG_KEYS.MAX_ORDER_RETRIES),
+        SystemConfig.findByPk(CONFIG_KEYS.MAX_REVIEW_RETRIES),
+    ]);
+    return {
+        maxOrderRetries: parseInt(orderConfig?.value ?? '3', 10),
+        maxReviewRetries: parseInt(reviewConfig?.value ?? '3', 10),
+    };
+}
 
 // Derive a user-friendly pipeline status from the three internal status fields
 function derivePipelineStatus(orderStatus: string, reviewStatus: string, payoutStatus: string): string {
@@ -83,6 +94,8 @@ function formatClaimResponse(claim: OrderClaim): Record<string, unknown> {
         rejection_reason: c.rejection_reason,
         created_at: c.created_at,
         order_proof_url: c.order_proof_url,
+        order_retry_count: c.order_retry_count ?? 0,
+        review_retry_count: c.review_retry_count ?? 0,
         product_title: c.Campaign?.product_title ?? '',
         product_image_url: c.Campaign?.product_image_url ?? '',
         asin: c.Campaign?.asin ?? '',
@@ -393,6 +406,203 @@ export const cancelClaim = async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(`Error cancelling claim: ${formatError(error)}`);
         return res.status(500).json({ message: 'Internal server error while cancelling claim' });
+    }
+};
+
+/**
+ * POST /api/buyer/claims/:id/retry-order
+ * Retry a rejected order by submitting new proof. Enforces max retry limit.
+ */
+export const retryOrderProof = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!buyerProfile) return res.status(403).json({ message: 'Buyer profile not found' });
+
+        if (buyerProfile.is_blacklisted) {
+            return res.status(403).json({ message: 'Your account has been restricted. Contact support.' });
+        }
+
+        const { id } = req.params;
+        const { amazon_order_id, order_proof_url, purchase_date } = req.body;
+
+        if (!amazon_order_id || !order_proof_url || !purchase_date) {
+            return res.status(400).json({ message: 'amazon_order_id, order_proof_url, and purchase_date are required' });
+        }
+
+        const claim = await OrderClaim.findOne({
+            where: { id, buyer_id: buyerProfile.id },
+            include: [{ model: Campaign, required: true, attributes: ['asin', 'product_title', 'product_image_url', 'region', 'guidelines', 'seller_id'] }],
+        });
+
+        if (!claim) return res.status(404).json({ message: 'Claim not found' });
+
+        if (claim.order_status !== OrderStatus.REJECTED) {
+            return res.status(400).json({ message: 'Only rejected orders can be retried' });
+        }
+
+        const { maxOrderRetries } = await getMaxRetries();
+        if (claim.order_retry_count >= maxOrderRetries) {
+            return res.status(400).json({ message: 'Maximum retry attempts reached. No further retries are allowed.' });
+        }
+
+        // Check for duplicate order ID (excluding this claim itself)
+        if (amazon_order_id !== claim.amazon_order_id) {
+            const existing = await OrderClaim.findOne({
+                where: { amazon_order_id, id: { [Op.ne]: id } },
+            });
+            if (existing) {
+                return res.status(409).json({ message: 'This Amazon order ID is already associated with another claim.' });
+            }
+        }
+
+        await claim.update({
+            amazon_order_id,
+            order_proof_url,
+            purchase_date: new Date(purchase_date),
+            order_status: OrderStatus.PENDING_VERIFICATION,
+            rejection_reason: null,
+            order_retry_count: claim.order_retry_count + 1,
+            verification_method: null,
+            verification_details: null,
+            auto_verified_at: null,
+            verified_by_admin_id: null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+        await claim.reload({
+            include: [{ model: Campaign, required: true, attributes: ['asin', 'product_title', 'product_image_url', 'region', 'guidelines', 'seller_id'] }],
+        });
+
+        // Attempt auto-verification (non-blocking)
+        attemptAutoVerification(claim, claim.campaign_id)
+            .catch(err => logger.error('Background order auto-verification failed on retry', { claimId: claim.id, err }));
+
+        return res.status(200).json({
+            message: 'Order proof resubmitted successfully. Pending verification.',
+            claim: formatClaimResponse(claim),
+        });
+    } catch (error) {
+        logger.error(`Error retrying order proof: ${formatError(error)}`);
+        return res.status(500).json({ message: 'Internal server error while retrying order' });
+    }
+};
+
+/**
+ * POST /api/buyer/claims/:id/retry-review
+ * Retry a rejected review by submitting new proof. Enforces max retry limit.
+ */
+export const retryReviewProof = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const buyerProfile = await BuyerProfile.findOne({ where: { user_id: userId } });
+        if (!buyerProfile) return res.status(403).json({ message: 'Buyer profile not found' });
+
+        if (buyerProfile.is_blacklisted) {
+            return res.status(403).json({ message: 'Your account has been restricted. Contact support.' });
+        }
+
+        const { id } = req.params;
+        const { review_proof_url, review_rating, review_title, review_text, amazon_review_id } = req.body;
+
+        if (!review_proof_url || !review_rating || !review_title || !review_text || !amazon_review_id) {
+            return res.status(400).json({ message: 'review_proof_url, review_rating, review_title, review_text, and amazon_review_id are required' });
+        }
+
+        try {
+            new URL(review_proof_url);
+        } catch {
+            return res.status(400).json({ message: 'review_proof_url must be a valid URL' });
+        }
+
+        const rating = parseInt(review_rating, 10);
+        if (isNaN(rating) || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'review_rating must be an integer between 1 and 5' });
+        }
+
+        if (typeof review_title !== 'string' || review_title.trim().length < 1) {
+            return res.status(400).json({ message: 'review_title is required' });
+        }
+
+        if (typeof review_text !== 'string' || review_text.trim().length < 10) {
+            return res.status(400).json({ message: 'review_text must be at least 10 characters' });
+        }
+
+        const claim = await OrderClaim.findOne({
+            where: { id, buyer_id: buyerProfile.id },
+            include: [{ model: Campaign, required: true, attributes: ['asin', 'product_title', 'product_image_url', 'region', 'guidelines', 'seller_id'] }],
+        });
+
+        if (!claim) return res.status(404).json({ message: 'Claim not found' });
+
+        if (claim.review_status !== ReviewStatus.REJECTED) {
+            return res.status(400).json({ message: 'Only rejected reviews can be retried' });
+        }
+
+        const { maxReviewRetries } = await getMaxRetries();
+        if (claim.review_retry_count >= maxReviewRetries) {
+            return res.status(400).json({ message: 'Maximum retry attempts reached. No further retries are allowed.' });
+        }
+
+        // Check for duplicate review ID (excluding this claim)
+        if (amazon_review_id) {
+            const existing = await OrderClaim.findOne({
+                where: { amazon_review_id, id: { [Op.ne]: id } },
+            });
+            if (existing) {
+                return res.status(409).json({ message: 'This Amazon review URL has already been submitted for another claim.' });
+            }
+        }
+
+        await claim.update({
+            review_proof_url,
+            review_rating: rating,
+            review_title: review_title.trim(),
+            review_text: review_text.trim(),
+            amazon_review_id: amazon_review_id || null,
+            review_date: new Date(),
+            review_status: ReviewStatus.PENDING_VERIFICATION,
+            rejection_reason: null,
+            review_retry_count: claim.review_retry_count + 1,
+            review_verification_method: null,
+            review_verification_details: null,
+            review_auto_verified_at: null,
+            verified_by_admin_id: null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+        await claim.reload({
+            include: [{ model: Campaign, required: true, attributes: ['asin', 'product_title', 'product_image_url', 'region', 'guidelines', 'seller_id'] }],
+        });
+
+        // Attempt auto-verification (non-blocking)
+        attemptAutoReviewVerification(claim, claim.campaign_id)
+            .catch(err => logger.error('Background review auto-verification failed on retry', { claimId: claim.id, err }));
+
+        // Notify seller (non-blocking)
+        type ClaimWithCampaign = OrderClaim & { Campaign?: { seller_id: string; product_title: string } };
+        const claimData = claim as ClaimWithCampaign;
+        if (claimData.Campaign?.seller_id) {
+            const sellerProfile = await SellerProfile.findByPk(claimData.Campaign.seller_id);
+            if (sellerProfile) {
+                notificationService.send(sellerProfile.user_id, NotificationCategory.REVIEW_SUBMITTED, {
+                    message: `A buyer has resubmitted a review for "${claimData.Campaign.product_title}" (Order: ${claim.amazon_order_id}). Review it in your dashboard.`,
+                    actionLink: `/seller/reviews`,
+                }).catch((err) => logger.error('Failed to send review retry notification', { err }));
+            }
+        }
+
+        return res.status(200).json({
+            message: 'Review resubmitted successfully. Pending verification.',
+            claim: formatClaimResponse(claim),
+        });
+    } catch (error) {
+        logger.error(`Error retrying review proof: ${formatError(error)}`);
+        return res.status(500).json({ message: 'Internal server error while retrying review' });
     }
 };
 

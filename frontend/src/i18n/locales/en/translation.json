@@ -239,6 +239,22 @@
 
             "rejection_reason": "Rejection Reason",
 
+            "attempts_left": "{{count}} attempt left",
+            "attempts_remaining": "{{count}} attempt remaining",
+            "no_retries_left": "No retries remaining",
+            "retry": "Retry",
+            "retry_fill_fields": "Please fill in all fields.",
+            "order_retry_success": "Order proof resubmitted successfully.",
+            "retry_order": "Resubmit Order Proof",
+            "retry_review": "Resubmit Review",
+            "amazon_order_id": "Amazon Order ID",
+            "purchase_date": "Purchase Date",
+            "select_purchase_date": "Select purchase date",
+            "order_screenshot": "Order Screenshot",
+            "resubmitting": "Resubmitting...",
+            "resubmit_order": "Resubmit Order Proof",
+            "review_retried": "Review resubmitted successfully! It will be verified shortly.",
+
             "cancel_claim": "Cancel This Claim",
             "cancel_confirm_title": "Cancel Claim?",
             "cancel_confirm_desc": "Are you sure you want to cancel your claim for \"{{product}}\"? This action cannot be undone.",

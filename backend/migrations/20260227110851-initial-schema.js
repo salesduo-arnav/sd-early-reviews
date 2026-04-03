@@ -446,6 +446,16 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
+      order_retry_count: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      review_retry_count: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn('now'),

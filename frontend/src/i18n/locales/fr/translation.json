@@ -239,6 +239,22 @@
 
             "rejection_reason": "Motif du rejet",
 
+            "attempts_left": "{{count}} tentative restante",
+            "attempts_remaining": "{{count}} tentative restante",
+            "no_retries_left": "Plus aucune tentative restante",
+            "retry": "Réessayer",
+            "retry_fill_fields": "Veuillez remplir tous les champs.",
+            "order_retry_success": "Preuve de commande renvoyée avec succès.",
+            "retry_order": "Renvoyer la Preuve de Commande",
+            "retry_review": "Renvoyer l'Avis",
+            "amazon_order_id": "Numéro de Commande Amazon",
+            "purchase_date": "Date d'Achat",
+            "select_purchase_date": "Sélectionner la date d'achat",
+            "order_screenshot": "Capture d'Écran de la Commande",
+            "resubmitting": "Renvoi en cours...",
+            "resubmit_order": "Renvoyer la Preuve de Commande",
+            "review_retried": "Avis renvoyé avec succès ! Il sera vérifié prochainement.",
+
             "cancel_claim": "Annuler cette réclamation",
             "cancel_confirm_title": "Annuler la réclamation ?",
             "cancel_confirm_desc": "Êtes-vous sûr de vouloir annuler votre réclamation pour « {{product}} » ? Cette action est irréversible.",

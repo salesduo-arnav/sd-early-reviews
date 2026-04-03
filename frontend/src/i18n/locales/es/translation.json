@@ -239,6 +239,22 @@
 
             "rejection_reason": "Razón de Rechazo",
 
+            "attempts_left": "{{count}} intento restante",
+            "attempts_remaining": "{{count}} intento restante",
+            "no_retries_left": "No quedan reintentos",
+            "retry": "Reintentar",
+            "retry_fill_fields": "Por favor, complete todos los campos.",
+            "order_retry_success": "Prueba de pedido reenviada correctamente.",
+            "retry_order": "Reenviar Prueba de Pedido",
+            "retry_review": "Reenviar Reseña",
+            "amazon_order_id": "ID de Pedido de Amazon",
+            "purchase_date": "Fecha de Compra",
+            "select_purchase_date": "Seleccionar fecha de compra",
+            "order_screenshot": "Captura de Pantalla del Pedido",
+            "resubmitting": "Reenviando...",
+            "resubmit_order": "Reenviar Prueba de Pedido",
+            "review_retried": "¡Reseña reenviada correctamente! Será verificada en breve.",
+
             "cancel_claim": "Cancelar Este Reclamo",
             "cancel_confirm_title": "¿Cancelar Reclamo?",
             "cancel_confirm_desc": "¿Estás seguro de que deseas cancelar tu reclamo de \"{{product}}\"? Esta acción no se puede deshacer.",

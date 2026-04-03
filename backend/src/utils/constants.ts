@@ -46,6 +46,16 @@ export const SYSTEM_CONFIGS = {
         defaultValue: 'false',
         description: 'Enable or disable buyer notifications when new campaigns match their interests',
     },
+    MAX_ORDER_RETRIES: {
+        key: 'max_order_retries',
+        defaultValue: '3',
+        description: 'Maximum number of times a buyer can retry a rejected order submission',
+    },
+    MAX_REVIEW_RETRIES: {
+        key: 'max_review_retries',
+        defaultValue: '3',
+        description: 'Maximum number of times a buyer can retry a rejected review submission',
+    },
 } as const;
 
 // Flat config key lookup derived from SYSTEM_CONFIGS (zero duplication)

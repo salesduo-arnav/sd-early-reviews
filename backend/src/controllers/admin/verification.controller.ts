@@ -168,7 +168,9 @@ export const verifyOrder = async (req: Request, res: Response) => {
             verification_method: VERIFICATION_METHOD.MANUAL,
         };
 
-        if (action === 'REJECT') {
+        if (action === 'APPROVE') {
+            updateData.rejection_reason = null;
+        } else {
             updateData.rejection_reason = reason;
         }
 
@@ -240,6 +242,7 @@ export const verifyReview = async (req: Request, res: Response) => {
             updateData.payout_status = PayoutStatus.PENDING;
             updateData.review_approved_at = new Date();
             updateData.review_verification_method = VERIFICATION_METHOD.MANUAL;
+            updateData.rejection_reason = null;
         } else {
             updateData.rejection_reason = reason;
         }

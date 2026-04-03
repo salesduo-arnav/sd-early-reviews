@@ -239,6 +239,22 @@
 
             "rejection_reason": "Ablehnungsgrund",
 
+            "attempts_left": "{{count}} Versuch übrig",
+            "attempts_remaining": "{{count}} Versuch verbleibend",
+            "no_retries_left": "Keine Versuche mehr übrig",
+            "retry": "Erneut versuchen",
+            "retry_fill_fields": "Bitte füllen Sie alle Felder aus.",
+            "order_retry_success": "Bestellnachweis erfolgreich erneut eingereicht.",
+            "retry_order": "Bestellnachweis erneut einreichen",
+            "retry_review": "Bewertung erneut einreichen",
+            "amazon_order_id": "Amazon-Bestellnummer",
+            "purchase_date": "Kaufdatum",
+            "select_purchase_date": "Kaufdatum auswählen",
+            "order_screenshot": "Bestellscreenshot",
+            "resubmitting": "Wird erneut eingereicht...",
+            "resubmit_order": "Bestellnachweis erneut einreichen",
+            "review_retried": "Bewertung erfolgreich erneut eingereicht! Sie wird in Kürze überprüft.",
+
             "cancel_claim": "Diesen Anspruch stornieren",
             "cancel_confirm_title": "Anspruch stornieren?",
             "cancel_confirm_desc": "Sind Sie sicher, dass Sie Ihren Anspruch für \"{{product}}\" stornieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
