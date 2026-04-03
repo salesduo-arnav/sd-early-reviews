@@ -37,9 +37,12 @@ import { cn } from '@/lib/utils';
 
 interface ClaimCardProps {
     claim: BuyerClaim;
+    maxOrderRetries: number;
+    maxReviewRetries: number;
     onViewDetails: (claim: BuyerClaim) => void;
     onUploadReview: (claim: BuyerClaim) => void;
     onCancelled: () => void;
+    onRetry: (claim: BuyerClaim) => void;
 }
 
 function DeadlineCountdown({ deadline }: { deadline: string }) {
@@ -76,7 +79,7 @@ function DeadlineCountdown({ deadline }: { deadline: string }) {
 }
 
 /** Status-specific contextual message strip at the bottom of the card */
-function StatusContextStrip({ claim }: { claim: BuyerClaim }) {
+function StatusContextStrip({ claim, maxOrderRetries, maxReviewRetries }: { claim: BuyerClaim; maxOrderRetries: number; maxReviewRetries: number }) {
     const { t } = useTranslation();
 
     switch (claim.pipeline_status) {
@@ -115,13 +118,26 @@ function StatusContextStrip({ claim }: { claim: BuyerClaim }) {
                     <span>{t('buyer.claims.status_msg_reimbursed', "You've been reimbursed {{amount}}", { amount: formatPrice(Number(claim.expected_payout_amount), claim.region) })}</span>
                 </div>
             );
-        case 'REJECTED':
+        case 'REJECTED': {
+            const isOrderRejected = claim.order_status === 'REJECTED';
+            const retryCount = isOrderRejected ? claim.order_retry_count : claim.review_retry_count;
+            const maxRetries = isOrderRejected ? maxOrderRetries : maxReviewRetries;
+            const attemptsLeft = maxRetries - retryCount;
+
             return (
                 <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/5 px-3 py-1.5 rounded-md">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="line-clamp-1">{claim.rejection_reason || t('buyer.claims.status_msg_rejected', 'Your claim was rejected')}</span>
+                    <span className="line-clamp-1 flex-1">
+                        {claim.rejection_reason || t('buyer.claims.status_msg_rejected', 'Your claim was rejected')}
+                    </span>
+                    {attemptsLeft > 0 && (
+                        <span className="flex-shrink-0 text-[10px] font-medium bg-destructive/10 px-1.5 py-0.5 rounded">
+                            {t('buyer.claims.attempts_left', '{{count}} attempt left', { count: attemptsLeft })}
+                        </span>
+                    )}
                 </div>
             );
+        }
         case 'TIMEOUT':
             return (
                 <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md">
@@ -134,7 +150,7 @@ function StatusContextStrip({ claim }: { claim: BuyerClaim }) {
     }
 }
 
-export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }: ClaimCardProps) {
+export function ClaimCard({ claim, maxOrderRetries, maxReviewRetries, onViewDetails, onUploadReview, onCancelled, onRetry }: ClaimCardProps) {
     const { t } = useTranslation();
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
@@ -142,6 +158,11 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
     const showDeadline = claim.pipeline_status === 'REVIEW_PENDING' && claim.review_deadline;
     const showUploadAction = claim.pipeline_status === 'REVIEW_PENDING';
     const showCancelAction = claim.pipeline_status === 'ORDER_SUBMITTED';
+    const isRejected = claim.pipeline_status === 'REJECTED';
+    const isOrderRejected = claim.order_status === 'REJECTED';
+    const retryCount = isOrderRejected ? claim.order_retry_count : claim.review_retry_count;
+    const maxRetries = isOrderRejected ? maxOrderRetries : maxReviewRetries;
+    const canRetry = isRejected && retryCount < maxRetries;
 
     const handleCancelConfirm = async () => {
         setIsCancelling(true);
@@ -251,7 +272,7 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                         )}
 
                         {/* Status context strip */}
-                        <StatusContextStrip claim={claim} />
+                        <StatusContextStrip claim={claim} maxOrderRetries={maxOrderRetries} maxReviewRetries={maxReviewRetries} />
                     </div>
 
                     {/* Actions footer */}
@@ -287,6 +308,17 @@ export function ClaimCard({ claim, onViewDetails, onUploadReview, onCancelled }:
                             >
                                 <X className="w-3.5 h-3.5 mr-1" />
                                 {t('common.cancel', 'Cancel')}
+                            </Button>
+                        )}
+                        {canRetry && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => onRetry(claim)}
+                                className="h-7 px-3 text-xs font-medium"
+                            >
+                                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                                {t('buyer.claims.retry', 'Retry')}
                             </Button>
                         )}
                     </div>

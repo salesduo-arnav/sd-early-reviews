@@ -29,10 +29,17 @@ import {
     Star,
     AlertCircle,
     X,
-    Calendar,
+    Calendar as CalendarIcon,
     Wallet,
     Image as ImageIcon,
+    RefreshCw,
+    Loader2,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, formatDistanceToNow } from 'date-fns';
 import { formatPrice, getAmazonProductUrl } from '@/lib/regions';
 import { buyerApi } from '@/api/buyer';
@@ -47,12 +54,31 @@ interface ClaimDetailModalProps {
     onOpenChange: (open: boolean) => void;
     onReviewSubmitted: () => void;
     onClaimCancelled: () => void;
+    maxOrderRetries: number;
+    maxReviewRetries: number;
 }
 
-export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted, onClaimCancelled }: ClaimDetailModalProps) {
+export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted, onClaimCancelled, maxOrderRetries, maxReviewRetries }: ClaimDetailModalProps) {
     const { t } = useTranslation();
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [isRetrying, setIsRetrying] = useState(false);
+    const [retryOrderId, setRetryOrderId] = useState('');
+    const [retrySelectedDate, setRetrySelectedDate] = useState<Date | undefined>();
+    const [retryDatePickerOpen, setRetryDatePickerOpen] = useState(false);
+    const [retryProofFile, setRetryProofFile] = useState<File | null>(null);
+
+    // Reset retry form state when opening a different claim or reopening the modal
+    const claimId = claim?.id;
+    const claimOrderId = claim?.amazon_order_id;
+    React.useEffect(() => {
+        if (claimId) {
+            setRetryOrderId(claimOrderId ?? '');
+            setRetrySelectedDate(undefined);
+            setRetryProofFile(null);
+            setIsRetrying(false);
+        }
+    }, [claimId, claimOrderId]);
 
     if (!claim) return null;
 
@@ -60,6 +86,12 @@ export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted,
     const hasReview = claim.review_text || claim.review_rating;
     const isRejected = claim.pipeline_status === 'REJECTED';
     const canCancel = claim.pipeline_status === 'ORDER_SUBMITTED';
+    const isOrderRejected = claim.order_status === 'REJECTED';
+    const isReviewRejected = claim.review_status === 'REJECTED' && claim.order_status !== 'REJECTED';
+    const orderAttemptsLeft = maxOrderRetries - (claim.order_retry_count ?? 0);
+    const reviewAttemptsLeft = maxReviewRetries - (claim.review_retry_count ?? 0);
+    const canRetryOrder = isOrderRejected && orderAttemptsLeft > 0;
+    const canRetryReview = isReviewRejected && reviewAttemptsLeft > 0;
 
     const handleCancel = async () => {
         setIsCancelling(true);
@@ -80,6 +112,29 @@ export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted,
     const handleReviewSuccess = () => {
         onOpenChange(false);
         onReviewSubmitted();
+    };
+
+    const handleRetryOrder = async () => {
+        if (!retryOrderId.trim() || !retryProofFile || !retrySelectedDate) {
+            toast.error(t('buyer.claims.retry_fill_fields', 'Please fill in all fields.'));
+            return;
+        }
+        setIsRetrying(true);
+        try {
+            const { url } = await buyerApi.uploadImage(retryProofFile);
+            await buyerApi.retryOrder(claim.id, {
+                amazon_order_id: retryOrderId.trim(),
+                order_proof_url: url,
+                purchase_date: format(retrySelectedDate, 'yyyy-MM-dd'),
+            });
+            toast.success(t('buyer.claims.order_retry_success', 'Order proof resubmitted successfully.'));
+            onOpenChange(false);
+            onReviewSubmitted();
+        } catch (err) {
+            toast.error(getErrorMessage(err));
+        } finally {
+            setIsRetrying(false);
+        }
     };
 
     // Deadline info
@@ -256,7 +311,7 @@ export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted,
 
                                     {claim.review_date && (
                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                            <Calendar className="w-3 h-3" />
+                                            <CalendarIcon className="w-3 h-3" />
                                             {t('buyer.claims.submitted_on', 'Submitted {{date}}', { date: format(new Date(claim.review_date), 'MMM d, yyyy') })}
                                         </div>
                                     )}
@@ -299,13 +354,103 @@ export function ClaimDetailModal({ claim, open, onOpenChange, onReviewSubmitted,
                             </div>
                         )}
 
-                        {/* Rejection Reason */}
+                        {/* Rejection Reason + Retry */}
                         {isRejected && claim.rejection_reason && (
                             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex gap-3 text-destructive">
                                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                <div>
+                                <div className="flex-1">
                                     <h5 className="font-medium text-sm">{t('buyer.claims.rejection_reason', 'Rejection Reason')}</h5>
                                     <p className="text-sm mt-1 opacity-90">{claim.rejection_reason}</p>
+                                    <p className="text-xs mt-2 font-medium opacity-75">
+                                        {(canRetryOrder || canRetryReview)
+                                            ? t('buyer.claims.attempts_remaining', '{{count}} attempt remaining', { count: canRetryOrder ? orderAttemptsLeft : reviewAttemptsLeft })
+                                            : t('buyer.claims.no_retries_left', 'No retries remaining')
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Order Retry Form */}
+                        {canRetryOrder && (
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                    <RefreshCw className="w-4 h-4" />
+                                    {t('buyer.claims.retry_order', 'Resubmit Order Proof')}
+                                </h4>
+                                <div className="bg-background border rounded-lg p-4 space-y-3">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="retry-order-id">{t('buyer.claims.amazon_order_id', 'Amazon Order ID')}</Label>
+                                        <Input
+                                            id="retry-order-id"
+                                            placeholder="e.g. 123-4567890-1234567"
+                                            value={retryOrderId}
+                                            onChange={(e) => setRetryOrderId(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label>{t('buyer.claims.purchase_date', 'Purchase Date')}</Label>
+                                        <Popover open={retryDatePickerOpen} onOpenChange={setRetryDatePickerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'w-full justify-start text-left font-normal',
+                                                        !retrySelectedDate && 'text-muted-foreground',
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {retrySelectedDate
+                                                        ? format(retrySelectedDate, 'PPP')
+                                                        : t('buyer.claims.select_purchase_date', 'Select purchase date')}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={retrySelectedDate}
+                                                    onSelect={(date) => {
+                                                        setRetrySelectedDate(date);
+                                                        setRetryDatePickerOpen(false);
+                                                    }}
+                                                    disabled={{ after: new Date() }}
+                                                    toDate={new Date()}
+                                                    fromYear={2020}
+                                                    toYear={new Date().getFullYear()}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label>{t('buyer.claims.order_screenshot', 'Order Screenshot')}</Label>
+                                        <ImageUpload
+                                            file={retryProofFile}
+                                            onChange={setRetryProofFile}
+                                            disabled={isRetrying}
+                                        />
+                                    </div>
+                                    <Button onClick={handleRetryOrder} disabled={isRetrying} className="w-full">
+                                        {isRetrying ? (
+                                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('buyer.claims.resubmitting', 'Resubmitting...')}</>
+                                        ) : (
+                                            <><RefreshCw className="w-4 h-4 mr-2" />{t('buyer.claims.resubmit_order', 'Resubmit Order Proof')}</>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Review Retry Form */}
+                        {canRetryReview && (
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                    <RefreshCw className="w-4 h-4" />
+                                    {t('buyer.claims.retry_review', 'Resubmit Review')}
+                                </h4>
+                                <div className="bg-background border rounded-lg p-4">
+                                    <SubmitReviewForm claimId={claim.id} onSuccess={handleReviewSuccess} isRetry />
                                 </div>
                             </div>
                         )}

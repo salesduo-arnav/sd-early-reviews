@@ -239,6 +239,22 @@
 
             "rejection_reason": "अस्वीकृति का कारण",
 
+            "attempts_left": "{{count}} प्रयास शेष",
+            "attempts_remaining": "{{count}} प्रयास बाकी",
+            "no_retries_left": "कोई पुनः प्रयास शेष नहीं",
+            "retry": "पुनः प्रयास करें",
+            "retry_fill_fields": "कृपया सभी फ़ील्ड भरें।",
+            "order_retry_success": "ऑर्डर प्रमाण सफलतापूर्वक पुनः सबमिट कर दिया गया।",
+            "retry_order": "ऑर्डर प्रमाण पुनः सबमिट करें",
+            "retry_review": "समीक्षा पुनः सबमिट करें",
+            "amazon_order_id": "Amazon ऑर्डर ID",
+            "purchase_date": "खरीद की तारीख",
+            "select_purchase_date": "खरीद की तारीख चुनें",
+            "order_screenshot": "ऑर्डर स्क्रीनशॉट",
+            "resubmitting": "पुनः सबमिट हो रहा है...",
+            "resubmit_order": "ऑर्डर प्रमाण पुनः सबमिट करें",
+            "review_retried": "समीक्षा सफलतापूर्वक पुनः सबमिट कर दी गई! इसे जल्द ही सत्यापित किया जाएगा।",
+
             "cancel_claim": "यह क्लेम रद्द करें",
             "cancel_confirm_title": "क्लेम रद्द करें?",
             "cancel_confirm_desc": "क्या आप वाकई \"{{product}}\" के लिए अपना क्लेम रद्द करना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।",

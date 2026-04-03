@@ -18,6 +18,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { PageMeta } from '@/components/PageMeta';
+import { API_BASE_URL } from '@/config';
 
 export default function MyClaimsPage() {
     const { t } = useTranslation();
@@ -33,6 +34,8 @@ export default function MyClaimsPage() {
     const [detailOpen, setDetailOpen] = useState(false);
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [sortBy, setSortBy] = useState<string>('newest');
+    const [maxOrderRetries, setMaxOrderRetries] = useState(3);
+    const [maxReviewRetries, setMaxReviewRetries] = useState(3);
 
     const fetchClaims = useCallback(async () => {
         setLoading(true);
@@ -63,6 +66,16 @@ export default function MyClaimsPage() {
     useEffect(() => {
         setCurrentPage(1);
     }, [statusFilter, debouncedSearch, dateRange, sortBy]);
+
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/config`)
+            .then(res => res.json())
+            .then(config => {
+                if (config.max_order_retries) setMaxOrderRetries(parseInt(config.max_order_retries, 10));
+                if (config.max_review_retries) setMaxReviewRetries(parseInt(config.max_review_retries, 10));
+            })
+            .catch(() => { /* use defaults */ });
+    }, []);
 
     const handleViewDetails = (claim: BuyerClaim) => {
         setSelectedClaim(claim);
@@ -188,9 +201,12 @@ export default function MyClaimsPage() {
                                     <ClaimCard
                                         key={claim.id}
                                         claim={claim}
+                                        maxOrderRetries={maxOrderRetries}
+                                        maxReviewRetries={maxReviewRetries}
                                         onViewDetails={handleViewDetails}
                                         onUploadReview={handleUploadReview}
                                         onCancelled={handleRefresh}
+                                        onRetry={handleViewDetails}
                                     />
                                 ))}
                             </div>
@@ -217,6 +233,8 @@ export default function MyClaimsPage() {
                 }}
                 onReviewSubmitted={handleRefresh}
                 onClaimCancelled={handleRefresh}
+                maxOrderRetries={maxOrderRetries}
+                maxReviewRetries={maxReviewRetries}
             />
         </div>
     );

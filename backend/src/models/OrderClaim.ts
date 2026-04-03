@@ -40,7 +40,7 @@ interface OrderClaimAttributes {
     review_date?: Date;
     review_status: ReviewStatus;
     review_deadline?: Date;
-    rejection_reason?: string;
+    rejection_reason?: string | null;
     verified_by_admin_id?: string;
     payout_status: PayoutStatus;
     verification_method?: string;
@@ -53,11 +53,13 @@ interface OrderClaimAttributes {
     payout_processed_at?: Date;
     wise_transfer_id?: string;
     payout_method?: string;
+    order_retry_count: number;
+    review_retry_count: number;
     created_at?: Date;
     deleted_at?: Date;
 }
 
-type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_title' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'verification_method' | 'verification_details' | 'auto_verified_at' | 'review_verification_method' | 'review_verification_details' | 'review_auto_verified_at' | 'review_approved_at' | 'payout_processed_at' | 'wise_transfer_id' | 'payout_method' | 'deleted_at'>;
+type OrderClaimCreationAttributes = Optional<OrderClaimAttributes, 'id' | 'order_status' | 'review_status' | 'payout_status' | 'created_at' | 'review_proof_url' | 'review_rating' | 'review_title' | 'review_text' | 'amazon_review_id' | 'review_date' | 'review_deadline' | 'rejection_reason' | 'verified_by_admin_id' | 'verification_method' | 'verification_details' | 'auto_verified_at' | 'review_verification_method' | 'review_verification_details' | 'review_auto_verified_at' | 'review_approved_at' | 'payout_processed_at' | 'wise_transfer_id' | 'payout_method' | 'order_retry_count' | 'review_retry_count' | 'deleted_at'>;
 
 export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAttributes> implements OrderClaimAttributes {
     public id!: string;
@@ -76,7 +78,7 @@ export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAt
     public review_date!: Date;
     public review_status!: ReviewStatus;
     public review_deadline!: Date;
-    public rejection_reason!: string;
+    public rejection_reason!: string | null;
     public verified_by_admin_id!: string;
     public payout_status!: PayoutStatus;
     public verification_method!: string;
@@ -89,6 +91,8 @@ export class OrderClaim extends Model<OrderClaimAttributes, OrderClaimCreationAt
     public payout_processed_at!: Date;
     public wise_transfer_id!: string;
     public payout_method!: string;
+    public order_retry_count!: number;
+    public review_retry_count!: number;
     public created_at!: Date;
     public deleted_at!: Date;
 }
@@ -216,6 +220,16 @@ OrderClaim.init(
         payout_method: {
             type: DataTypes.STRING,
             allowNull: true,
+        },
+        order_retry_count: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        },
+        review_retry_count: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
         },
         created_at: {
             type: DataTypes.DATE,

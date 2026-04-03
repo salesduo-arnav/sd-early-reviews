@@ -239,6 +239,22 @@
 
             "rejection_reason": "سبب الرفض",
 
+            "attempts_left": "{{count}} محاولة متبقية",
+            "attempts_remaining": "{{count}} محاولة متبقية",
+            "no_retries_left": "لا توجد محاولات متبقية",
+            "retry": "إعادة المحاولة",
+            "retry_fill_fields": "يرجى ملء جميع الحقول.",
+            "order_retry_success": "تمت إعادة إرسال دليل الطلب بنجاح.",
+            "retry_order": "إعادة إرسال دليل الطلب",
+            "retry_review": "إعادة إرسال التقييم",
+            "amazon_order_id": "رقم طلب أمازون",
+            "purchase_date": "تاريخ الشراء",
+            "select_purchase_date": "حدد تاريخ الشراء",
+            "order_screenshot": "لقطة شاشة الطلب",
+            "resubmitting": "جارٍ إعادة الإرسال...",
+            "resubmit_order": "إعادة إرسال دليل الطلب",
+            "review_retried": "تمت إعادة إرسال التقييم بنجاح! سيتم التحقق منه قريباً.",
+
             "cancel_claim": "إلغاء هذا الطلب",
             "cancel_confirm_title": "إلغاء الطلب؟",
             "cancel_confirm_desc": "هل أنت متأكد من رغبتك في إلغاء طلبك لـ \"{{product}}\"؟ لا يمكن التراجع عن هذا الإجراء.",

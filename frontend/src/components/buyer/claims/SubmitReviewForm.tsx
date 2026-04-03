@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 interface SubmitReviewFormProps {
     claimId: string;
     onSuccess: () => void;
+    isRetry?: boolean;
 }
 
 const reviewSchema = z.object({
@@ -30,7 +31,7 @@ const reviewSchema = z.object({
 
 type ReviewFormData = z.infer<typeof reviewSchema>;
 
-export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) {
+export function SubmitReviewForm({ claimId, onSuccess, isRetry = false }: SubmitReviewFormProps) {
     const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,8 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
             // Upload image to S3
             const { url } = await buyerApi.uploadImage(proofFile);
 
-            await buyerApi.submitReviewProof(claimId, {
+            const submitFn = isRetry ? buyerApi.retryReview : buyerApi.submitReviewProof;
+            await submitFn(claimId, {
                 review_proof_url: url,
                 review_rating: data.review_rating,
                 review_title: data.review_title,
@@ -98,7 +100,11 @@ export function SubmitReviewForm({ claimId, onSuccess }: SubmitReviewFormProps) 
                 amazon_review_id: data.amazon_review_id,
             });
 
-            toast.success(t('buyer.claims.review_submitted', 'Review submitted successfully! It will be verified shortly.'));
+            toast.success(
+                isRetry
+                    ? t('buyer.claims.review_retried', 'Review resubmitted successfully! It will be verified shortly.')
+                    : t('buyer.claims.review_submitted', 'Review submitted successfully! It will be verified shortly.'),
+            );
             onSuccess();
         } catch (err) {
             const message = getErrorMessage(err);
